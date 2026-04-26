@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AETHERION"
+version = "1.0.0"
+id = "artifacts/aetherion"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23815
+
+[services.development]
+run = "pnpm --filter @workspace/aetherion run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/aetherion", "run", "build" ]
+publicDir = "artifacts/aetherion/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23815"
+BASE_PATH = "/"

@@ -3,13 +3,26 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AETHERION API - Autonomous Agent Economy Platform
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: templates
+    description: Business template operations
+  - name: stations
+    description: Station (space station / business) operations
+  - name: agents
+    description: AI agent operations
+  - name: rooms
+    description: Room operations within stations
+  - name: tasks
+    description: Task management for agents
+  - name: dashboard
+    description: Dashboard and analytics
+
 paths:
   /healthz:
     get:
@@ -24,6 +37,374 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List all business templates
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [crypto, ecommerce, content, saas, all]
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+    post:
+      operationId: createTemplate
+      tags: [templates]
+      summary: Create a new business template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTemplateBody"
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+
+  /templates/{id}:
+    get:
+      operationId: getTemplate
+      tags: [templates]
+      summary: Get a template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Template found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "404":
+          description: Not found
+
+  /stations:
+    get:
+      operationId: listStations
+      tags: [stations]
+      summary: List all stations for the user
+      responses:
+        "200":
+          description: List of stations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Station"
+    post:
+      operationId: createStation
+      tags: [stations]
+      summary: Create a new station from a template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStationBody"
+      responses:
+        "201":
+          description: Station created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Station"
+
+  /stations/{id}:
+    get:
+      operationId: getStation
+      tags: [stations]
+      summary: Get station by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Station details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Station"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateStation
+      tags: [stations]
+      summary: Update station status or settings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStationBody"
+      responses:
+        "200":
+          description: Station updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Station"
+    delete:
+      operationId: deleteStation
+      tags: [stations]
+      summary: Delete a station
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /stations/{id}/rooms:
+    get:
+      operationId: listRooms
+      tags: [rooms]
+      summary: List all rooms in a station
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+
+  /stations/{id}/agents:
+    get:
+      operationId: listStationAgents
+      tags: [agents]
+      summary: List all agents in a station
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+
+  /agents:
+    get:
+      operationId: listAgents
+      tags: [agents]
+      summary: List all agents
+      responses:
+        "200":
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+
+  /agents/{id}:
+    get:
+      operationId: getAgent
+      tags: [agents]
+      summary: Get agent by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateAgent
+      tags: [agents]
+      summary: Update agent status or assignment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAgentBody"
+      responses:
+        "200":
+          description: Agent updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+
+  /agents/{id}/tasks:
+    get:
+      operationId: listAgentTasks
+      tags: [tasks]
+      summary: List tasks for an agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Assign a new task to an agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskBody"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update task progress or status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskBody"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get overall platform summary stats
+      responses:
+        "200":
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent agent activity feed
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Recent activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/agent-performance:
+    get:
+      operationId: getAgentPerformance
+      tags: [dashboard]
+      summary: Get agent performance breakdown
+      responses:
+        "200":
+          description: Agent performance stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentPerformance"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +415,326 @@ components:
       required:
         - status
 
+    Template:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [crypto, ecommerce, content, saas]
+        agentCount:
+          type: integer
+        roomCount:
+          type: integer
+        rating:
+          type: number
+        usageCount:
+          type: integer
+        isPublished:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - slug
+        - description
+        - category
+        - agentCount
+        - roomCount
+        - rating
+        - usageCount
+        - isPublished
+        - createdAt
+
+    CreateTemplateBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [crypto, ecommerce, content, saas]
+        isPublished:
+          type: boolean
+      required:
+        - name
+        - description
+        - category
+
+    Station:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        templateId:
+          type: integer
+        templateName:
+          type: string
+        status:
+          type: string
+          enum: [idle, running, paused, completed]
+        progress:
+          type: number
+        agentCount:
+          type: integer
+        activeAgents:
+          type: integer
+        roomCount:
+          type: integer
+        tasksCompleted:
+          type: integer
+        tasksTotal:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - templateId
+        - templateName
+        - status
+        - progress
+        - agentCount
+        - activeAgents
+        - roomCount
+        - tasksCompleted
+        - tasksTotal
+        - createdAt
+
+    CreateStationBody:
+      type: object
+      properties:
+        name:
+          type: string
+        templateId:
+          type: integer
+      required:
+        - name
+        - templateId
+
+    UpdateStationBody:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [idle, running, paused, completed]
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: integer
+        stationId:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [research, development, design, marketing, operations, analytics]
+        status:
+          type: string
+          enum: [idle, active, busy]
+        agentCount:
+          type: integer
+        tasksCompleted:
+          type: integer
+      required:
+        - id
+        - stationId
+        - name
+        - type
+        - status
+        - agentCount
+        - tasksCompleted
+
+    Agent:
+      type: object
+      properties:
+        id:
+          type: integer
+        stationId:
+          type: integer
+        roomId:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+          enum: [research, strategy, builder, content, growth, analytics]
+        status:
+          type: string
+          enum: [idle, working, paused, offline]
+        level:
+          type: integer
+        experience:
+          type: integer
+        tasksCompleted:
+          type: integer
+        currentTask:
+          type: string
+          nullable: true
+      required:
+        - id
+        - stationId
+        - roomId
+        - name
+        - role
+        - status
+        - level
+        - experience
+        - tasksCompleted
+
+    UpdateAgentBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [idle, working, paused, offline]
+        roomId:
+          type: integer
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed]
+        progress:
+          type: integer
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - agentId
+        - title
+        - description
+        - status
+        - progress
+        - priority
+        - createdAt
+
+    CreateTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+      required:
+        - title
+        - description
+        - priority
+
+    UpdateTaskBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed]
+        progress:
+          type: integer
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalStations:
+          type: integer
+        activeStations:
+          type: integer
+        totalAgents:
+          type: integer
+        activeAgents:
+          type: integer
+        tasksCompletedToday:
+          type: integer
+        totalTemplates:
+          type: integer
+        overallProgress:
+          type: number
+      required:
+        - totalStations
+        - activeStations
+        - totalAgents
+        - activeAgents
+        - tasksCompletedToday
+        - totalTemplates
+        - overallProgress
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentName:
+          type: string
+        agentRole:
+          type: string
+        stationName:
+          type: string
+        action:
+          type: string
+        details:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - id
+        - agentName
+        - agentRole
+        - stationName
+        - action
+        - details
+        - timestamp
+
+    AgentPerformance:
+      type: object
+      properties:
+        role:
+          type: string
+        tasksCompleted:
+          type: integer
+        avgProgress:
+          type: number
+        agentCount:
+          type: integer
+      required:
+        - role
+        - tasksCompleted
+        - avgProgress
+        - agentCount
