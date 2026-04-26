@@ -3,28 +3,30 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import { AppLayout } from "@/components/layout/AppLayout";
-import Home from "@/pages/Home";
-import Stations from "@/pages/Stations";
-import StationDetail from "@/pages/StationDetail";
-import Templates from "@/pages/Templates";
-import Agents from "@/pages/Agents";
+import { AppShell } from "@/components/layout/AppShell";
+import Dashboard from "@/pages/Dashboard";
+import Crew from "@/pages/Crew";
+import Missions from "@/pages/Missions";
+import Timeline from "@/pages/Timeline";
+import Market from "@/pages/Market";
+import RoomDetail from "@/pages/RoomDetail";
 
 const queryClient = new QueryClient();
 
 function Router() {
   return (
-    <AppLayout>
+    <AppShell>
       <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/dashboard" component={Home} />
-        <Route path="/stations" component={Stations} />
-        <Route path="/stations/:id" component={StationDetail} />
-        <Route path="/templates" component={Templates} />
-        <Route path="/agents" component={Agents} />
+        <Route path="/" component={Dashboard} />
+        <Route path="/crew" component={Crew} />
+        <Route path="/missions" component={Missions} />
+        <Route path="/timeline" component={Timeline} />
+        <Route path="/templates" component={Market} />
+        <Route path="/stations/:id" component={Dashboard} />
+        <Route path="/rooms/:id" component={RoomDetail} />
         <Route component={NotFound} />
       </Switch>
-    </AppLayout>
+    </AppShell>
   );
 }
 
