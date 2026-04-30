@@ -1,42 +1,83 @@
 import { useState } from "react";
 import { useGetRecentActivity } from "@workspace/api-client-react";
-import { ROLE_COLORS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 const FILTERS = ["ALL", "AGENTS", "TASKS", "STATION"];
+
+const ROLE_HEX: Record<string, string> = {
+  research:  "#4df0d8",
+  strategy:  "#9b6dff",
+  builder:   "#4d7fff",
+  design:    "#9b6dff",
+  growth:    "#4dff9b",
+  analytics: "#ff4d6d",
+  content:   "#ffb84d",
+};
+
+function getRoleHex(role: string): string {
+  return ROLE_HEX[role?.toLowerCase()] ?? "#636b8a";
+}
+
+function formatTime(ts: string): string {
+  try {
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return ts.substring(0, 8);
+    return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  } catch {
+    return ts.substring(0, 5);
+  }
+}
 
 export default function Timeline() {
   const [filter, setFilter] = useState("ALL");
   const { data: activity } = useGetRecentActivity({ limit: 50 });
 
-  // Naive client-side filtering since API doesn't support type filtering
-  const filteredActivity = activity?.filter(item => {
+  const filtered = (activity ?? []).filter(item => {
     if (filter === "ALL") return true;
-    if (filter === "AGENTS") return item.action.toLowerCase().includes("agent");
-    if (filter === "TASKS") return item.action.toLowerCase().includes("task");
+    if (filter === "AGENTS") return item.agentName?.toLowerCase() !== "system";
+    if (filter === "TASKS") return item.action.toLowerCase().includes("task") || item.action.toLowerCase().includes("complet");
     if (filter === "STATION") return item.action.toLowerCase().includes("station") || item.action.toLowerCase().includes("room");
     return true;
-  }) || [];
+  });
+
+  const mono = { fontFamily: "'Space Mono', monospace" };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 md:p-12 flex flex-col h-full">
-      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Header */}
+      <div style={{
+        flexShrink: 0,
+        padding: "16px 28px 12px",
+        borderBottom: "1px solid var(--ae-border)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-end",
+        gap: 16,
+      }}>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight uppercase">EVENT TIMELINE</h1>
-          <p className="text-muted-foreground mt-2 font-mono">Chronological log of all system events.</p>
+          <h1 style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.8 }}>
+            EVENT TIMELINE
+          </h1>
+          <p style={{ ...mono, fontSize: 10, color: "var(--ae-muted)", marginTop: 4 }}>
+            Chronological log of all system events.
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: 6 }}>
           {FILTERS.map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={cn(
-                "px-4 py-1.5 text-[10px] font-mono rounded-full transition-all border",
-                filter === f 
-                  ? "bg-primary/10 text-primary border-primary shadow-[0_0_10px_rgba(0,255,255,0.2)]" 
-                  : "bg-transparent text-muted-foreground border-border hover:border-white/30"
-              )}
+              style={{
+                ...mono,
+                fontSize: 9,
+                padding: "4px 12px",
+                border: `1px solid ${filter === f ? "var(--ae-cyan)" : "var(--ae-border)"}`,
+                background: filter === f ? "var(--ae-cyan-dim)" : "transparent",
+                color: filter === f ? "var(--ae-cyan)" : "var(--ae-muted)",
+                cursor: "pointer",
+                letterSpacing: "0.08em",
+                transition: "all 0.15s",
+              }}
             >
               {f}
             </button>
@@ -44,44 +85,97 @@ export default function Timeline() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-black/20 rounded-xl border border-border p-4 relative min-h-0">
-        <div className="absolute left-[88px] top-4 bottom-4 w-px bg-white/5" />
-        
-        <div className="space-y-1 relative z-10">
-          {filteredActivity.map((item, i) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i * 0.05, 1) }}
-              key={item.id} 
-              className="flex items-start gap-6 p-3 rounded-lg hover:bg-white/5 group transition-colors"
-            >
-              <div className="w-16 flex-shrink-0 text-right text-xs font-mono text-muted-foreground pt-1">
-                {/* Extracting just time if possible, otherwise use full string */}
-                {item.timestamp.includes(":") ? item.timestamp.split(" ")[1] : item.timestamp}
-              </div>
-              
-              <div className="relative flex flex-col items-center pt-1.5">
-                <div className="w-3 h-3 rounded-full bg-background border-2 border-white/10 z-10" />
-                <div className={cn("absolute top-2 w-1.5 h-1.5 rounded-full z-20", ROLE_COLORS[item.agentRole]?.split(" ")[0].replace("text-", "bg-"))} />
-              </div>
-              
-              <div className="flex-1 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-white text-sm">{item.agentName}</span>
-                  <span className="text-xs font-mono text-muted-foreground bg-white/5 px-1.5 rounded uppercase">{item.agentRole}</span>
+      {/* Events */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px 28px" }}>
+        <div style={{ position: "relative" }}>
+          {/* Vertical timeline line */}
+          <div style={{
+            position: "absolute",
+            left: 86,
+            top: 0, bottom: 0,
+            width: 1,
+            background: "var(--ae-border)",
+          }} />
+
+          {filtered.map((item, i) => {
+            const color = getRoleHex(item.agentRole);
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: Math.min(i * 0.04, 0.8) }}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 0,
+                  padding: "8px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.03)",
+                }}
+              >
+                {/* Timestamp */}
+                <div style={{
+                  width: 72,
+                  flexShrink: 0,
+                  textAlign: "right",
+                  paddingRight: 14,
+                  paddingTop: 2,
+                  ...mono, fontSize: 9, color: "var(--ae-dim)",
+                }}>
+                  {formatTime(item.timestamp)}
                 </div>
-                <div className="text-sm mt-1 text-white/80">{item.action}</div>
-                {item.details && (
-                  <div className="text-xs font-mono text-muted-foreground mt-1.5 bg-black/30 p-2 rounded border border-white/5">
-                    {item.details}
+
+                {/* Dot on line */}
+                <div style={{ width: 16, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 4 }}>
+                  <div style={{
+                    width: 8, height: 8,
+                    borderRadius: "50%",
+                    background: color,
+                    boxShadow: `0 0 6px ${color}`,
+                    border: "1px solid var(--ae-bg)",
+                    position: "relative",
+                    zIndex: 1,
+                  }} />
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: 1, minWidth: 0, paddingLeft: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+                    <span style={{ ...mono, fontWeight: 700, fontSize: 11, color: "var(--ae-text)" }}>{item.agentName}</span>
+                    <span style={{
+                      ...mono, fontSize: 8,
+                      padding: "1px 7px",
+                      border: `1px solid ${color}44`,
+                      background: `${color}15`,
+                      color: color,
+                      letterSpacing: "0.1em",
+                    }}>
+                      {item.agentRole?.toUpperCase()}
+                    </span>
+                    <span style={{ ...mono, fontSize: 10, color: "var(--ae-text)", opacity: 0.85 }}>{item.action}</span>
                   </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
-          {filteredActivity.length === 0 && (
-            <div className="p-8 text-center text-muted-foreground font-mono">No events found matching filter.</div>
+                  {item.details && (
+                    <div style={{
+                      ...mono, fontSize: 9,
+                      color: "var(--ae-muted)",
+                      background: "rgba(0,0,0,0.3)",
+                      border: "1px solid var(--ae-border)",
+                      padding: "5px 10px",
+                      marginTop: 4,
+                      lineHeight: 1.5,
+                    }}>
+                      {item.details}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+
+          {filtered.length === 0 && (
+            <div style={{ ...mono, fontSize: 10, color: "var(--ae-muted)", padding: "40px 0", textAlign: "center" }}>
+              NO EVENTS FOUND FOR FILTER: {filter}
+            </div>
           )}
         </div>
       </div>

@@ -1,165 +1,254 @@
 import { useState } from "react";
-import { useListAgents, useListAgentTasks, useUpdateAgent } from "@workspace/api-client-react";
-import { ROLE_COLORS, AGENT_STATUS_COLORS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { useListAgents, useListAgentTasks } from "@workspace/api-client-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 
 const FILTERS = ["ALL", "RESEARCH", "STRATEGY", "BUILDER", "CONTENT", "GROWTH", "ANALYTICS"];
+
+const ROLE_HEX: Record<string, string> = {
+  research:  "#4df0d8",
+  strategy:  "#9b6dff",
+  builder:   "#4d7fff",
+  design:    "#9b6dff",
+  growth:    "#4dff9b",
+  analytics: "#ff4d6d",
+  content:   "#ffb84d",
+};
+
+function getRoleHex(role: string): string {
+  return ROLE_HEX[role?.toLowerCase()] ?? "#4d7fff";
+}
 
 export default function Crew() {
   const { data: agents } = useListAgents();
   const [filter, setFilter] = useState("ALL");
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const filteredAgents = agents?.filter(a => filter === "ALL" || a.role.toUpperCase() === filter) || [];
+  const filteredAgents = agents?.filter(
+    a => filter === "ALL" || a.role.toUpperCase() === filter
+  ) ?? [];
   const selectedAgent = agents?.find(a => a.id === selectedId);
 
-  const { data: tasks } = useListAgentTasks(selectedId || 0, { query: { enabled: !!selectedId } });
+  const { data: tasks } = useListAgentTasks(selectedId ?? 0, { query: { enabled: !!selectedId } });
+
+  const mono = { fontFamily: "'Space Mono', monospace" };
 
   return (
-    <div className="flex flex-col h-full p-6 gap-6 overflow-hidden">
-      <div className="flex justify-between items-end flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight uppercase">CREW ROSTER</h1>
-          <p className="text-sm font-mono text-muted-foreground mt-1">Manage and assign autonomous agents</p>
-        </div>
-        <div className="flex gap-2">
-          {FILTERS.map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={cn(
-                "px-3 py-1 text-[10px] font-mono rounded-full transition-all border",
-                filter === f 
-                  ? "bg-primary/20 text-primary border-primary/50" 
-                  : "bg-black/30 text-muted-foreground border-transparent hover:bg-white/5 hover:text-white"
-              )}
-            >
-              {f}
-            </button>
-          ))}
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", position: "relative" }}>
+      {/* Header */}
+      <div style={{ flexShrink: 0, padding: "16px 24px 12px", borderBottom: "1px solid var(--ae-border)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1 style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.8 }}>CREW ROSTER</h1>
+            <p style={{ ...mono, fontSize: 10, color: "var(--ae-muted)", marginTop: 4 }}>Manage and assign autonomous agents</p>
+          </div>
+          {/* Filters */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {FILTERS.map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                style={{
+                  ...mono,
+                  fontSize: 9,
+                  padding: "3px 10px",
+                  border: `1px solid ${filter === f ? "var(--ae-cyan)" : "var(--ae-border)"}`,
+                  background: filter === f ? "var(--ae-cyan-dim)" : "transparent",
+                  color: filter === f ? "var(--ae-cyan)" : "var(--ae-muted)",
+                  cursor: "pointer",
+                  letterSpacing: "0.08em",
+                  transition: "all 0.15s",
+                }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-[300px]">
-          {filteredAgents.map((agent) => (
-            <motion.button
-              key={agent.id}
-              onClick={() => setSelectedId(agent.id === selectedId ? null : agent.id)}
-              className={cn(
-                "flex flex-col p-4 rounded-xl border bg-card/40 backdrop-blur text-left transition-all",
-                selectedId === agent.id ? "border-white" : "border-border hover:border-white/20",
-                agent.status === "working" && "border-emerald-500/50 shadow-[0_0_15px_rgba(52,211,153,0.1)]"
-              )}
-              layoutId={`card-${agent.id}`}
-            >
-              <div className="flex gap-4 items-start w-full">
-                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold border flex-shrink-0", ROLE_COLORS[agent.role])}>
-                  {agent.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-lg truncate pr-2">{agent.name}</h3>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 bg-white/10 rounded flex-shrink-0">LVL {agent.level}</span>
+      {/* Grid */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px", paddingBottom: selectedId ? 310 : 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
+          {filteredAgents.map(agent => {
+            const roleColor = getRoleHex(agent.role);
+            const isSelected = selectedId === agent.id;
+            const isWorking = agent.status?.toLowerCase() === "working";
+
+            return (
+              <motion.button
+                key={agent.id}
+                onClick={() => setSelectedId(isSelected ? null : agent.id)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: 14,
+                  background: isSelected ? `${roleColor}10` : "var(--ae-surface)",
+                  border: `1px solid ${isSelected ? roleColor : isWorking ? roleColor + "55" : "var(--ae-border)"}`,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.15s",
+                  boxShadow: isWorking ? `0 0 12px ${roleColor}22` : "none",
+                  position: "relative",
+                }}
+              >
+                {/* Role corner accents */}
+                <div style={{ position: "absolute", top: 0, left: 0, width: 8, height: 8, borderTop: `2px solid ${roleColor}`, borderLeft: `2px solid ${roleColor}` }} />
+                <div style={{ position: "absolute", bottom: 0, right: 0, width: 8, height: 8, borderBottom: `2px solid ${roleColor}`, borderRight: `2px solid ${roleColor}` }} />
+
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 10 }}>
+                  <div style={{
+                    width: 40, height: 40,
+                    borderRadius: "50%",
+                    background: `${roleColor}20`,
+                    border: `1.5px solid ${roleColor}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontFamily: "'Space Mono', monospace",
+                    fontWeight: 700, fontSize: 14,
+                    color: roleColor,
+                    flexShrink: 0,
+                  }}>
+                    {agent.name.charAt(0)}
                   </div>
-                  <div className="text-xs font-mono text-muted-foreground uppercase truncate mt-0.5">{agent.role}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ ...mono, fontWeight: 700, fontSize: 13, color: "var(--ae-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {agent.name}
+                      </span>
+                      <span style={{
+                        ...mono, fontSize: 8,
+                        padding: "1px 5px",
+                        background: "rgba(0,0,0,0.4)",
+                        border: "1px solid var(--ae-border)",
+                        color: "var(--ae-muted)",
+                        flexShrink: 0,
+                        marginLeft: 6,
+                      }}>
+                        LVL {agent.level}
+                      </span>
+                    </div>
+                    <div style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", letterSpacing: "0.08em", marginTop: 2 }}>
+                      {agent.role?.toUpperCase()}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-4 flex items-center gap-2">
-                <div className={cn("w-2 h-2 rounded-full", agent.status === "working" ? "bg-emerald-500" : "bg-gray-500")} />
-                <span className="text-[10px] font-mono text-muted-foreground uppercase">{agent.status}</span>
-                <span className="text-[10px] font-mono text-muted-foreground ml-auto">{agent.tasksCompleted} TASKS</span>
-              </div>
-              {agent.currentTask && (
-                <div className="mt-3 text-xs text-white/70 bg-black/30 p-2 rounded border border-white/5 truncate font-mono">
-                  &gt; {agent.currentTask}
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span className={`status-dot ${agent.status?.toLowerCase()}`} />
+                  <span style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", letterSpacing: "0.06em" }}>{agent.status?.toUpperCase()}</span>
+                  <span style={{ ...mono, fontSize: 9, color: "var(--ae-dim)", marginLeft: "auto" }}>{agent.tasksCompleted} TASKS</span>
                 </div>
-              )}
-            </motion.button>
-          ))}
+
+                {agent.currentTask && (
+                  <div style={{
+                    marginTop: 8,
+                    ...mono, fontSize: 9,
+                    color: "var(--ae-muted)",
+                    background: "rgba(0,0,0,0.3)",
+                    border: "1px solid var(--ae-border)",
+                    padding: "5px 8px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}>
+                    &gt; {agent.currentTask}
+                  </div>
+                )}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
+      {/* Detail Panel */}
       <AnimatePresence>
         {selectedAgent && (
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            className="absolute bottom-0 left-0 right-0 h-[300px] bg-background/95 backdrop-blur-xl border-t border-white/20 p-6 z-30 shadow-2xl flex gap-8"
+            transition={{ type: "tween", duration: 0.2 }}
+            style={{
+              position: "absolute",
+              bottom: 0, left: 0, right: 0,
+              height: 280,
+              background: "var(--ae-surface)",
+              borderTop: "1px solid var(--ae-border-bright)",
+              padding: "16px 24px",
+              zIndex: 30,
+              display: "flex",
+              gap: 24,
+            }}
           >
-            <div className="w-[300px] flex-shrink-0 flex flex-col">
-              <div className="flex items-center gap-4 mb-6">
-                <div className={cn("w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border", ROLE_COLORS[selectedAgent.role])}>
+            <div style={{ width: 280, flexShrink: 0, display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: "50%",
+                  background: `${getRoleHex(selectedAgent.role)}20`,
+                  border: `1.5px solid ${getRoleHex(selectedAgent.role)}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "'Space Mono', monospace",
+                  fontWeight: 700, fontSize: 18,
+                  color: getRoleHex(selectedAgent.role),
+                }}>
                   {selectedAgent.name.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="font-bold text-2xl">{selectedAgent.name}</h2>
-                  <div className="text-sm font-mono text-muted-foreground uppercase mt-1">{selectedAgent.role} • Level {selectedAgent.level}</div>
-                </div>
-              </div>
-              
-              <div className="space-y-4 flex-1">
-                <div>
-                  <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-1">
-                    <span>EXPERIENCE</span>
-                    <span>{selectedAgent.experience} XP</span>
-                  </div>
-                  <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-border/50">
-                    <div className="h-full bg-white/80" style={{ width: `${selectedAgent.experience % 100}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-mono text-muted-foreground mb-1">STATUS</div>
-                  <div className={cn("inline-block text-xs font-mono px-2 py-1 rounded border uppercase", AGENT_STATUS_COLORS[selectedAgent.status])}>
-                    {selectedAgent.status}
-                  </div>
+                  <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: "var(--ae-text)", lineHeight: 1.6, letterSpacing: "0.04em" }}>{selectedAgent.name}</div>
+                  <div style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", marginTop: 4, letterSpacing: "0.08em" }}>{selectedAgent.role?.toUpperCase()} · LEVEL {selectedAgent.level}</div>
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-auto">
-                <button className="flex-1 bg-white hover:bg-white/90 text-black py-2 rounded text-xs font-mono font-bold transition-colors">
-                  ASSIGN
-                </button>
-                <button className="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded text-xs font-mono font-bold transition-colors">
-                  UPGRADE
-                </button>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 5 }}>
+                  <span>EXPERIENCE</span>
+                  <span style={{ color: "var(--ae-text)" }}>{selectedAgent.experience} XP</span>
+                </div>
+                <div className="pixel-progress">
+                  <div className="pixel-progress-fill" style={{ width: `${selectedAgent.experience % 100}%`, background: "var(--ae-green)" }} />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+                <button className="pixel-btn primary" style={{ flex: 1 }}>UPGRADE</button>
+                <button className="pixel-btn" style={{ flex: 1 }}>ASSIGN</button>
+                <button className="pixel-btn warning" style={{ flex: 1 }}>PAUSE</button>
               </div>
             </div>
 
-            <div className="flex-1 border-l border-white/10 pl-8 flex flex-col min-w-0">
-              <h3 className="text-xs font-mono text-muted-foreground mb-4">RECENT TASKS</h3>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-4 scrollbar-hide">
+            <div style={{ flex: 1, borderLeft: "1px solid var(--ae-border)", paddingLeft: 24, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
+              <div style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", letterSpacing: "0.12em", marginBottom: 10 }}>RECENT TASKS</div>
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
                 {tasks?.length ? tasks.map(task => (
-                  <div key={task.id} className="p-3 rounded bg-white/5 border border-white/5 flex flex-col gap-2">
-                    <div className="flex justify-between items-start">
-                      <div className="font-medium text-sm">{task.title}</div>
-                      <span className={cn(
-                        "text-[10px] font-mono px-2 py-0.5 rounded",
-                        task.status === "completed" ? "bg-emerald-500/20 text-emerald-400" :
-                        task.status === "in_progress" ? "bg-cyan-500/20 text-cyan-400" : "bg-gray-500/20 text-gray-400"
-                      )}>
-                        {task.status}
-                      </span>
-                    </div>
-                    {task.status === "in_progress" && (
-                      <div className="h-1 bg-black/40 rounded-full overflow-hidden">
-                        <div className="h-full bg-cyan-400" style={{ width: `${task.progress}%` }} />
-                      </div>
-                    )}
+                  <div key={task.id} style={{
+                    padding: "8px 12px",
+                    background: "rgba(0,0,0,0.3)",
+                    border: "1px solid var(--ae-border)",
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
+                  }}>
+                    <span style={{ ...mono, fontSize: 10, color: "var(--ae-text)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.title}</span>
+                    <span style={{
+                      ...mono, fontSize: 8, padding: "2px 7px",
+                      border: `1px solid ${task.status === "completed" ? "var(--ae-green)" : task.status === "in_progress" ? "var(--ae-cyan)" : "var(--ae-border)"}55`,
+                      color: task.status === "completed" ? "var(--ae-green)" : task.status === "in_progress" ? "var(--ae-cyan)" : "var(--ae-muted)",
+                      flexShrink: 0, letterSpacing: "0.06em",
+                    }}>
+                      {task.status?.toUpperCase().replace("_", " ")}
+                    </span>
                   </div>
                 )) : (
-                  <div className="text-sm text-muted-foreground italic">No recent tasks.</div>
+                  <div style={{ ...mono, fontSize: 10, color: "var(--ae-muted)", fontStyle: "italic" }}>No recent tasks.</div>
                 )}
               </div>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setSelectedId(null)}
-              className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-white"
+              style={{ position: "absolute", top: 12, right: 16, background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)" }}
             >
-              ✕
+              <X size={14} />
             </button>
           </motion.div>
         )}

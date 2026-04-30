@@ -2,68 +2,134 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { Home, Users, Target, Clock, Store, Settings } from "lucide-react";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
-import { cn } from "@/lib/utils";
+
+const NAV_ITEMS = [
+  { href: "/",          label: "STATION",  Icon: Home },
+  { href: "/crew",      label: "CREW",     Icon: Users },
+  { href: "/missions",  label: "MISSIONS", Icon: Target },
+  { href: "/timeline",  label: "TIMELINE", Icon: Clock },
+  { href: "/templates", label: "MARKET",   Icon: Store },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: summary } = useGetDashboardSummary();
 
-  const navItems = [
-    { href: "/", label: "STATION", icon: Home },
-    { href: "/crew", label: "CREW", icon: Users },
-    { href: "/missions", label: "MISSIONS", icon: Target },
-    { href: "/timeline", label: "TIMELINE", icon: Clock },
-    { href: "/templates", label: "MARKET", icon: Store },
+  const stats = [
+    { label: "REVENUE",  value: "$0",                                               color: "var(--ae-green)" },
+    { label: "TASKS",    value: String(summary?.tasksCompletedToday ?? 0),          color: "var(--ae-blue)"  },
+    { label: "AGENTS",   value: `${summary?.activeAgents ?? 0}/${summary?.totalAgents ?? 0}`, color: "var(--ae-cyan)" },
   ];
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col bg-background text-foreground overflow-hidden">
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--ae-bg)", overflow: "hidden" }}>
       <div className="scanline" />
-      
+
       {/* TOP BAR */}
-      <header className="h-12 flex-shrink-0 flex items-center justify-between px-4 border-b border-border/50 bg-background/90 backdrop-blur-md z-20">
-        <div className="flex items-center gap-2 font-mono font-bold tracking-wider text-primary">
-          AETHERION
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-3 text-xs font-mono">
-            <div className="flex items-center gap-2 px-3 py-1 bg-black/40 border border-primary/20 rounded">
-              <span className="text-muted-foreground">REV</span>
-              <span className="text-emerald-400">$0</span>
+      <header style={{
+        height: 48,
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 16px",
+        background: "var(--ae-surface)",
+        borderBottom: "1px solid var(--ae-border)",
+        zIndex: 100,
+      }}>
+        {/* Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div>
+            <div style={{
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: 11,
+              color: "#fff",
+              letterSpacing: "0.06em",
+              lineHeight: 1,
+            }}>
+              AETHERION
             </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-black/40 border border-primary/20 rounded">
-              <span className="text-muted-foreground">TASKS</span>
-              <span className="text-blue-400">{summary?.tasksCompletedToday || 0}</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-black/40 border border-primary/20 rounded">
-              <span className="text-muted-foreground">AGENTS</span>
-              <span className="text-cyan-400">{summary?.activeAgents || 0}/{summary?.totalAgents || 0}</span>
-            </div>
+            <div style={{
+              height: 2,
+              width: 84,
+              marginTop: 4,
+              background: "linear-gradient(to right, var(--ae-cyan), var(--ae-blue), transparent)",
+            }} />
           </div>
+          <span style={{
+            fontFamily: "'Space Mono', monospace",
+            fontSize: 8,
+            color: "var(--ae-green)",
+            border: "1px solid var(--ae-green)",
+            padding: "1px 5px",
+            letterSpacing: "0.12em",
+          }}>
+            ONLINE
+          </span>
         </div>
 
-        <div className="flex items-center">
-          <button className="p-2 text-muted-foreground hover:text-primary transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
+        {/* Stats */}
+        <div style={{ display: "flex", gap: 28 }}>
+          {stats.map(s => (
+            <div key={s.label} style={{ textAlign: "center" }}>
+              <div style={{
+                fontFamily: "'Space Mono', monospace",
+                fontSize: 8,
+                color: "var(--ae-muted)",
+                letterSpacing: "0.12em",
+                lineHeight: 1.2,
+              }}>
+                {s.label}
+              </div>
+              <div style={{
+                fontFamily: "'Space Mono', monospace",
+                fontSize: 14,
+                fontWeight: 700,
+                color: s.color,
+                lineHeight: 1.2,
+                marginTop: 1,
+              }}>
+                {s.value}
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* Settings */}
+        <button
+          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)", padding: 4 }}
+          onMouseEnter={e => (e.currentTarget.style.color = "var(--ae-text)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "var(--ae-muted)")}
+        >
+          <Settings size={16} />
+        </button>
       </header>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 min-h-0 relative z-10 bg-grid-pattern overflow-hidden flex flex-col">
+      {/* MAIN */}
+      <main style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {children}
       </main>
 
       {/* BOTTOM NAV */}
-      <nav className="h-14 flex-shrink-0 flex border-t border-border/50 bg-background/95 backdrop-blur z-20">
-        {navItems.map((item) => {
-          const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-          const Icon = item.icon;
+      <nav style={{
+        height: 52,
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "stretch",
+        background: "var(--ae-bg)",
+        borderTop: "1px solid var(--ae-border)",
+        zIndex: 100,
+      }}>
+        {NAV_ITEMS.map(({ href, label, Icon }) => {
+          const isActive = href === "/" ? location === "/" : location.startsWith(href);
           return (
-            <Link key={item.href} href={item.href} className={cn("bottom-nav-item group", isActive && "active")}>
-              <Icon className="w-5 h-5 mb-1 group-hover:text-primary transition-colors" />
-              <span className="text-[10px] font-mono tracking-wider">{item.label}</span>
+            <Link
+              key={href}
+              href={href}
+              className={`bottom-nav-item${isActive ? " active" : ""}`}
+            >
+              <Icon size={16} />
+              <span>{label}</span>
             </Link>
           );
         })}

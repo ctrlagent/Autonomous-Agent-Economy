@@ -1,0 +1,616 @@
+# ============================================================
+# REPLIT AI — MASTER BUILD PROMPT
+# AETHERION: Autonomous Agent Economy OS
+# ============================================================
+# INSTRUKSI: Copy paste SELURUH prompt ini ke Replit AI.
+# Attach semua gambar referensi UI yang sudah digenerate.
+# ============================================================
+
+---
+
+## 🎯 MISI UTAMA
+
+Saya ingin kamu membangun **AETHERION** — sebuah AI Agent Operating System Dashboard — menggunakan **gambar-gambar UI yang saya lampirkan sebagai referensi visual 100%**.
+
+Prioritas absolut:
+- **Pixel art / 2D pixel aesthetic** persis seperti di gambar referensi
+- **Warna, font, border, glow effect** harus sama identik
+- **Layout dan komponen** harus mengikuti gambar secara presisi
+- Tidak boleh ada deviasi desain — ini bukan interpretasi, ini adalah **reimplementasi visual yang akurat**
+
+---
+
+## 📁 TECH STACK
+
+```
+Framework  : Next.js 14 (App Router)
+Language   : TypeScript (strict)
+Styling    : Tailwind CSS + custom CSS
+Animation  : Framer Motion
+Game Canvas: Phaser 3 (untuk station grid)
+Font       : Space Mono (monospace UI), Press Start 2P (pixel headers)
+State      : React useState / useReducer
+```
+
+Install semua yang dibutuhkan:
+```bash
+npm install next react react-dom typescript framer-motion phaser
+npm install -D tailwindcss postcss autoprefixer @types/react @types/node
+```
+
+---
+
+## 🎨 DESIGN SYSTEM — IKUTI 100% PERSIS GAMBAR
+
+### Color Palette (CSS Variables)
+```css
+:root {
+  /* Backgrounds */
+  --ae-bg:          #0a0b0f;   /* deep space black */
+  --ae-surface:     #0f1118;   /* panel surface */
+  --ae-surface-2:   #141720;   /* elevated surface */
+  --ae-border:      #1e2130;   /* default border */
+  --ae-border-bright: #2a2f47; /* active border */
+
+  /* Neon Accents - SAMA DENGAN DI GAMBAR */
+  --ae-cyan:        #4df0d8;   /* Research Lab, main accent */
+  --ae-cyan-dim:    #0d2e2b;
+  --ae-blue:        #4d7fff;   /* Dev Lab, links */
+  --ae-blue-dim:    #0d1a3d;
+  --ae-violet:      #9b6dff;   /* Design Studio */
+  --ae-violet-dim:  #1e0d3d;
+  --ae-amber:       #ffb84d;   /* Marketing, warnings */
+  --ae-amber-dim:   #2e1f0d;
+  --ae-green:       #4dff9b;   /* Revenue, success */
+  --ae-green-dim:   #0d2e1a;
+  --ae-red:         #ff4d6d;   /* errors, remove */
+  --ae-red-dim:     #2e0d18;
+  --ae-gold:        #ffd700;   /* level up, rewards */
+  --ae-gold-dim:    #2e2400;
+
+  /* Text */
+  --ae-text:        #e4e7f0;
+  --ae-muted:       #636b8a;
+  --ae-dim:         #363d56;
+}
+```
+
+### Typography (HARUS SAMA PERSIS DENGAN GAMBAR)
+```css
+/* WAJIB: Import kedua font ini */
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Press+Start+2P&display=swap');
+
+/* Penggunaan:
+   - "AETHERION", room names, section headers → Press Start 2P
+   - Stats, timestamps, badges, labels, values → Space Mono
+   - Body text, task descriptions → Space Mono regular
+   - TIDAK BOLEH menggunakan Inter, Roboto, atau sans-serif biasa
+*/
+```
+
+### Pixel Border Style
+```css
+/* Room borders dengan pixel corner accent */
+.pixel-border {
+  border: 1px solid var(--ae-border);
+  position: relative;
+}
+.pixel-border::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 10px; height: 10px;
+  border-top: 2px solid var(--ae-cyan);
+  border-left: 2px solid var(--ae-cyan);
+}
+.pixel-border::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 10px; height: 10px;
+  border-bottom: 2px solid var(--ae-cyan);
+  border-right: 2px solid var(--ae-cyan);
+}
+
+/* Neon glow effect - seperti di gambar */
+.neon-glow-cyan { box-shadow: 0 0 8px #4df0d8, 0 0 20px rgba(77,240,216,0.3); }
+.neon-glow-blue { box-shadow: 0 0 8px #4d7fff, 0 0 20px rgba(77,127,255,0.3); }
+.neon-glow-amber { box-shadow: 0 0 8px #ffb84d, 0 0 20px rgba(255,184,77,0.3); }
+```
+
+### Dot Grid Background (seperti di gambar)
+```css
+.ae-grid-bg {
+  background-image:
+    radial-gradient(circle, #4d7fff 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-color: #0a0b0f;
+  opacity: 0.15;
+}
+```
+
+### CRT Scanline Overlay (WAJIB - terlihat jelas di gambar)
+```css
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+```
+
+---
+
+## 🏗️ STRUKTUR FILE
+
+```
+aetherion/
+├── app/
+│   ├── globals.css          ← semua CSS variables + scanline + grid
+│   ├── layout.tsx           ← font import, body class
+│   └── page.tsx             ← entry point → <Dashboard />
+│
+├── components/
+│   ├── ui/
+│   │   ├── Badge.tsx        ← neon color variants
+│   │   ├── ProgressBar.tsx  ← pixel-style thick bar
+│   │   ├── StatusDot.tsx    ← pulsing neon dot
+│   │   ├── TabNav.tsx       ← bottom nav bar seperti di gambar
+│   │   └── PixelButton.tsx  ← bevel pixel-style button
+│   │
+│   └── dashboard/
+│       ├── Dashboard.tsx        ← root layout + tab routing
+│       ├── Header.tsx           ← top bar: logo + stats + tab nav
+│       ├── ActivityLog.tsx      ← left sidebar log feed
+│       ├── StationGrid.tsx      ← wrapper for Phaser canvas
+│       ├── StationPhaser.tsx    ← Phaser 3 canvas component
+│       ├── RoomLabel.tsx        ← DOM overlay room names
+│       ├── AgentDetailStrip.tsx ← agent info + upgrade button
+│       ├── CrewGrid.tsx         ← agent card management
+│       ├── ShipComms.tsx        ← chat interface
+│       ├── Missions.tsx         ← progress bars + rewards
+│       ├── Marketplace.tsx      ← template cards
+│       └── Timeline.tsx         ← event log dengan filter
+│
+├── lib/
+│   ├── stationScene.ts      ← Phaser Scene: rooms + agent movement
+│   │                           + comm lines + level-up burst effect
+│   └── data.ts              ← semua mock data
+│
+└── types/index.ts           ← TypeScript interfaces
+```
+
+---
+
+## 🖥️ KOMPONEN 1: HEADER (Top Bar)
+
+Referensi: bagian atas di semua gambar
+
+```
+Layout: flex row, full width, height 48px, bg var(--ae-surface), 
+        border-bottom 1px var(--ae-border)
+
+Left section:
+  - Logo "AETHERION" dalam Press Start 2P, ukuran 14px, warna white
+  - Garis gradient di bawah logo: cyan → blue → transparent
+  - Badge "ONLINE" hijau kecil
+  - Station name: "Crypto Developer Station" Space Mono text-xs text-muted
+
+Center section (stats):
+  Tiap stat: label kecil atas + nilai besar bawah
+  - REVENUE: nilai "$3,840" warna var(--ae-green), font Space Mono bold
+  - TASKS: nilai "24" warna var(--ae-blue)
+  - AGENTS: nilai "8/8" warna var(--ae-cyan)
+
+Right section:
+  - Settings gear icon
+  - Commander badge/avatar pixel icon
+```
+
+---
+
+## 🖥️ KOMPONEN 2: TAB NAVIGATION
+
+Referensi: bottom bar di gambar 3 dan 4
+
+```
+Layout: bottom fixed bar, full width, height 52px
+        bg var(--ae-bg), border-top var(--ae-border)
+
+5 tabs dengan icon + label:
+  🏠 STATION   ◎ CREW   🎯 MISSIONS   📡 COMMS   🏪 MARKET
+
+Tiap tab:
+  - Icon pixel art style (SVG atau emoji)
+  - Label Space Mono 9px
+  - Active state: icon + text warna var(--ae-cyan), 
+    top border 2px var(--ae-cyan), bg slight cyan-dim
+  - Inactive: text var(--ae-dim)
+
+Active indicator: thin neon line di atas tab yang aktif
+```
+
+---
+
+## 🖥️ KOMPONEN 3: STATION GRID (Phaser 3 Canvas)
+
+Referensi: GAMBAR 1 dan GAMBAR 4 — ini adalah komponen utama
+
+Implementasi Phaser 3 `StationScene extends Phaser.Scene`:
+
+### Room Layout (3×2 grid):
+```
+Row 0: Research Lab | Dev Lab      | Design Studio
+Row 1: Marketing Hub| Ops Center   | Analytics
+```
+
+### Per Room, draw dengan Graphics:
+```typescript
+// Room panel fill
+gfx.fillStyle(0x0f1118, 0.95)
+gfx.fillRoundedRect(x, y, w, h, 4)
+
+// Room border dengan warna per status
+// active → neon cyan/green/blue sesuai room
+// idle → dim border
+
+// Corner accent marks (pixel bracket style)
+gfx.lineStyle(2, roomColor, 0.7)
+// draw L-shape di top-left dan bottom-right corner
+
+// Status dot pulsing di top-right corner room
+// Room name label di dalam (DOM overlay)
+
+// Floor texture: dot grid atau hex grid pattern
+// per-room color theme subtle background tint
+```
+
+### Agent Sprites:
+```typescript
+// 8 agent objects, tiap agent punya:
+// - posisi x,y
+// - target waypoint (random dalam room bounds)
+// - gerakan smooth menuju target
+// - trail effect (12 titik history)
+// - particle emitter saat working
+// - comm lines ke agent lain (flash)
+// - selected ring saat diklik
+
+// Agent body: circle outline + inner dot
+// Color: sesuai status (working=blue, active=green, idle=dim)
+// Glow: radial gradient outward
+
+// LEVEL-UP EFFECT saat upgrade:
+// - 4 shock rings expanding outward
+// - 40 burst particles (circles + diamonds) dengan gravity
+// - starburst rays 12 arah
+// - screen flash golden
+// - DOM floating label "FORGE → LV.5" animate up
+```
+
+### Comm Lines:
+```typescript
+// Setiap agent punya timer, saat expired:
+// - draw line ke random agent lain
+// - alpha fade berdasarkan elapsed time
+// - midpoint dot
+// - line color = agent status color
+```
+
+---
+
+## 🖥️ KOMPONEN 4: ACTIVITY LOG (Left Sidebar)
+
+Referensi: sidebar kiri di gambar 1 dan 3
+
+```
+Layout: w-[200px], h-full, bg var(--ae-surface), 
+        border-right var(--ae-border), p-3, overflow-hidden
+
+Header: "ACTIVITY LOG" Space Mono 9px tracking-widest + "● LIVE" green
+
+Log entries (AnimatePresence untuk new entries):
+  Tiap entry:
+  - timestamp: "12:42" Space Mono 9px dim
+  - icon prefix: "✓" green | "→" blue | "⚠" amber | "✕" red
+  - text: Space Mono 11px, warna sesuai type
+  - border-bottom tipis antar entry
+
+New entry animation:
+  - slide in dari kiri + fade in
+  - height animate dari 0
+
+Live update: tambah entry baru tiap 4.5 detik
+```
+
+---
+
+## 🖥️ KOMPONEN 5: AGENT DETAIL STRIP
+
+Referensi: panel bawah di gambar 3 saat agent dipilih
+
+```
+Layout: fixed bottom strip, di atas tab nav
+        bg var(--ae-surface), border-top var(--ae-border-bright)
+        px-4 py-3, slide up saat agent dipilih
+
+Content:
+  Left: avatar circle (32px) warna sesuai role + initials
+  Center:
+    - agent name bold + role badge + LV.X badge
+    - status dot + status text
+    - current task text Space Mono
+    - XP progress bar dengan fill animation
+  Right: [↑ UPGRADE] button + [✕ close]
+
+UPGRADE button state:
+  - Default: border ae-border text-ae-muted
+  - Hover: border gold/30 text-ae-amber
+  - Active/Upgrading: pulsing amber border + "⚡ UPGRADING" text
+
+Saat UPGRADE diklik:
+  1. XP bar animate 0 → 100% dalam 600ms
+  2. Panggil scene.triggerLevelUp(agentId)
+  3. LV badge animate scale bounce
+  4. Floating label "NAME → LV.X" muncul di atas canvas
+```
+
+---
+
+## 🖥️ KOMPONEN 6: SHIP COMMS
+
+Referensi: GAMBAR 3 ship comms panel + GAMBAR 2 alerts section
+
+```
+Layout: max-w-[480px], bg var(--ae-surface), border var(--ae-border), rounded-lg, p-4
+
+Header: "SHIP COMMS" + antenna icon + "5 ONLINE" green badge
+
+Message cards (tiap agent):
+  bg: var(--ae-bg)
+  border: var(--ae-border), approved → var(--ae-green)/20
+  padding: 12px
+  
+  Card content:
+  - Left: agent color dot + agent name Space Mono cyan bold + timestamp dim
+  - Right: action badge (approve/review/optimize) colored pill
+  - Body: message text Space Mono 12px text-muted
+  - Below: [Approve →] button green outline (hide if approved)
+
+Approved state: card border green, "approved" badge muncul
+
+Bottom actions:
+  [Approve All] | [Repeat] | [Optimize]
+  pixel border style buttons
+
+Saat "Approve All": 
+  flash success message "✓ All tasks approved" slide in hijau
+```
+
+---
+
+## 🖥️ KOMPONEN 7: MISSIONS
+
+```
+Layout: max-w-lg, single column card
+
+Tiap mission:
+  - Title font-semibold text-ae-text
+  - Fraction right-aligned Space Mono: "$3,840 / $5,000"
+  - Progress bar: h-2, rounded, animated fill dengan Framer Motion
+    colors: green/blue/cyan/amber per mission
+  - Percentage label 9px dim
+
+Progress bar pixel style:
+  background: var(--ae-border)
+  fill: colored dengan slight inner glow
+  
+Rewards section:
+  border-top, "REWARDS" header
+  badge pills: "+500 XP" gold | "Agent Unlock" violet | "Badge" blue
+
+Entrance animation:
+  tiap mission animate in dari kiri dengan delay stagger
+```
+
+---
+
+## 🖥️ KOMPONEN 8: MARKETPLACE
+
+```
+Layout: full width, card grid auto-fill minmax(200px)
+
+Search bar: full width, bg ae-bg, border ae-border, 
+            font Space Mono, focus → border ae-blue/40
+
+Tiap template card:
+  bg ae-surface, border ae-border, rounded-lg, p-4
+  hover: y -2px, border ae-border-bright
+  active template: border ae-blue/40, neon glow blue
+  
+  Card content:
+  - "ACTIVE" badge absolute top (jika active)
+  - Category badge colored: Crypto=amber, Content=cyan, SaaS=violet
+  - Template name 13px semibold
+  - Description 11px muted
+  - Stats row: "×12 agents  ◫6 rooms" mono dim
+  - Bottom: star rating amber + user count | [Use template] button
+
+Animate: tiap card slide up dengan stagger delay
+```
+
+---
+
+## 🖥️ KOMPONEN 9: TIMELINE
+
+```
+Layout: full width, timeline view
+
+Filter tabs: All | Revenue | Agents | Errors
+  pill style, active = ae-blue-dim bg + ae-blue border
+
+Timeline:
+  vertical line: 1px var(--ae-border) dari top ke bottom
+  
+  Tiap event:
+  - colored dot on line (color by type)
+  - timestamp Space Mono dim kiri
+  - title text ae-text
+  - type badge optional
+  
+  Event types:
+  ok → green dot "✓"
+  info → blue dot "→"  
+  warn → amber dot "⚠"
+  error → red dot "✕"
+
+Right panel (optional):
+  sparkline revenue chart 7d
+  agent activity summary
+```
+
+---
+
+## ⚡ PHASER SCENE DETAILS
+
+File: `lib/stationScene.ts`
+
+```typescript
+export class StationScene extends Phaser.Scene {
+  // Public callbacks
+  onAgentSelect?: (agent: AgentData | null) => void
+  onLevelUpLabel?: (x: number, y: number, name: string, level: number) => void
+
+  // Methods
+  create()         // init rooms, agents, click handler, grid fade-in tween
+  update()         // clear + draw everything tiap frame
+  
+  // Draw methods
+  drawBackground() // fill solid bg
+  drawGrid()       // dot grid 24px spacing
+  drawRooms()      // 6 rooms dengan status-based border color
+  drawCommLines()  // agent-to-agent flash lines  
+  drawAgents()     // movement + trail + particles + body
+  drawLevelUp()    // shockwave rings + burst particles + starburst
+  drawScanline()   // moving CRT sweep line
+  drawHUD()        // title bar overlay
+
+  // Public API
+  triggerLevelUp(agentId: string): number  // returns new level
+  getAgentLevel(id: string): number
+}
+```
+
+### Dynamic Import (wajib untuk SSR):
+```typescript
+// Di React component:
+const scene = await import('@/lib/stationScene')
+  .then(m => new m.StationScene())
+
+new Phaser.Game({
+  type: Phaser.AUTO,
+  parent: mountRef.current,
+  scene: scene,
+  banner: false,
+  audio: { noAudio: true }
+})
+```
+
+---
+
+## 📱 RESPONSIVE BEHAVIOR
+
+```
+Desktop (≥1200px): layout dua kolom — sidebar + main content
+Tablet (768-1199px): collapsible sidebar
+Mobile (<768px): bottom nav only, single column, canvas scales down
+
+Canvas resize:
+  ResizeObserver on container → game.scale.resize(w, h)
+```
+
+---
+
+## 🧪 MOCK DATA STRUCTURE
+
+```typescript
+// Agents
+const AGENTS = [
+  { id:'a1', name:'Prism',  role:'Research',  status:'Working',   roomId:'r1', pct:72, level:3 },
+  { id:'a2', name:'Forge',  role:'Strategy',  status:'Working',   roomId:'r1', pct:55, level:4 },
+  { id:'a3', name:'Apex',   role:'Builder',   status:'Deploying', roomId:'r2', pct:45, level:3 },
+  { id:'a4', name:'Pixel',  role:'Design',    status:'Working',   roomId:'r3', pct:88, level:2 },
+  { id:'a5', name:'Nova',   role:'Growth',    status:'Writing',   roomId:'r4', pct:30, level:3 },
+  { id:'a6', name:'Echo',   role:'Growth',    status:'Idle',      roomId:'r4', pct:0,  level:2 },
+  { id:'a7', name:'Rose',   role:'Analytics', status:'Active',    roomId:'r6', pct:91, level:3 },
+  { id:'a8', name:'Cipher', role:'Analytics', status:'Analyzing', roomId:'r6', pct:78, level:2 },
+]
+
+// Rooms
+const ROOMS = [
+  { id:'r1', name:'Research Lab',   color:0x4df0d8, status:'active',  col:0, row:0 },
+  { id:'r2', name:'Dev Lab',        color:0x4d7fff, status:'working', col:1, row:0 },
+  { id:'r3', name:'Design Studio',  color:0x9b6dff, status:'active',  col:2, row:0 },
+  { id:'r4', name:'Marketing Hub',  color:0xffb84d, status:'working', col:0, row:1 },
+  { id:'r5', name:'Ops Center',     color:0x363d56, status:'idle',    col:1, row:1 },
+  { id:'r6', name:'Analytics',      color:0x4d7fff, status:'active',  col:2, row:1 },
+]
+```
+
+---
+
+## ✅ CHECKLIST VISUAL (verifikasi dengan gambar referensi)
+
+Sebelum selesai, pastikan:
+
+- [ ] Font "Press Start 2P" terload untuk headers besar
+- [ ] Font "Space Mono" untuk semua label, stats, timestamps
+- [ ] Background #0a0b0f solid dark di semua panel
+- [ ] CRT scanline overlay terlihat di seluruh layar
+- [ ] Dot grid background terlihat subtle di canvas area
+- [ ] 6 room neon borders dengan warna berbeda per room
+- [ ] Agent dots bergerak smooth dalam room bounds
+- [ ] Trail effect di belakang agent yang bergerak
+- [ ] Comm lines flash antar agent
+- [ ] Level-up burst: shockwave + particles + floating label
+- [ ] Activity log auto-update setiap beberapa detik
+- [ ] Tab navigation di bottom dengan active indicator
+- [ ] Ship Comms approve buttons functional
+- [ ] Mission progress bars animasi smooth saat load
+- [ ] Marketplace cards hover effect
+- [ ] Semua warna dari palette CSS variables
+- [ ] Zero white backgrounds / zero light theme
+- [ ] Zero rounded modern buttons (harus pixel/sharp style)
+- [ ] Zero generic sans-serif fonts
+
+---
+
+## 🚀 MULAI DARI SINI
+
+Urutan build yang disarankan:
+
+1. Setup project + install deps + globals.css (palette + fonts + scanline)
+2. `lib/data.ts` — semua mock data
+3. `lib/stationScene.ts` — Phaser scene (rooms + agents + effects)
+4. `components/ui/*` — Badge, ProgressBar, StatusDot, TabNav, PixelButton
+5. `components/dashboard/Header.tsx`
+6. `components/dashboard/ActivityLog.tsx`  
+7. `components/dashboard/StationPhaser.tsx` — canvas + DOM overlay
+8. `components/dashboard/StationGrid.tsx` — wrapper
+9. `components/dashboard/AgentDetailStrip.tsx`
+10. `components/dashboard/Dashboard.tsx` — root + tabs
+11. Semua tab screens: Crew, Missions, Comms, Market, Timeline
+12. Testing + polish: animasi, responsive, edge cases
+
+---
+
+**INGAT: Setiap keputusan visual HARUS mengacu ke gambar referensi yang dilampirkan. 
+Jika ada keraguan tentang warna, spacing, font size, atau layout — lihat gambar, 
+bukan asumsi. Tujuannya adalah pixel-perfect reimplementation dari gambar tersebut.**

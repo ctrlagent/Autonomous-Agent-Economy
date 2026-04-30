@@ -1,10 +1,15 @@
 import { useGetDashboardSummary, useGetAgentPerformance } from "@workspace/api-client-react";
-import { cn } from "@/lib/utils";
-import { CheckCircle2, Lock, Target } from "lucide-react";
+import { motion } from "framer-motion";
+import { CheckCircle2, Circle, Lock, Target } from "lucide-react";
 
 export default function Missions() {
   const { data: summary } = useGetDashboardSummary();
   const { data: performance } = useGetAgentPerformance();
+
+  const avgPerformance =
+    performance && performance.length > 0
+      ? Math.round(performance.reduce((acc, p) => acc + p.avgProgress, 0) / performance.length)
+      : 0;
 
   const missions = [
     {
@@ -12,117 +17,165 @@ export default function Missions() {
       title: "Launch Your First Station",
       desc: "Create and deploy your first operational space station.",
       target: 1,
-      current: summary?.totalStations || 0,
-      reward: "500 XP + Template Unlock",
-      locked: false,
+      current: summary?.totalStations ?? 0,
+      xp: "500 XP",
+      reward: "Template Unlock",
+      color: "var(--ae-cyan)",
     },
     {
       id: 2,
       title: "Deploy 6 Agents",
       desc: "Recruit and assign a full crew of 6 agents.",
       target: 6,
-      current: summary?.totalAgents || 0,
-      reward: "1000 XP + Advanced Roles",
-      locked: false,
+      current: summary?.totalAgents ?? 0,
+      xp: "1000 XP",
+      reward: "Advanced Roles",
+      color: "var(--ae-blue)",
     },
     {
       id: 3,
       title: "Complete 10 Tasks",
       desc: "Successfully execute 10 automated tasks across any station.",
       target: 10,
-      current: summary?.tasksCompletedToday || 0, // Using today as proxy since API doesn't expose all-time total easily
-      reward: "1500 XP + Module Upgrade",
-      locked: (summary?.totalAgents || 0) < 1,
+      current: summary?.tasksCompletedToday ?? 0,
+      xp: "1500 XP",
+      reward: "Module Upgrade",
+      locked: (summary?.totalAgents ?? 0) < 1,
+      color: "var(--ae-violet)",
     },
     {
       id: 4,
       title: "Run 3 Active Stations",
       desc: "Manage multiple operations simultaneously.",
       target: 3,
-      current: summary?.activeStations || 0,
-      reward: "3000 XP + Command Center Style",
-      locked: (summary?.totalStations || 0) < 1,
+      current: summary?.activeStations ?? 0,
+      xp: "3000 XP",
+      reward: "Command Center Style",
+      locked: (summary?.totalStations ?? 0) < 1,
+      color: "var(--ae-amber)",
     },
     {
       id: 5,
       title: "Reach 90% Agent Performance",
       desc: "Optimize workflows to achieve maximum efficiency.",
       target: 90,
-      current: performance && performance.length > 0 ? Math.round(performance.reduce((acc, p) => acc + p.avgProgress, 0) / performance.length) : 0,
-      reward: "5000 XP + Elite Badge",
-      locked: (summary?.tasksCompletedToday || 0) < 5,
-    }
+      current: avgPerformance,
+      xp: "5000 XP",
+      reward: "Elite Badge",
+      locked: (summary?.tasksCompletedToday ?? 0) < 5,
+      color: "var(--ae-green)",
+    },
   ];
 
+  const mono = { fontFamily: "'Space Mono', monospace" };
+
   return (
-    <div className="max-w-4xl mx-auto p-6 md:p-12">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-          <Target className="w-8 h-8 text-primary" />
-          MISSION LOG
-        </h1>
-        <p className="text-muted-foreground mt-2 font-mono">Complete objectives to unlock upgrades and earn experience.</p>
+    <div style={{ height: "100%", overflowY: "auto", padding: "24px 32px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+        <Target size={20} color="var(--ae-cyan)" />
+        <div>
+          <h1 style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.8 }}>
+            MISSION LOG
+          </h1>
+          <p style={{ ...mono, fontSize: 10, color: "var(--ae-muted)", marginTop: 4 }}>
+            Complete objectives to unlock upgrades and earn experience.
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {missions.map(mission => {
+      {/* Mission Cards */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 780 }}>
+        {missions.map((mission, i) => {
           const isComplete = mission.current >= mission.target;
+          const isLocked = mission.locked;
           const progress = Math.min(100, Math.round((mission.current / mission.target) * 100));
 
           return (
-            <div 
+            <motion.div
               key={mission.id}
-              className={cn(
-                "p-6 rounded-xl border relative overflow-hidden transition-all",
-                isComplete ? "bg-emerald-950/20 border-emerald-500/30" :
-                mission.locked ? "bg-black/40 border-border/50 opacity-50" :
-                "bg-card border-border hover:border-white/20"
-              )}
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.07 }}
+              style={{
+                background: isComplete ? `${mission.color}10` : "var(--ae-surface)",
+                border: `1px solid ${isComplete ? mission.color + "50" : isLocked ? "var(--ae-border)" : "var(--ae-border)"}`,
+                padding: "18px 20px",
+                opacity: isLocked ? 0.45 : 1,
+                position: "relative",
+                display: "flex",
+                gap: 20,
+                alignItems: "center",
+              }}
             >
-              {isComplete && (
-                <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-emerald-500/10 to-transparent pointer-events-none" />
-              )}
-              
-              <div className="flex flex-col md:flex-row gap-6 md:items-center">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    {isComplete ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    ) : mission.locked ? (
-                      <Lock className="w-5 h-5 text-muted-foreground" />
-                    ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-primary" />
-                    )}
-                    <h2 className={cn("text-xl font-bold", isComplete ? "text-emerald-400" : "text-white")}>
-                      {mission.title}
-                    </h2>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4 pl-8">{mission.desc}</p>
-                  
-                  {!mission.locked && (
-                    <div className="pl-8">
-                      <div className="flex justify-between text-xs font-mono mb-1">
-                        <span className="text-white/60">PROGRESS</span>
-                        <span className="text-white">{mission.current} / {mission.target}</span>
-                      </div>
-                      <div className="h-2 bg-black/50 rounded-full overflow-hidden border border-white/10">
-                        <div 
-                          className={cn("h-full transition-all duration-1000", isComplete ? "bg-emerald-500" : "bg-primary")} 
-                          style={{ width: `${progress}%` }} 
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="md:w-48 flex-shrink-0 flex flex-col justify-center items-end border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6">
-                  <span className="text-[10px] font-mono text-muted-foreground mb-1">REWARD</span>
-                  <span className={cn("text-sm font-bold text-right", isComplete ? "text-emerald-400" : "text-amber-400")}>
-                    {mission.reward}
-                  </span>
-                </div>
+              {/* Corner accents */}
+              <div style={{ position: "absolute", top: 0, left: 0, width: 8, height: 8, borderTop: `2px solid ${isComplete ? mission.color : "var(--ae-border-bright)"}`, borderLeft: `2px solid ${isComplete ? mission.color : "var(--ae-border-bright)"}` }} />
+              <div style={{ position: "absolute", bottom: 0, right: 0, width: 8, height: 8, borderBottom: `2px solid ${isComplete ? mission.color : "var(--ae-border-bright)"}`, borderRight: `2px solid ${isComplete ? mission.color : "var(--ae-border-bright)"}` }} />
+
+              {/* Status icon */}
+              <div style={{ flexShrink: 0 }}>
+                {isComplete ? (
+                  <CheckCircle2 size={20} color={mission.color} />
+                ) : isLocked ? (
+                  <Lock size={18} color="var(--ae-muted)" />
+                ) : (
+                  <Circle size={18} color="var(--ae-muted)" />
+                )}
               </div>
-            </div>
+
+              {/* Content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ ...mono, fontWeight: 700, fontSize: 12, color: isComplete ? mission.color : "var(--ae-text)", marginBottom: 4 }}>
+                  {mission.title}
+                </div>
+                <div style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", marginBottom: 10 }}>
+                  {mission.desc}
+                </div>
+                {!isLocked && (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 5 }}>
+                      <span>PROGRESS</span>
+                      <span style={{ color: "var(--ae-text)" }}>{mission.current} / {mission.target}</span>
+                    </div>
+                    <div className="pixel-progress">
+                      <div
+                        className="pixel-progress-fill"
+                        style={{
+                          width: `${progress}%`,
+                          background: isComplete ? mission.color : "var(--ae-blue)",
+                          boxShadow: isComplete ? `0 0 6px ${mission.color}80` : "none",
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+                {isLocked && (
+                  <div style={{ ...mono, fontSize: 9, color: "var(--ae-dim)", letterSpacing: "0.08em" }}>
+                    [ LOCKED — COMPLETE PREVIOUS MISSION ]
+                  </div>
+                )}
+              </div>
+
+              {/* Reward */}
+              <div style={{
+                flexShrink: 0,
+                width: 150,
+                borderLeft: "1px solid var(--ae-border)",
+                paddingLeft: 16,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-end",
+                gap: 4,
+              }}>
+                <span style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>REWARD</span>
+                <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--ae-gold)", textAlign: "right" }}>
+                  {mission.xp}
+                </span>
+                <span style={{ ...mono, fontSize: 9, color: "var(--ae-violet)", textAlign: "right" }}>
+                  + {mission.reward}
+                </span>
+              </div>
+            </motion.div>
           );
         })}
       </div>
