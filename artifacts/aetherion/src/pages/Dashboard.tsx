@@ -1,13 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   useListStations, useListRooms, useListStationAgents,
   useGetDashboardSummary, useGetRecentActivity, useListAgentTasks,
 } from "@workspace/api-client-react";
-import { Pause, ChevronDown } from "lucide-react";
+import { Pause, ChevronDown, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
 import type { AgentData as PhaserAgent } from "@/lib/stationScene";
+import type { StationScene } from "@/lib/stationScene";
 import { DUNGEON_ROOMS } from "@/lib/dungeonLayout";
 
 const ROLE_HEX: Record<string, string> = {
@@ -38,7 +39,7 @@ export default function Dashboard() {
   const { data: stations } = useListStations();
   const [activeStationId, setActiveStationId] = useState<number | null>(null);
   const currentStationId = activeStationId ?? (stations?.[0]?.id ?? null);
-  const currentStation = stations?.find(s => s.id === currentStationId);
+  const currentStation = stations?.find((s: { id: number }) => s.id === currentStationId);
 
   const { data: rooms } = useListRooms(currentStationId ?? 0, { query: { enabled: !!currentStationId } });
   const { data: agents } = useListStationAgents(currentStationId ?? 0, { query: { enabled: !!currentStationId } });
@@ -50,17 +51,41 @@ export default function Dashboard() {
   const [showStationDropdown, setShowStationDropdown] = useState(false);
   const { data: agentTasks } = useListAgentTasks(selectedAgentId ?? 0, { query: { enabled: !!selectedAgentId } });
 
+  // Revenue & Phaser scene state
+  const [revenue, setRevenue] = useState(3840);
+  const [revenueGlow, setRevenueGlow] = useState(false);
+  const [dayPhase, setDayPhase] = useState<string>('PEAK HOURS');
+  const [activeIncidents, setActiveIncidents] = useState<Array<{ roomId: string; label: string; countdown: number; countdownMax: number }>>([]);
+
   const triggerRef = useRef<((id: string) => number) | null>(null);
+  const sceneRef = useRef<StationScene | null>(null);
+
+  // Poll scene for day phase and incidents
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (sceneRef.current) {
+        setDayPhase(sceneRef.current.getDayPhase());
+        setActiveIncidents(sceneRef.current.getActiveIncidents());
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const handleRevenueChange = (delta: number) => {
+    setRevenue(r => r + delta);
+    setRevenueGlow(true);
+    setTimeout(() => setRevenueGlow(false), 1200);
+  };
 
   const dungeonRoom = DUNGEON_ROOMS.find(r => r.id === selectedDungeonRoomId) ?? null;
-  const selectedAgent = agents?.find(a => a.id === selectedAgentId);
+  const selectedAgent = agents?.find((a: { id: number }) => a.id === selectedAgentId);
   const roomAgents = dungeonRoom
-    ? agents?.filter(a => a.role?.toLowerCase() === dungeonRoom.role)
+    ? agents?.filter((a: { role: string }) => a.role?.toLowerCase() === dungeonRoom.role)
     : null;
 
   const handlePhaserAgentSelect = (agent: PhaserAgent | null) => {
     if (agent) {
-      const dbAgent = agents?.find(a => a.name?.toUpperCase() === agent.name || a.role?.toLowerCase() === agent.role?.toLowerCase());
+      const dbAgent = agents?.find((a: { name: string; role: string }) => a.name?.toUpperCase() === agent.name || a.role?.toLowerCase() === agent.role?.toLowerCase());
       setSelectedAgentId(dbAgent?.id ?? null);
       setSelectedDungeonRoomId(null);
     } else {
@@ -74,6 +99,8 @@ export default function Dashboard() {
   };
 
   void timeAgo;
+
+  const phaseColor = dayPhase === 'NIGHT OPS' ? 'var(--ae-blue)' : dayPhase === 'PEAK HOURS' ? '#ffd700' : 'var(--ae-cyan)';
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -98,9 +125,30 @@ export default function Dashboard() {
             ONLINE
           </span>
         )}
+
+        {/* Day/Night Phase */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          {activeIncidents.length > 0 && (
+            <span style={{ ...mono, fontSize: 7, color: "#ff2244", letterSpacing: "0.1em", animation: "pulse-dot 1s ease-in-out infinite", display: "flex", alignItems: "center", gap: 4 }}>
+              <AlertTriangle size={9} /> {activeIncidents.length} INCIDENT{activeIncidents.length > 1 ? 'S' : ''}
+            </span>
+          )}
+          <span style={{ ...mono, fontSize: 7, color: phaseColor, letterSpacing: "0.12em", padding: "2px 8px", border: `1px solid ${phaseColor}55` }}>
+            ◉ {dayPhase}
+          </span>
+          <span style={{
+            ...mono, fontSize: 11, fontWeight: 700,
+            color: "#4dff9b",
+            textShadow: revenueGlow ? "0 0 12px #4dff9b, 0 0 24px #4dff9b" : "0 0 6px #4dff9b55",
+            transition: "text-shadow 0.3s",
+          }}>
+            ${revenue.toLocaleString()}
+          </span>
+        </div>
+
         {showStationDropdown && (
           <div style={{ position: "absolute", top: "100%", left: 16, zIndex: 50, background: "var(--ae-surface-2)", border: "1px solid var(--ae-border-bright)", minWidth: 200 }}>
-            {stations?.map(s => (
+            {stations?.map((s: { id: number; name: string }) => (
               <button key={s.id} onClick={() => { setActiveStationId(s.id); setShowStationDropdown(false); }}
                 style={{
                   ...mono, display: "block", width: "100%", textAlign: "left", padding: "7px 12px",
@@ -126,7 +174,28 @@ export default function Dashboard() {
             <span style={{ ...mono, fontSize: 7, color: "var(--ae-red)", marginLeft: "auto", letterSpacing: "0.1em" }}>● LIVE</span>
           </div>
           <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-            {activity?.map(item => (
+            {/* Active incidents at top of log */}
+            {activeIncidents.map(inc => {
+              const room = DUNGEON_ROOMS.find(r => r.id === inc.roomId);
+              return (
+                <div key={inc.roomId} style={{
+                  display: "flex", gap: 8, padding: "5px 10px",
+                  borderBottom: "1px solid rgba(255,34,68,0.2)",
+                  background: "rgba(255,34,68,0.06)",
+                  animation: "pulse-dot 1.5s ease-in-out infinite",
+                }}>
+                  <AlertTriangle size={10} style={{ color: "#ff2244", flexShrink: 0, marginTop: 2 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ ...mono, fontSize: 8, color: "#ff4455", fontWeight: 700 }}>{inc.label}</div>
+                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)" }}>{room?.name} · click room to dismiss</div>
+                    <div style={{ height: 2, background: "var(--ae-border)", marginTop: 3 }}>
+                      <div style={{ height: "100%", width: `${(inc.countdown / inc.countdownMax) * 100}%`, background: "#ff2244", transition: "width 1s linear" }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {activity?.map((item: { id: number; agentRole: string; agentName: string; timestamp: string; action: string }) => (
               <div key={item.id} style={{
                 display: "flex", gap: 8, padding: "6px 10px",
                 borderBottom: "1px solid rgba(255,255,255,0.03)",
@@ -170,7 +239,9 @@ export default function Dashboard() {
             <StationCanvas
               onAgentSelect={handlePhaserAgentSelect}
               onRoomSelect={handleRoomSelect}
+              onRevenueChange={handleRevenueChange}
               triggerRef={triggerRef}
+              sceneRef={sceneRef}
             />
           </div>
         </div>
@@ -212,7 +283,7 @@ export default function Dashboard() {
                 {agentTasks && agentTasks.length > 0 && (
                   <div>
                     <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 6, letterSpacing: "0.1em" }}>TASKS ({agentTasks.length})</div>
-                    {agentTasks.slice(0, 3).map(t => (
+                    {agentTasks.slice(0, 3).map((t: { id: number; title: string }) => (
                       <div key={t.id} style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", padding: "4px 0", borderBottom: "1px solid var(--ae-border)" }}>
                         → {t.title}
                       </div>
@@ -241,17 +312,32 @@ export default function Dashboard() {
                       {dungeonRoom.name.toUpperCase()}
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ ...mono, fontSize: 8, padding: "2px 7px", border: "1px solid var(--ae-border)", color: "var(--ae-muted)", letterSpacing: "0.08em" }}>{dungeonRoom.role.toUpperCase()}</span>
                     <span style={{ ...mono, fontSize: 8, padding: "2px 7px", border: `1px solid #${dungeonRoom.color.toString(16).padStart(6, '0')}55`, color: `#${dungeonRoom.color.toString(16).padStart(6, '0')}`, letterSpacing: "0.08em" }}>ACTIVE</span>
                   </div>
                 </div>
 
+                {/* Incident in this room */}
+                {activeIncidents.filter(i => i.roomId === dungeonRoom.id).map(inc => (
+                  <div key={inc.roomId} style={{ border: "1px solid #ff224455", background: "rgba(255,34,68,0.08)", padding: "8px 10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      <AlertTriangle size={11} style={{ color: "#ff2244" }} />
+                      <span style={{ ...mono, fontSize: 8, color: "#ff4455", fontWeight: 700 }}>INCIDENT</span>
+                    </div>
+                    <div style={{ ...mono, fontSize: 9, color: "#ff6677", marginBottom: 6 }}>{inc.label}</div>
+                    <div style={{ height: 3, background: "var(--ae-border)", marginBottom: 6 }}>
+                      <div style={{ height: "100%", width: `${(inc.countdown / inc.countdownMax) * 100}%`, background: "#ff2244" }} />
+                    </div>
+                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)" }}>Click room on map to dismiss • +20XP reward</div>
+                  </div>
+                ))}
+
                 {roomAgents && roomAgents.length > 0 && (
                   <div>
                     <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 8, letterSpacing: "0.1em" }}>CREW ({roomAgents.length})</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      {roomAgents.map(a => (
+                      {roomAgents.map((a: { id: number; name: string; role: string }) => (
                         <button key={a.id} onClick={() => { setSelectedAgentId(a.id); setSelectedDungeonRoomId(null); }}
                           style={{
                             display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
@@ -275,7 +361,7 @@ export default function Dashboard() {
                 {rooms && (
                   <div>
                     <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 6, letterSpacing: "0.1em" }}>DB ROOMS ({rooms.length})</div>
-                    {rooms.slice(0, 3).map(r => (
+                    {rooms.slice(0, 3).map((r: { id: number; name: string }) => (
                       <div key={r.id} style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", padding: "3px 0", borderBottom: "1px solid var(--ae-border)" }}>
                         {r.name}
                       </div>
@@ -297,6 +383,13 @@ export default function Dashboard() {
                 <div>
                   <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 8, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.6 }}>STATION OVERVIEW</div>
                   <div style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", marginTop: 4, letterSpacing: "0.08em" }}>SELECT A ROOM OR AGENT</div>
+                </div>
+
+                {/* Day/Night phase card */}
+                <div style={{ border: `1px solid ${phaseColor}44`, background: `${phaseColor}0a`, padding: "8px 10px" }}>
+                  <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 4, letterSpacing: "0.1em" }}>CYCLE PHASE</div>
+                  <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: phaseColor }}>{dayPhase}</div>
+                  <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginTop: 2 }}>5-MIN CYCLE · AUTO</div>
                 </div>
 
                 {currentStation && (
@@ -327,17 +420,36 @@ export default function Dashboard() {
                   </div>
                 )}
 
+                {/* Active Incidents summary */}
+                {activeIncidents.length > 0 && (
+                  <div>
+                    <div style={{ ...mono, fontSize: 7, color: "#ff4455", letterSpacing: "0.1em", marginBottom: 6 }}>⚠ ACTIVE INCIDENTS ({activeIncidents.length})</div>
+                    {activeIncidents.map(inc => {
+                      const room = DUNGEON_ROOMS.find(r => r.id === inc.roomId);
+                      return (
+                        <div key={inc.roomId} style={{ ...mono, fontSize: 8, color: "#ff6677", padding: "3px 0", borderBottom: "1px solid rgba(255,34,68,0.2)" }}>
+                          ⚡ {inc.label} · {room?.name}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* Dungeon rooms quick list */}
                 <div>
                   <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>DUNGEON ROOMS</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                    {DUNGEON_ROOMS.map(r => (
-                      <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
-                        <div style={{ width: 6, height: 6, background: `#${r.color.toString(16).padStart(6, '0')}`, boxShadow: `0 0 4px #${r.color.toString(16).padStart(6, '0')}`, flexShrink: 0 }} />
-                        <span style={{ ...mono, fontSize: 8, color: "var(--ae-text)", flex: 1 }}>{r.name}</span>
-                        <span style={{ ...mono, fontSize: 7, color: "var(--ae-muted)" }}>{r.role.toUpperCase()}</span>
-                      </div>
-                    ))}
+                    {DUNGEON_ROOMS.map(r => {
+                      const hasIncident = activeIncidents.some(i => i.roomId === r.id);
+                      return (
+                        <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
+                          <div style={{ width: 6, height: 6, background: hasIncident ? "#ff2244" : `#${r.color.toString(16).padStart(6, '0')}`, boxShadow: `0 0 4px ${hasIncident ? '#ff2244' : `#${r.color.toString(16).padStart(6, '0')}`}`, flexShrink: 0 }} />
+                          <span style={{ ...mono, fontSize: 8, color: hasIncident ? "#ff6677" : "var(--ae-text)", flex: 1 }}>{r.name}</span>
+                          {hasIncident && <span style={{ ...mono, fontSize: 6, color: "#ff4455" }}>⚠</span>}
+                          <span style={{ ...mono, fontSize: 7, color: "var(--ae-muted)" }}>{r.role.toUpperCase()}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

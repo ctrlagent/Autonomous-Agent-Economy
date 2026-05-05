@@ -1,0 +1,44 @@
+I have an existing React + Vite + Tailwind v4 + Phaser dashboard app called AETHERION. It is a 2D top-down pixel dungeon scene showing 6 rooms (Research Lab, Dev Lab, Design Studio, Marketing Hub, Ops Center, Analytics) arranged in a 3×2 grid connected by corridors. Eight pixel-art AI agents walk around inside their assigned rooms. The stack is a pnpm monorepo with a Drizzle + PostgreSQL backend (Express API on port 3001, Vite frontend on port 8080).
+
+Please implement ALL of the following UI/UX upgrades in one pass:
+
+1. Tileset furniture in every room
+Using the Kenney roguelike-indoors spritesheet (roguelikeIndoor_transparent.png, 16×16 tiles, 1px spacing, 26 cols × 17 rows), place role-appropriate furniture sprites inside each room so they feel lived-in. Research Lab gets bookshelves and lab tables. Dev Lab gets monitor desks and server racks. Design Studio gets easels and color tables. Analytics gets data terminals. Ops Center gets a command console. Marketing Hub gets a broadcast desk. Draw furniture using Phaser image objects at fixed tile positions inside each room, below the agent layer.
+
+2. Per-role ambient particle effects
+Each room type gets a unique looping particle system rendered in Phaser:
+
+Research Lab → small white sparkle nodes that float upward and fade
+Dev Lab → green binary digits (0/1) that drip downward along the walls
+Design Studio → tiny colored squares drifting upward like paint chips
+Analytics → mini 2-bar chart icons that pulse and fade in the room corners
+Ops Center → a radar sweep arc that rotates around the room center
+Marketing Hub → tiny gold coin icons that rise and fade
+3. Per-agent floating task progress bar
+Above each agent's name label, render a small pixel-art progress bar (20×3 px, rounded cap) that fills from 0–100% based on the agent's pct field. When it reaches 100%, flash the bar green and animate a brief "+XP" label floating upward before resetting.
+
+4. Agent pathfinding through corridors
+When an agent's roomId changes (simulate this on a timer every 30–60 seconds for random agents), animate them walking out of their current room through the connecting corridor and into the new room. The agent follows a waypoint path: room center → corridor entry → corridor exit → new room center. While in transit, show a glowing cyan orb leading them as a "mission packet."
+
+5. Economy flyover numbers
+When a task completes (detect pct hitting 100%), spawn a floating +$NNN text label in the agent's color that rises from the agent's position and drifts toward the top-right corner revenue counter, then fades out. The revenue counter in the top bar should increment by that amount with a brief glow.
+
+6. Day/night dungeon cycle
+Over a 5-minute real-time cycle, smoothly shift the dungeon's ambient tint from cool dark blue (night, multiplier ~0.6 brightness) through neutral (dawn/dusk) to warm amber (peak hours, multiplier ~1.0). Adjust room border glow intensity and corridor brightness accordingly. Show the current cycle phase ("PEAK HOURS" / "NIGHT OPS") as a small label in the bottom status bar.
+
+7. Incident alert events
+Every 90–120 seconds, randomly trigger an incident on one room: the room border flashes red with a pixelated "!" icon in the corner and an alert label (e.g., "SERVER OVERLOAD", "BUDGET ALERT"). A pixel countdown bar appears on the room. Clicking the room during an incident dismisses it and gives a small XP reward to agents in that room. Show incident details in the right panel.
+
+8. Mini-map overlay
+In the top-right corner of the Phaser canvas (not the React panel), render a small 120×90 px mini-map showing the dungeon as tiny colored rectangles matching each room's role color. Agent positions appear as 2×2 px colored dots. Clicking a dot on the mini-map selects that agent and centers the view. The mini-map has a dark semi-transparent background with a cyan border.
+
+Technical constraints to maintain:
+
+All Phaser rendering uses the existing StationScene class pattern with createPhaserScene() factory method
+Agents are defined in AGENTS_DEF array in stationScene.ts; room layout in dungeonLayout.ts
+Pixel art rendering: pixelArt: true in Phaser game config
+Dungeon tile size computed dynamically from canvas dimensions
+Rendering depth order: dungeon floor (0) → furniture (1) → room overlays (2) → particles (3) → agents (5) → name labels (8) → fx/HUD (9)
+The Kenney tileset is at attached_assets/pixel-pack/roguelikeIndoor_transparent.png and loaded via new URL('../../../../attached_assets/...', import.meta.url).href
+Vite fs.allow must include the workspace root ['../..'] to serve the tileset
+All new effects should degrade gracefully if the tileset fails to load (fall back to Phaser Graphics primitives)

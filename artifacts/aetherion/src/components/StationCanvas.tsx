@@ -12,10 +12,12 @@ interface LevelUpLabel {
 interface Props {
   onAgentSelect: (agent: AgentData | null) => void;
   onRoomSelect?: (roomId: string | null) => void;
+  onRevenueChange?: (delta: number) => void;
   triggerRef: MutableRefObject<((id: string) => number) | null>;
+  sceneRef?: MutableRefObject<import('../lib/stationScene').StationScene | null>;
 }
 
-export function StationCanvas({ onAgentSelect, onRoomSelect, triggerRef }: Props) {
+export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, triggerRef, sceneRef }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<unknown>(null);
   const [label, setLabel] = useState<LevelUpLabel | null>(null);
@@ -38,7 +40,9 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, triggerRef }: Props
         setLabel({ x, y, name, level, id: Date.now() });
         setTimeout(() => setLabel(null), 2000);
       };
+      stationScene.onRevenueChange = onRevenueChange ?? undefined;
       triggerRef.current = (id) => stationScene.triggerLevelUp(id);
+      if (sceneRef) sceneRef.current = stationScene;
 
       const phaserScene = stationScene.createPhaserScene();
 
@@ -65,6 +69,7 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, triggerRef }: Props
 
     return () => {
       destroyed = true;
+      if (sceneRef) sceneRef.current = null;
       if (gameRef.current) {
         (gameRef.current as { destroy: (v: boolean) => void }).destroy(true);
         gameRef.current = null;
