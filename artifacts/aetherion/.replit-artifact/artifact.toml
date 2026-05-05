@@ -12,10 +12,10 @@ version = "1.0.0"
 [[services]]
 name = "web"
 paths = [ "/" ]
-localPort = 23815
+localPort = 8080
 
 [services.development]
-run = "pnpm --filter @workspace/aetherion run dev"
+run = "BASE_PATH=/ PORT=8080 pnpm --filter @workspace/aetherion dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/aetherion", "run", "build" ]
@@ -27,5 +27,5 @@ from = "/*"
 to = "/index.html"
 
 [services.env]
-PORT = "23815"
+PORT = "8080"
 BASE_PATH = "/"

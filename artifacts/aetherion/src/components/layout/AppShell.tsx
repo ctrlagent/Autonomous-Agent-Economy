@@ -1,108 +1,144 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, Target, Clock, Store, Settings } from "lucide-react";
+import { Settings, Zap, Users, Target, Radio, Store } from "lucide-react";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 
 const NAV_ITEMS = [
-  { href: "/",          label: "STATION",  Icon: Home },
-  { href: "/crew",      label: "CREW",     Icon: Users },
-  { href: "/missions",  label: "MISSIONS", Icon: Target },
-  { href: "/timeline",  label: "TIMELINE", Icon: Clock },
-  { href: "/templates", label: "MARKET",   Icon: Store },
+  { href: "/",          label: "STATION",    Icon: Zap },
+  { href: "/crew",      label: "CREW",       Icon: Users },
+  { href: "/missions",  label: "MISSIONS",   Icon: Target },
+  { href: "/timeline",  label: "SHIP COMMS", Icon: Radio },
+  { href: "/templates", label: "MARKET",     Icon: Store },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: summary } = useGetDashboardSummary();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const stats = [
-    { label: "REVENUE",  value: "$0",                                               color: "var(--ae-green)" },
-    { label: "TASKS",    value: String(summary?.tasksCompletedToday ?? 0),          color: "var(--ae-blue)"  },
-    { label: "AGENTS",   value: `${summary?.activeAgents ?? 0}/${summary?.totalAgents ?? 0}`, color: "var(--ae-cyan)" },
+    { label: "REVENUE",  value: "$3,840",                                                       color: "#4dff9b" },
+    { label: "TASK",     value: String(summary?.tasksCompletedToday ?? 0),                      color: "#4d7fff" },
+    { label: "AGENT",    value: `${summary?.activeAgents ?? 0}/${summary?.totalAgents ?? 0}`,   color: "#4df0d8" },
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--ae-bg)", overflow: "hidden" }}>
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      height: "100dvh",
+      background: "var(--ae-bg)",
+      overflow: "hidden",
+      position: "relative",
+    }}>
       <div className="scanline" />
 
       {/* TOP BAR */}
       <header style={{
-        height: 48,
+        height: 46,
         flexShrink: 0,
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 16px",
+        alignItems: "stretch",
         background: "var(--ae-surface)",
-        borderBottom: "1px solid var(--ae-border)",
+        borderBottom: "2px solid var(--ae-border)",
         zIndex: 100,
       }}>
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div>
-            <div style={{
-              fontFamily: "'Press Start 2P', monospace",
-              fontSize: 11,
-              color: "#fff",
-              letterSpacing: "0.06em",
-              lineHeight: 1,
-            }}>
-              AETHERION
-            </div>
-            <div style={{
-              height: 2,
-              width: 84,
-              marginTop: 4,
-              background: "linear-gradient(to right, var(--ae-cyan), var(--ae-blue), transparent)",
-            }} />
-          </div>
+        <div style={{
+          padding: "0 18px",
+          borderRight: "1px solid var(--ae-border)",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flexShrink: 0,
+        }}>
+          <svg width="22" height="22" viewBox="0 0 22 22" style={{ imageRendering: "pixelated", flexShrink: 0 }}>
+            <polygon points="11,1 21,6 21,16 11,21 1,16 1,6" fill="none" stroke="#4df0d8" strokeWidth="1.5" />
+            <polygon points="11,5 17,8.5 17,13.5 11,17 5,13.5 5,8.5" fill="none" stroke="#4df0d8" strokeWidth="0.5" opacity="0.35" />
+            <text x="11" y="15.5" textAnchor="middle" fill="#ffb84d" fontSize="9" fontFamily="'Press Start 2P',monospace">A</text>
+          </svg>
           <span style={{
-            fontFamily: "'Space Mono', monospace",
-            fontSize: 8,
-            color: "var(--ae-green)",
-            border: "1px solid var(--ae-green)",
-            padding: "1px 5px",
-            letterSpacing: "0.12em",
-          }}>
-            ONLINE
-          </span>
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: 10,
+            color: "#fff",
+            letterSpacing: "0.06em",
+            lineHeight: 1,
+            textShadow: "0 0 12px rgba(77,240,216,0.5)",
+          }}>AETHERION</span>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: "flex", gap: 28 }}>
-          {stats.map(s => (
-            <div key={s.label} style={{ textAlign: "center" }}>
-              <div style={{
-                fontFamily: "'Space Mono', monospace",
-                fontSize: 8,
-                color: "var(--ae-muted)",
-                letterSpacing: "0.12em",
-                lineHeight: 1.2,
-              }}>
-                {s.label}
-              </div>
-              <div style={{
-                fontFamily: "'Space Mono', monospace",
-                fontSize: 14,
+        {/* Stats strip */}
+        <div style={{ display: "flex", height: "100%", borderRight: "1px solid var(--ae-border)" }}>
+          {stats.map((s, i) => (
+            <div key={s.label} style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "0 16px",
+              borderRight: i < stats.length - 1 ? "1px solid var(--ae-border)" : "none",
+              height: "100%",
+            }}>
+              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>
+                {s.label}:
+              </span>
+              <span style={{
+                fontFamily: "'Space Mono',monospace",
+                fontSize: 13,
                 fontWeight: 700,
                 color: s.color,
-                lineHeight: 1.2,
-                marginTop: 1,
-              }}>
-                {s.value}
-              </div>
+                textShadow: `0 0 8px ${s.color}80`,
+              }}>{s.value}</span>
             </div>
           ))}
         </div>
 
-        {/* Settings */}
-        <button
-          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)", padding: 4 }}
-          onMouseEnter={e => (e.currentTarget.style.color = "var(--ae-text)")}
-          onMouseLeave={e => (e.currentTarget.style.color = "var(--ae-muted)")}
-        >
-          <Settings size={16} />
-        </button>
+        {/* Nav tabs — fills remaining width */}
+        <div style={{ display: "flex", flex: 1, height: "100%", justifyContent: "flex-end" }}>
+          {NAV_ITEMS.map(({ href, label }) => {
+            const isActive = href === "/" ? location === "/" : location.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 14px",
+                  height: "100%",
+                  fontFamily: "'Space Mono',monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.08em",
+                  color: isActive ? "#0a0b0f" : "var(--ae-muted)",
+                  background: isActive ? "var(--ae-cyan)" : "transparent",
+                  borderLeft: "1px solid var(--ae-border)",
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                  fontWeight: isActive ? 700 : 400,
+                  boxShadow: isActive ? "0 0 16px rgba(77,240,216,0.5)" : "none",
+                }}
+              >{label}</Link>
+            );
+          })}
+          <button
+            onClick={() => setSettingsOpen(v => !v)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 46,
+              height: "100%",
+              background: "none",
+              border: "none",
+              borderLeft: "1px solid var(--ae-border)",
+              cursor: "pointer",
+              color: settingsOpen ? "var(--ae-cyan)" : "var(--ae-muted)",
+              transition: "color 0.15s",
+            }}
+          ><Settings size={14} /></button>
+        </div>
       </header>
 
       {/* MAIN */}
@@ -110,30 +146,44 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* BOTTOM NAV */}
-      <nav style={{
-        height: 52,
+      {/* BOTTOM STATUS BAR */}
+      <div style={{
+        height: 26,
         flexShrink: 0,
-        display: "flex",
-        alignItems: "stretch",
-        background: "var(--ae-bg)",
+        background: "rgba(0,0,0,0.6)",
         borderTop: "1px solid var(--ae-border)",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 14px",
+        gap: 20,
         zIndex: 100,
       }}>
-        {NAV_ITEMS.map(({ href, label, Icon }) => {
-          const isActive = href === "/" ? location === "/" : location.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`bottom-nav-item${isActive ? " active" : ""}`}
-            >
-              <Icon size={16} />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4dff9b", boxShadow: "0 0 6px #4dff9b", animation: "pulse-dot 2s ease-in-out infinite" }} />
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>AUTONOMOUS · RUNNING</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>AGENTS</span>
+          <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
+            <div style={{
+              height: "100%",
+              width: `${Math.min(100, ((summary?.activeAgents ?? 0) / Math.max(1, summary?.totalAgents ?? 1)) * 100)}%`,
+              background: "#4dff9b",
+              boxShadow: "0 0 4px #4dff9b",
+              transition: "width 1s",
+            }} />
+          </div>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{summary?.activeAgents ?? 0}/{summary?.totalAgents ?? 0}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>XP</span>
+          <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
+            <div style={{ height: "100%", width: "32%", background: "linear-gradient(to right, #4d7fff, #9b6dff)", boxShadow: "0 0 4px #4d7fff" }} />
+          </div>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>0/10</span>
+        </div>
+        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginLeft: "auto" }}>v1.0 · TICK 00:00</span>
+      </div>
     </div>
   );
 }

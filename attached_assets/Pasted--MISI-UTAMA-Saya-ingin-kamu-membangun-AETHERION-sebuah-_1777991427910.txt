@@ -1,0 +1,155 @@
+ MISI UTAMA
+
+Saya ingin kamu membangun **AETHERION** — sebuah AI Agent Operating System Dashboard — menggunakan **gambar-gambar UI yang saya lampirkan sebagai referensi visual 100%**.
+
+Prioritas absolut:
+- **Pixel art / 2D pixel aesthetic** persis seperti di gambar referensi
+- **Warna, font, border, glow effect** harus sama identik
+- **Layout dan komponen** harus mengikuti gambar secara presisi
+- Tidak boleh ada deviasi desain — ini bukan interpretasi, ini adalah **reimplementasi visual yang akurat**
+
+---
+
+## 📁 TECH STACK
+
+```
+Framework  : Next.js 14 (App Router)
+Language   : TypeScript (strict)
+Styling    : Tailwind CSS + custom CSS
+Animation  : Framer Motion
+Game Canvas: Phaser 3 (untuk station grid)
+Font       : Space Mono (monospace UI), Press Start 2P (pixel headers)
+State      : React useState / useReducer
+```
+
+Install semua yang dibutuhkan:
+```bash
+npm install next react react-dom typescript framer-motion phaser
+npm install -D tailwindcss postcss autoprefixer @types/react @types/node
+```
+
+---
+
+## 🎨 DESIGN SYSTEM — IKUTI 100% PERSIS GAMBAR
+
+### Color Palette (CSS Variables)
+```css
+:root {
+  /* Backgrounds */
+  --ae-bg:          #0a0b0f;   /* deep space black */
+  --ae-surface:     #0f1118;   /* panel surface */
+  --ae-surface-2:   #141720;   /* elevated surface */
+  --ae-border:      #1e2130;   /* default border */
+  --ae-border-bright: #2a2f47; /* active border */
+
+  /* Neon Accents - SAMA DENGAN DI GAMBAR */
+  --ae-cyan:        #4df0d8;   /* Research Lab, main accent */
+  --ae-cyan-dim:    #0d2e2b;
+  --ae-blue:        #4d7fff;   /* Dev Lab, links */
+  --ae-blue-dim:    #0d1a3d;
+  --ae-violet:      #9b6dff;   /* Design Studio */
+  --ae-violet-dim:  #1e0d3d;
+  --ae-amber:       #ffb84d;   /* Marketing, warnings */
+  --ae-amber-dim:   #2e1f0d;
+  --ae-green:       #4dff9b;   /* Revenue, success */
+  --ae-green-dim:   #0d2e1a;
+  --ae-red:         #ff4d6d;   /* errors, remove */
+  --ae-red-dim:     #2e0d18;
+  --ae-gold:        #ffd700;   /* level up, rewards */
+  --ae-gold-dim:    #2e2400;
+
+  /* Text */
+  --ae-text:        #e4e7f0;
+  --ae-muted:       #636b8a;
+  --ae-dim:         #363d56;
+}
+```
+
+### Typography (HARUS SAMA PERSIS DENGAN GAMBAR)
+```css
+/* WAJIB: Import kedua font ini */
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Press+Start+2P&display=swap');
+
+/* Penggunaan:
+   - "AETHERION", room names, section headers → Press Start 2P
+   - Stats, timestamps, badges, labels, values → Space Mono
+   - Body text, task descriptions → Space Mono regular
+   - TIDAK BOLEH menggunakan Inter, Roboto, atau sans-serif biasa
+*/
+```
+
+### Pixel Border Style
+```css
+/* Room borders dengan pixel corner accent */
+.pixel-border {
+  border: 1px solid var(--ae-border);
+  position: relative;
+}
+.pixel-border::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 10px; height: 10px;
+  border-top: 2px solid var(--ae-cyan);
+  border-left: 2px solid var(--ae-cyan);
+}
+.pixel-border::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 10px; height: 10px;
+  border-bottom: 2px solid var(--ae-cyan);
+  border-right: 2px solid var(--ae-cyan);
+}
+
+/* Neon glow effect - seperti di gambar */
+.neon-glow-cyan { box-shadow: 0 0 8px #4df0d8, 0 0 20px rgba(77,240,216,0.3); }
+.neon-glow-blue { box-shadow: 0 0 8px #4d7fff, 0 0 20px rgba(77,127,255,0.3); }
+.neon-glow-amber { box-shadow: 0 0 8px #ffb84d, 0 0 20px rgba(255,184,77,0.3); }
+```
+
+### Dot Grid Background (seperti di gambar)
+```css
+.ae-grid-bg {
+  background-image:
+    radial-gradient(circle, #4d7fff 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-color: #0a0b0f;
+  opacity: 0.15;
+}
+```
+
+### CRT Scanline Overlay (WAJIB - terlihat jelas di gambar)
+```css
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+```
+
+---
+
+## 🏗️ STRUKTUR FILE
+
+```
+aetherion/
+├── app/
+│   ├── globals.css          ← semua CSS variables + scanline + grid
+│   ├── layout.tsx           ← font import, body class
+│   └── page.tsx             ← entry point → <Dashboard />
+│
+├── components/
+│   ├── ui/
+│   │   ├── Badge.tsx        ← neon color variants
+│   │   ├── ProgressBar.tsx  ← pixel-style thick bar
+│   │   ├── StatusDot.tsx    ← pulsing neon dot
+│   │   ├── TabNav.tsx       ← bottom ...
