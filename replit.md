@@ -101,8 +101,26 @@ AETHERION is an Autonomous Agent Economy OS dashboard — an agentic AI operatin
 | growth | `#4dff9b` | `--ae-green` |
 | analytics | `#ff4d6d` | `--ae-red` |
 
+## Replit Environment
+
+### Running Services
+- **Frontend** (`artifacts/aetherion: web`): Vite dev server on port 3000, routed externally via artifact router on port 5000
+- **API Server** (`artifacts/api-server: API Server`): Express on port 3001, routed via `/api` path prefix
+- **Artifact Router**: Handles TLS termination at port 5000, routes `/api` → 3001 and `/` → 3000
+- **Database**: Replit managed PostgreSQL (DATABASE_URL set in environment)
+
+### Port Configuration
+- Port 5000: Artifact router (external HTTPS termination)
+- Port 3000: Vite frontend dev server
+- Port 3001: Express API server
+
+### Key Workflow Commands
+- Frontend workflow: `BASE_PATH=/ PORT=3000 pnpm --filter @workspace/aetherion dev`
+- API workflow: `PORT=3001 pnpm --filter @workspace/api-server run dev`
+
 ## Important Notes
 - `lib/api-zod/src/index.ts` must ONLY export `export * from "./generated/api"` — codegen regenerates it; adding extra exports causes TS2308 duplicate errors
 - Dashboard uses `useListStationAgents` (not `useListAgents`) for station-specific agents
 - All API hooks come from `@workspace/api-client-react`
 - Seed data: 3 stations, 18 rooms, 18 agents, 12 tasks, 10 activity entries
+- Do NOT run the artifact router (`$REPLIT_ARTIFACT_ROUTER`) as a separate workflow — it conflicts with the already-running frontend/API workflows. The artifact-based workflows handle routing automatically.
