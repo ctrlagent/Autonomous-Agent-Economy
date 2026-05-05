@@ -1,0 +1,82 @@
+Project State Summary
+Stack: React + Vite + Tailwind CSS v4 + Framer Motion + Phaser 3, pnpm monorepo at artifacts/aetherion/
+
+Running workflows:
+
+artifacts/aetherion: web — PORT=8080, BASE_PATH=/
+API Server — PORT=8081, BASE_PATH=/api-server (Vite proxies /api → localhost:8081)
+Database: PostgreSQL via Drizzle ORM (@workspace/db), seeded with 3 stations, 23 agents, 11 rooms, 10 tasks, 24 activity logs.
+
+Key files:
+
+artifacts/aetherion/src/pages/Dashboard.tsx — main dashboard (3-col: activity log | Phaser canvas | detail panel)
+artifacts/aetherion/src/lib/stationScene.ts — Phaser 3 scene (currently renders hexagonal rooms + colored dot agents)
+artifacts/aetherion/src/components/PixelSprite.tsx — SVG pixel art sprite system (7 role sprites)
+artifacts/aetherion/src/components/layout/AppShell.tsx — top nav (STATION/CREW/MISSIONS/SHIP COMMS/MARKET)
+artifacts/aetherion/src/index.css — design system (--ae-* CSS vars, Press Start 2P + Space Mono fonts, CRT scanlines)
+artifacts/aetherion/vite.config.ts — proxy /api → 8081, alias @assets → attached_assets/
+What to Build Next
+1. Station Scene — 2D Top-Down Pixel Dungeon
+Replace the current hexagonal room Phaser scene with a classic top-down 2D RPG dungeon layout:
+
+Rooms rendered as dungeon chambers connected by corridors (like classic Zelda or RPG dungeon maps)
+Use uploaded pixel pack tileset for: floor tiles, wall tiles, room borders, corridor tiles, doors
+Each room has a name label and role color accent (research=cyan, strategy=purple, builder=blue, etc.)
+Rooms are clickable — selecting a room highlights it and shows agents inside in the right panel
+Camera can pan/zoom if the dungeon is larger than the viewport
+Tilemap should be built from a 2D array config that maps to room positions
+2. Agent Characters — 2D Pixel Walkers
+Replace colored dot agents with animated 2D pixel art characters inside the dungeon:
+
+Each agent walks/idles using sprite sheet animation (4-direction walk cycle from uploaded pack)
+Agents wander within their assigned room boundaries
+Agent role determines their sprite variant (use different character types from the pack)
+Clicking an agent selects them → right panel shows agent detail
+Status affects animation: working = walking animation, idle = idle/stand animation, paused = static
+Agent name floats above character as small pixel text
+3. Pixel Pack Integration
+When the user uploads a pixel pack ZIP or folder:
+
+Extract tilesets to attached_assets/pixel-pack/
+Update stationScene.ts to load tileset via this.load.image() or this.load.tilemapTiledJSON()
+Update character sprites to use spritesheet frames via this.load.spritesheet()
+The Vite alias @assets → ../../attached_assets is already configured — use it for asset paths
+Expected pixel pack structure to support:
+
+attached_assets/pixel-pack/
+  tileset.png        ← dungeon floor/wall tiles (16x16 or 32x32 grid)
+  characters.png     ← agent walk cycles (spritesheet)
+  ui-icons.png       ← optional UI decorations
+
+4. Dungeon Layout Config
+Create artifacts/aetherion/src/lib/dungeonLayout.ts:
+
+// Maps station rooms to dungeon grid positions
+export const DUNGEON_ROOMS = {
+  research:   { gridX: 1, gridY: 1, width: 5, height: 4, type: 'research' },
+  strategy:   { gridX: 7, gridY: 1, width: 5, height: 4, type: 'strategy' },
+  builder:    { gridX: 1, gridY: 6, width: 5, height: 4, type: 'development' },
+  analytics:  { gridX: 7, gridY: 6, width: 5, height: 4, type: 'analytics' },
+  // corridors connecting them
+};
+
+5. Other UI Improvements to Apply
+Crew page: Show agent sprites as walking pixel characters instead of static SVG avatars
+Market page: Use pixel pack decorative tiles for the marketplace stalls/background
+AppShell stats bar: Add live tick counter (TICK 00:00 → incrementing)
+How to Upload Pixel Pack
+Tell the agent:
+
+"I'm uploading a pixel pack — the tileset PNG is at attached_assets/pixel-pack/tileset.png and character spritesheet is at attached_assets/pixel-pack/characters.png. Each tile is 16×16px. The character spritesheet has 4 rows (down/left/right/up) × 3 frames per direction."
+
+Then instruct:
+
+"Update stationScene.ts to load these assets and render the dungeon using the tileset tiles. Use the character spritesheet for agent walk animations."
+
+Important Technical Notes
+Phaser 3 canvas is inside StationCanvas.tsx which wraps stationScene.ts
+stationScene.ts receives agents via scene.registry or direct data injection from the React component
+Agents are passed as AgentData[] with fields: id, name, role, status, roomId
+The Phaser scene re-renders when agents prop changes (via useEffect in StationCanvas.tsx)
+Keep image-rendering: pixelated on the canvas for crisp pixel art scaling
+Tileset must be loaded in Phaser preload() and used in create() — avoid hot-reloading conflicts

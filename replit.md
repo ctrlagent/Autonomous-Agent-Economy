@@ -41,15 +41,22 @@ AETHERION is an Autonomous Agent Economy OS dashboard — an agentic AI operatin
 - Bottom nav bar: STATION / CREW / MISSIONS / TIMELINE / MARKET
 - Top bar: AETHERION logo + ONLINE badge + Revenue / Tasks / Agents stats + settings icon
 
-### Phaser 3 Station Canvas
+### Phaser Station Canvas — 2D Pixel Dungeon
+- `src/lib/dungeonLayout.ts` — DUNGEON_ROOMS (6 rooms in 3×2 grid), DUNGEON_CORRIDORS (7 corridors), ROLE_COLORS map
 - `src/lib/stationScene.ts` — StationScene class (factory pattern, `createPhaserScene()` method)
 - `src/components/StationCanvas.tsx` — React wrapper with dynamic import in useEffect
 - Phaser must be imported ONLY via `await import('phaser')` inside useEffect; handle both ESM and CJS:
   ```ts
   const Phaser = ((PhaserMod as any).default ?? PhaserMod) as typeof import('phaser');
   ```
-- Scene features: 6 rooms, 8 moving agents, trails, comm lines, particles, level-up burst effects
-- Click room/agent to select (triggers React state via callback)
+- **Tileset**: Kenney roguelike-indoors (`attached_assets/pixel-pack/roguelikeIndoor_transparent.png`) — 16×16 tiles, 1px spacing, 26×17 grid; loaded via `new URL('../../../../attached_assets/...', import.meta.url).href` (Vite `fs.allow` must include workspace root `['../..']`)
+- **Dungeon grid**: 30 cols × 22 rows; tile pixel size computed dynamically from canvas size
+- **Rendering layers** (by depth): dungeonGfx(0) → tiled floor images(1) → overlayGfx(2) → agentGfx(5) → nameTexts(8) → fxGfx(9)
+- **Room rendering**: dark fill + role-color glow + stone wall header + thick corner accents + door indicator + colored label bar
+- **Agents**: 8 pixel-art characters (head/body/legs) with walk animation (4-frame), role colors, comm lines between same-room agents, selection ring
+- **Interactions**: click agent → agent detail panel; click room → room detail panel; click void → deselect
+- **Effects**: level-up burst (rings + rays + particles + flash), CRT scanline sweep
+- **Live tick counter** in AppShell status bar (`useTick` hook, HH:MM:SS format)
 
 ### API Routes (artifacts/api-server)
 - `GET /api/templates` — Business templates marketplace

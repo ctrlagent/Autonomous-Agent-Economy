@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Settings, Zap, Users, Target, Radio, Store } from "lucide-react";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
@@ -11,10 +11,26 @@ const NAV_ITEMS = [
   { href: "/templates", label: "MARKET",     Icon: Store },
 ];
 
+function useTick() {
+  const [tick, setTick] = useState(0);
+  const startRef = useRef(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTick(Math.floor((Date.now() - startRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  const hh = String(Math.floor(tick / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((tick % 3600) / 60)).padStart(2, '0');
+  const ss = String(tick % 60).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: summary } = useGetDashboardSummary();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const tick = useTick();
 
   const stats = [
     { label: "REVENUE",  value: "$3,840",                                                       color: "#4dff9b" },
@@ -92,7 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </div>
 
-        {/* Nav tabs — fills remaining width */}
+        {/* Nav tabs */}
         <div style={{ display: "flex", flex: 1, height: "100%", justifyContent: "flex-end" }}>
           {NAV_ITEMS.map(({ href, label }) => {
             const isActive = href === "/" ? location === "/" : location.startsWith(href);
@@ -182,7 +198,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>0/10</span>
         </div>
-        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginLeft: "auto" }}>v1.0 · TICK 00:00</span>
+        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginLeft: "auto" }}>
+          v1.0 · TICK {tick}
+        </span>
       </div>
     </div>
   );

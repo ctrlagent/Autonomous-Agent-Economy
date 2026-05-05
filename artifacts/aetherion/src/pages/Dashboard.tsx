@@ -1,18 +1,18 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   useListStations, useListRooms, useListStationAgents,
   useGetDashboardSummary, useGetRecentActivity, useListAgentTasks,
 } from "@workspace/api-client-react";
-import { cn } from "@/lib/utils";
-import { ChevronDown, Pause } from "lucide-react";
+import { Pause, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
 import type { AgentData as PhaserAgent } from "@/lib/stationScene";
+import { DUNGEON_ROOMS } from "@/lib/dungeonLayout";
 
 const ROLE_HEX: Record<string, string> = {
-  research: "#4df0d8", strategy: "#9b6dff", builder: "#4d7fff",
-  design: "#ff4d9b", growth: "#4dff9b", analytics: "#ff4d6d", content: "#ffb84d",
+  research: "#4df0d8", strategy: "#c0a020", builder: "#4d7fff",
+  design: "#9b6dff", growth: "#4dff9b", analytics: "#ff4d6d", content: "#ffb84d",
 };
 function getRoleHex(role: string) { return ROLE_HEX[role?.toLowerCase()] ?? "#4d7fff"; }
 
@@ -32,6 +32,8 @@ function formatTime(ts: string): string {
   } catch { return "--:--"; }
 }
 
+const mono = { fontFamily: "'Space Mono', monospace" };
+
 export default function Dashboard() {
   const { data: stations } = useListStations();
   const [activeStationId, setActiveStationId] = useState<number | null>(null);
@@ -43,23 +45,35 @@ export default function Dashboard() {
   const { data: activity } = useGetRecentActivity({ limit: 24 });
   const { data: summary } = useGetDashboardSummary();
 
-  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+  const [selectedDungeonRoomId, setSelectedDungeonRoomId] = useState<string | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
   const [showStationDropdown, setShowStationDropdown] = useState(false);
   const { data: agentTasks } = useListAgentTasks(selectedAgentId ?? 0, { query: { enabled: !!selectedAgentId } });
 
-  const selectedRoom = rooms?.find(r => r.id === selectedRoomId);
-  const selectedAgent = agents?.find(a => a.id === selectedAgentId);
-  const roomAgents = agents?.filter(a => a.roomId === selectedRoomId);
-
   const triggerRef = useRef<((id: string) => number) | null>(null);
-  const [, setPhaserAgent] = useState<PhaserAgent | null>(null);
+
+  const dungeonRoom = DUNGEON_ROOMS.find(r => r.id === selectedDungeonRoomId) ?? null;
+  const selectedAgent = agents?.find(a => a.id === selectedAgentId);
+  const roomAgents = dungeonRoom
+    ? agents?.filter(a => a.role?.toLowerCase() === dungeonRoom.role)
+    : null;
 
   const handlePhaserAgentSelect = (agent: PhaserAgent | null) => {
-    setPhaserAgent(agent);
+    if (agent) {
+      const dbAgent = agents?.find(a => a.name?.toUpperCase() === agent.name || a.role?.toLowerCase() === agent.role?.toLowerCase());
+      setSelectedAgentId(dbAgent?.id ?? null);
+      setSelectedDungeonRoomId(null);
+    } else {
+      setSelectedAgentId(null);
+    }
   };
 
-  const mono = { fontFamily: "'Space Mono', monospace" };
+  const handleRoomSelect = (roomId: string | null) => {
+    setSelectedDungeonRoomId(roomId);
+    setSelectedAgentId(null);
+  };
+
+  void timeAgo;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -79,7 +93,6 @@ export default function Dashboard() {
             <ChevronDown size={11} /> SWITCH
           </button>
         )}
-        {/* Station type badge */}
         {currentStation && (
           <span style={{ ...mono, fontSize: 7, padding: "1px 6px", border: "1px solid var(--ae-cyan)55", color: "var(--ae-cyan)", letterSpacing: "0.1em", marginLeft: 4 }}>
             ONLINE
@@ -104,6 +117,7 @@ export default function Dashboard() {
 
       {/* 3-Column Body */}
       <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
+
         {/* LEFT: ACTIVITY LOG */}
         <div style={{ width: 205, flexShrink: 0, borderRight: "1px solid var(--ae-border)", display: "flex", flexDirection: "column", background: "rgba(0,0,0,0.15)" }}>
           <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--ae-border)", display: "flex", alignItems: "center", gap: 8 }}>
@@ -116,7 +130,6 @@ export default function Dashboard() {
               <div key={item.id} style={{
                 display: "flex", gap: 8, padding: "6px 10px",
                 borderBottom: "1px solid rgba(255,255,255,0.03)",
-                transition: "background 0.15s",
               }}
                 onMouseEnter={e => (e.currentTarget.style.background = "rgba(77,240,216,0.03)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
@@ -137,8 +150,6 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-
-          {/* Message input at bottom */}
           <div style={{ padding: "8px 10px", borderTop: "1px solid var(--ae-border)", display: "flex", gap: 6 }}>
             <input
               placeholder="Message of comm..."
@@ -153,10 +164,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* CENTER: PHASER STATION */}
+        {/* CENTER: DUNGEON PHASER CANVAS */}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", position: "relative" }}>
           <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-            <StationCanvas onAgentSelect={handlePhaserAgentSelect} triggerRef={triggerRef} />
+            <StationCanvas
+              onAgentSelect={handlePhaserAgentSelect}
+              onRoomSelect={handleRoomSelect}
+              triggerRef={triggerRef}
+            />
           </div>
         </div>
 
@@ -205,51 +220,76 @@ export default function Dashboard() {
                   </div>
                 )}
                 <div style={{ display: "flex", gap: 6, marginTop: "auto" }}>
-                  <button className="pixel-btn primary" style={{ flex: 1, fontSize: 8 }} onClick={() => triggerRef.current?.(`a${selectedAgent.id}`)}>UPGRADE</button>
+                  <button className="pixel-btn primary" style={{ flex: 1, fontSize: 8 }}
+                    onClick={() => {
+                      const pId = `a${selectedAgent.id}`;
+                      triggerRef.current?.(pId);
+                    }}>UPGRADE</button>
                   <button className="pixel-btn" style={{ flex: 1, fontSize: 8 }}>ASSIGN</button>
                 </div>
               </motion.div>
-            ) : selectedRoom ? (
+
+            ) : dungeonRoom ? (
               <motion.div key="room" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
                 style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" }}
               >
-                <button onClick={() => setSelectedRoomId(null)} style={{ ...mono, background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)", fontSize: 8, textAlign: "left" }}>← CLOSE</button>
+                <button onClick={() => setSelectedDungeonRoomId(null)} style={{ ...mono, background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)", fontSize: 8, textAlign: "left" }}>← CLOSE</button>
                 <div>
-                  <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 8, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.6 }}>
-                    {selectedRoom.name?.toUpperCase()}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <div style={{ width: 10, height: 10, background: `#${dungeonRoom.color.toString(16).padStart(6, '0')}`, boxShadow: `0 0 8px #${dungeonRoom.color.toString(16).padStart(6, '0')}` }} />
+                    <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 8, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.6 }}>
+                      {dungeonRoom.name.toUpperCase()}
+                    </div>
                   </div>
-                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                    <span style={{ ...mono, fontSize: 8, padding: "2px 7px", border: "1px solid var(--ae-border)", color: "var(--ae-muted)", letterSpacing: "0.08em" }}>{selectedRoom.type?.toUpperCase()}</span>
-                    <span style={{ ...mono, fontSize: 8, padding: "2px 7px", border: `1px solid ${selectedRoom.status === "active" ? "var(--ae-cyan)55" : "var(--ae-border)"}`, color: selectedRoom.status === "active" ? "var(--ae-cyan)" : "var(--ae-muted)", letterSpacing: "0.08em" }}>{selectedRoom.status?.toUpperCase()}</span>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <span style={{ ...mono, fontSize: 8, padding: "2px 7px", border: "1px solid var(--ae-border)", color: "var(--ae-muted)", letterSpacing: "0.08em" }}>{dungeonRoom.role.toUpperCase()}</span>
+                    <span style={{ ...mono, fontSize: 8, padding: "2px 7px", border: `1px solid #${dungeonRoom.color.toString(16).padStart(6, '0')}55`, color: `#${dungeonRoom.color.toString(16).padStart(6, '0')}`, letterSpacing: "0.08em" }}>ACTIVE</span>
                   </div>
                 </div>
-                <div>
-                  <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 8, letterSpacing: "0.1em" }}>CREW ({roomAgents?.length ?? 0})</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {roomAgents?.map(a => (
-                      <button key={a.id} onClick={() => setSelectedAgentId(a.id)} style={{
-                        display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-                        background: "rgba(0,0,0,0.3)", border: "1px solid var(--ae-border)",
-                        cursor: "pointer", textAlign: "left", transition: "border-color 0.15s",
-                      }}
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--ae-border-bright)")}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--ae-border)")}
-                      >
-                        <AgentAvatar role={a.role} size={32} />
-                        <div>
-                          <div style={{ ...mono, fontWeight: 700, fontSize: 10, color: "var(--ae-text)" }}>{a.name}</div>
-                          <div style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.06em" }}>{a.role?.toUpperCase()}</div>
-                        </div>
-                      </button>
+
+                {roomAgents && roomAgents.length > 0 && (
+                  <div>
+                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 8, letterSpacing: "0.1em" }}>CREW ({roomAgents.length})</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      {roomAgents.map(a => (
+                        <button key={a.id} onClick={() => { setSelectedAgentId(a.id); setSelectedDungeonRoomId(null); }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
+                            background: "rgba(0,0,0,0.3)", border: "1px solid var(--ae-border)",
+                            cursor: "pointer", textAlign: "left",
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--ae-border-bright)")}
+                          onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--ae-border)")}
+                        >
+                          <AgentAvatar role={a.role} size={32} />
+                          <div>
+                            <div style={{ ...mono, fontWeight: 700, fontSize: 10, color: "var(--ae-text)" }}>{a.name}</div>
+                            <div style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.06em" }}>{a.role?.toUpperCase()}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {rooms && (
+                  <div>
+                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 6, letterSpacing: "0.1em" }}>DB ROOMS ({rooms.length})</div>
+                    {rooms.slice(0, 3).map(r => (
+                      <div key={r.id} style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", padding: "3px 0", borderBottom: "1px solid var(--ae-border)" }}>
+                        {r.name}
+                      </div>
                     ))}
                   </div>
-                </div>
+                )}
+
                 <div style={{ marginTop: "auto" }}>
                   <button className="pixel-btn warning" style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", gap: 6 }}>
                     <Pause size={10} /> PAUSE ROOM
                   </button>
                 </div>
               </motion.div>
+
             ) : (
               <motion.div key="overview" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
                 style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", gap: 14 }}
@@ -258,13 +298,14 @@ export default function Dashboard() {
                   <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 8, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.6 }}>STATION OVERVIEW</div>
                   <div style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", marginTop: 4, letterSpacing: "0.08em" }}>SELECT A ROOM OR AGENT</div>
                 </div>
+
                 {currentStation && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {[
-                      { label: "STATUS",  value: currentStation.status?.toUpperCase(),            color: currentStation.status === "running" ? "var(--ae-green)" : "var(--ae-amber)" },
+                      { label: "STATUS",  value: currentStation.status?.toUpperCase(),                        color: currentStation.status === "running" ? "var(--ae-green)" : "var(--ae-amber)" },
                       { label: "AGENTS",  value: `${currentStation.activeAgents}/${currentStation.agentCount}`, color: "var(--ae-cyan)" },
-                      { label: "TASKS",   value: String(currentStation.tasksCompleted),           color: "var(--ae-blue)" },
-                      { label: "ROOMS",   value: String(currentStation.roomCount),                color: "var(--ae-text)" },
+                      { label: "TASKS",   value: String(currentStation.tasksCompleted),                        color: "var(--ae-blue)" },
+                      { label: "ROOMS",   value: String(currentStation.roomCount),                             color: "var(--ae-text)" },
                     ].map(stat => (
                       <div key={stat.label} style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--ae-border)", padding: "9px 11px" }}>
                         <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>{stat.label}</div>
@@ -273,6 +314,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                 )}
+
                 {currentStation && (
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 5 }}>
@@ -285,21 +327,19 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* Agents quick list */}
-                {agents && agents.length > 0 && (
-                  <div>
-                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>CREW STATUS</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      {agents.slice(0, 6).map(a => (
-                        <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}>
-                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: getRoleHex(a.role), boxShadow: `0 0 5px ${getRoleHex(a.role)}`, flexShrink: 0 }} />
-                          <span style={{ ...mono, fontSize: 9, color: "var(--ae-text)", flex: 1 }}>{a.name}</span>
-                          <span style={{ ...mono, fontSize: 7, color: "var(--ae-muted)" }}>{a.status?.toUpperCase()}</span>
-                        </div>
-                      ))}
-                    </div>
+                {/* Dungeon rooms quick list */}
+                <div>
+                  <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>DUNGEON ROOMS</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    {DUNGEON_ROOMS.map(r => (
+                      <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
+                        <div style={{ width: 6, height: 6, background: `#${r.color.toString(16).padStart(6, '0')}`, boxShadow: `0 0 4px #${r.color.toString(16).padStart(6, '0')}`, flexShrink: 0 }} />
+                        <span style={{ ...mono, fontSize: 8, color: "var(--ae-text)", flex: 1 }}>{r.name}</span>
+                        <span style={{ ...mono, fontSize: 7, color: "var(--ae-muted)" }}>{r.role.toUpperCase()}</span>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
 
                 <div style={{ marginTop: "auto", display: "grid", gap: 6 }}>
                   {[
