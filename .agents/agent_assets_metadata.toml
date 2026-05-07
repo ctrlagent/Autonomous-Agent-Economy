@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "TucF05qbVf_q4Ns7KOBgv"
+uri = "file://AETHERION_PROJECT_DESCRIPTION.md"
+type = "text"
+title = "AETHERION — Project Description Lengkap"
