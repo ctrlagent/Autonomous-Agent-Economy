@@ -1,0 +1,50 @@
+I have an existing project called AETHERION — an Autonomous Agent Economy OS dashboard. It is a pnpm monorepo with:
+
+Frontend: React + Vite + Tailwind v4 + Phaser 3 at artifacts/aetherion (port 3000)
+API: Express 5 + Drizzle + PostgreSQL at artifacts/api-server (port 3001)
+Artifact router on port 5000 (external HTTPS)
+Current state of the 8 Phaser upgrades (partially done — continue from here):
+
+✅ ALREADY DONE (working):
+Tileset furniture — Kenney roguelike-indoors sprites placed per room role in drawFurniture() with Graphics fallback
+Per-role ambient particles — updateAmbientParticles() / drawParticles() on depth 3: sparkles (research), binary digits (builder), paint chips (design), 2-bar charts (analytics), radar sweep (strategy), gold coins (growth)
+Floating task progress bars — drawProgressBar() per agent: 20×3 px bar above name, fills by pct, flashes green + XP burst at 100%
+Agent pathfinding through corridors — ROOM_PATHS BFS graph, updateRoomChangeTimer() triggers every 30–60s, cyan transit orb leads agents through corridor waypoints
+Economy flyover numbers — economyFlyovers[] array spawned when pct hits 100%, rises from agent toward top-right, onRevenueChange callback updates revenue counter in Dashboard
+Day/Night dungeon cycle — updateDayNight() over 300s cycle (NIGHT OPS → DAWN → PEAK HOURS → DUSK), applies tint to floor/furniture images, dims room glow, phase label shown in Dashboard strip
+Incident alert events — incidents[] array, random every 90–120s, flash red border in drawRoom(), countdown bar, ! icon in updateFx(), clicking room dismisses + grants XP, shown in left activity log + right panel
+Mini-map overlay — 120×90 px top-right of Phaser canvas at depth 10, colored room rects, 3×3 agent dots, clicking dot selects agent
+❌ REMAINING BUGS TO FIX:
+Bug 1 — updateIncidents() calls drawDungeon() every frame (CRITICAL performance issue):
+
+drawDungeon() destroys and recreates all floor + furniture Phaser.GameObjects.Image objects — calling it every frame causes massive memory leak and frame drops
+Fix: Remove this.drawDungeon() from updateIncidents(). Instead, draw the dynamic incident border flash + countdown bar inside drawOverlay() (which already uses Graphics cleared each frame). The static dungeon only redraws on resize.
+Bug 2 — Incident border color in drawRoom() is static:
+
+The room border glow no longer responds to incidents because we removed that logic
+Fix: In drawOverlay(), after drawing selected room highlight, also draw incident border overlay for any room with an active incident: pulsing red stroke + red fill tint + countdown bar at bottom
+Bug 3 — initIncidentTimer fires too fast on startup:
+
+Initial incidentTimer = 90 + Math.random() * 30 is frames not seconds (fires in ~1.5s)
+Fix: Change initial value to (90 + Math.random() * 30) * 60
+Bug 4 — XP flash label is invisible:
+
+xpFlashLabel text is set but never rendered as visible text (only a dot burst in Graphics)
+Fix: Add a xpTexts: Phaser.GameObjects.Text[] array. When xpFlashTimer starts, create a floating Text object that animates upward and destroys itself. Or alternatively, use the fxGfx layer to spell it out pixel-by-pixel (simpler: just add a Phaser Text with floatUp CSS animation on the React overlay similar to the existing LevelUpLabel).
+KEY FILES:
+artifacts/aetherion/src/lib/stationScene.ts — main Phaser scene (~1519 lines after partial edits)
+artifacts/aetherion/src/lib/dungeonLayout.ts — room/corridor definitions
+artifacts/aetherion/src/components/StationCanvas.tsx — React wrapper with sceneRef, onRevenueChange prop
+artifacts/aetherion/src/pages/Dashboard.tsx — wires up revenue, day phase, incidents to UI
+ARCHITECTURE NOTES:
+Rendering depths: dungeonGfx(0) → floor/furniture images(1) → overlayGfx(2) → particleGfx(3) → agentGfx(5) → nameTexts(8) → fxGfx(9) → minimapGfx(10)
+drawDungeon() = expensive, only call on init + resize. drawOverlay() = Graphics cleared each frame (cheap). updateFx() = Graphics cleared each frame (cheap).
+Tileset: attached_assets/pixel-pack/roguelikeIndoor_transparent.png, 16×16, 1px spacing, 26 cols × 17 rows. Loaded via new URL('../../../../attached_assets/...', import.meta.url).href
+Phaser global is NOT available in class scope — compute hex tints manually: ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+Do NOT use key: in CreateSceneFromObjectConfig — TypeScript rejects it
+WORKFLOW COMMANDS:
+Frontend: BASE_PATH=/ PORT=3000 pnpm --filter @workspace/aetherion dev
+API: PORT=3001 pnpm --filter @workspace/api-server run dev
+Do NOT run $REPLIT_ARTIFACT_ROUTER as a separate workflow — conflicts with above
+Please fix all 4 bugs listed above, then verify the app runs without console errors.
+
