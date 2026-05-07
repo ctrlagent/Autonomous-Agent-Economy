@@ -794,11 +794,13 @@ export class StationScene {
           this.roomMissionProgress.set(ag.roomId, 0);
           this.triggerRoomMission(ag.roomId);
         }
-        // Reset pct
+        // Reset pct and prevPct together so the completion doesn't re-trigger next frame
+        ag.prevPct = 0;
         ag.pct = 0;
+      } else {
+        ag.prevPct = ag.pct;
+        ag.pct = newPct;
       }
-      ag.prevPct = ag.pct;
-      ag.pct = ag.pct >= 100 ? 0 : newPct;
 
       // Waypoint pathfinding
       if (ag.inTransit && ag.waypoints.length > 0) {
