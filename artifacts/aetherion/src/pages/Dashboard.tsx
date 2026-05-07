@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   useListStations, useListRooms, useListStationAgents,
   useGetDashboardSummary, useGetRecentActivity, useListAgentTasks,
 } from "@workspace/api-client-react";
-import { Pause, ChevronDown, AlertTriangle } from "lucide-react";
+import { Pause, ChevronDown, AlertTriangle, Star, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
@@ -56,6 +56,16 @@ export default function Dashboard() {
   const [revenueGlow, setRevenueGlow] = useState(false);
   const [dayPhase, setDayPhase] = useState<string>('PEAK HOURS');
   const [activeIncidents, setActiveIncidents] = useState<Array<{ roomId: string; label: string; countdown: number; countdownMax: number }>>([]);
+
+  // Mission complete queue
+  interface MissionEvent { id: number; roomId: string; roomName: string; reward: { xp: number; revenue: number; unlockLabel: string }; }
+  const [missionQueue, setMissionQueue] = useState<MissionEvent[]>([]);
+  const dismissMission = useCallback((id: number) => setMissionQueue(q => q.filter(m => m.id !== id)), []);
+  const handleRoomMissionComplete = useCallback((roomId: string, roomName: string, reward: { xp: number; revenue: number; unlockLabel: string }) => {
+    const ev: MissionEvent = { id: Date.now() + Math.random(), roomId, roomName, reward };
+    setMissionQueue(q => [...q, ev]);
+    setTimeout(() => dismissMission(ev.id), 7000);
+  }, [dismissMission]);
 
   const triggerRef = useRef<((id: string) => number) | null>(null);
   const sceneRef = useRef<StationScene | null>(null);
@@ -240,9 +250,78 @@ export default function Dashboard() {
               onAgentSelect={handlePhaserAgentSelect}
               onRoomSelect={handleRoomSelect}
               onRevenueChange={handleRevenueChange}
+              onRoomMissionComplete={handleRoomMissionComplete}
               triggerRef={triggerRef}
               sceneRef={sceneRef}
             />
+
+            {/* Mission Complete Notifications */}
+            <div style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "none", zIndex: 30, width: 320 }}>
+              <AnimatePresence>
+                {missionQueue.map(ev => {
+                  const room = DUNGEON_ROOMS.find(r => r.id === ev.roomId);
+                  const roomColor = room ? `#${room.color.toString(16).padStart(6, '0')}` : '#ffd700';
+                  return (
+                    <motion.div
+                      key={ev.id}
+                      initial={{ opacity: 0, y: 32, scale: 0.92 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -16, scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 340, damping: 28 }}
+                      style={{
+                        width: "100%",
+                        background: "rgba(8, 8, 18, 0.97)",
+                        border: `2px solid ${roomColor}`,
+                        boxShadow: `0 0 20px ${roomColor}55, 0 4px 24px rgba(0,0,0,0.8)`,
+                        pointerEvents: "all",
+                      }}
+                    >
+                      {/* Gold header bar */}
+                      <div style={{ background: `linear-gradient(90deg, ${roomColor}22, #ffd70033, ${roomColor}22)`, borderBottom: `1px solid ${roomColor}44`, padding: "6px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+                        <Star size={10} style={{ color: "#ffd700", flexShrink: 0 }} fill="#ffd700" />
+                        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: "#ffd700", letterSpacing: "0.12em", flex: 1 }}>MISSION COMPLETE</span>
+                        <button onClick={() => dismissMission(ev.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ae-dim)", padding: 0, display: "flex" }}>
+                          <X size={10} />
+                        </button>
+                      </div>
+
+                      {/* Body */}
+                      <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 8, height: 8, background: roomColor, boxShadow: `0 0 8px ${roomColor}`, flexShrink: 0 }} />
+                          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: "#fff", letterSpacing: "0.06em" }}>{ev.roomName.toUpperCase()}</span>
+                        </div>
+
+                        {/* Rewards row */}
+                        <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+                          <div style={{ flex: 1, background: "rgba(255,215,0,0.08)", border: "1px solid #ffd70033", padding: "5px 8px", textAlign: "center" }}>
+                            <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>XP</div>
+                            <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "#ffd700" }}>+{ev.reward.xp}</div>
+                          </div>
+                          <div style={{ flex: 1, background: "rgba(77,255,155,0.08)", border: "1px solid #4dff9b33", padding: "5px 8px", textAlign: "center" }}>
+                            <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>REVENUE</div>
+                            <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "#4dff9b" }}>${ev.reward.revenue}</div>
+                          </div>
+                        </div>
+
+                        {/* Unlock label */}
+                        <div style={{ background: `${roomColor}12`, border: `1px solid ${roomColor}44`, padding: "5px 9px", display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                          <span style={{ ...mono, fontSize: 7, color: roomColor, letterSpacing: "0.08em" }}>▶ {ev.reward.unlockLabel}</span>
+                        </div>
+
+                        {/* Auto-dismiss progress bar */}
+                        <motion.div
+                          style={{ height: 2, background: roomColor, originX: 0 }}
+                          initial={{ scaleX: 1 }}
+                          animate={{ scaleX: 0 }}
+                          transition={{ duration: 7, ease: "linear" }}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 

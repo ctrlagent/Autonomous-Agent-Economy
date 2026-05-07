@@ -9,15 +9,18 @@ interface LevelUpLabel {
   id: number;
 }
 
+interface MissionReward { xp: number; revenue: number; unlockLabel: string; }
+
 interface Props {
   onAgentSelect: (agent: AgentData | null) => void;
   onRoomSelect?: (roomId: string | null) => void;
   onRevenueChange?: (delta: number) => void;
+  onRoomMissionComplete?: (roomId: string, roomName: string, reward: MissionReward) => void;
   triggerRef: MutableRefObject<((id: string) => number) | null>;
   sceneRef?: MutableRefObject<import('../lib/stationScene').StationScene | null>;
 }
 
-export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, triggerRef, sceneRef }: Props) {
+export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, onRoomMissionComplete, triggerRef, sceneRef }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<unknown>(null);
   const [label, setLabel] = useState<LevelUpLabel | null>(null);
@@ -41,6 +44,7 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, tr
         setTimeout(() => setLabel(null), 2000);
       };
       stationScene.onRevenueChange = onRevenueChange ?? undefined;
+      stationScene.onRoomMissionComplete = onRoomMissionComplete ?? undefined;
       triggerRef.current = (id) => stationScene.triggerLevelUp(id);
       if (sceneRef) sceneRef.current = stationScene;
 

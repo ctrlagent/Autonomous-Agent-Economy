@@ -75,6 +75,24 @@ interface Incident {
   phase: 'alert' | 'active' | 'dismissed';
 }
 
+interface RoomMissionEffect {
+  roomId: string;
+  timer: number;
+  rings: Array<{ r: number; alpha: number; speed: number }>;
+  particles: BurstParticle[];
+  goldFlash: number;
+}
+
+const ROOM_UNLOCK_LABELS: Record<string, string> = {
+  research:  'DEEP SCAN PROTOCOL UNLOCKED',
+  builder:   'RAPID BUILD PIPELINE ACTIVE',
+  design:    'CREATIVE AMPLIFIER ONLINE',
+  growth:    'VIRAL LOOP ENGINE BOOSTED',
+  strategy:  'TACTICAL ADVANTAGE +15%',
+  analytics: 'PREDICTIVE MODEL UPGRADED',
+  content:   'CONTENT ENGINE UPGRADED',
+};
+
 const AGENTS_DEF: AgentData[] = [
   { id: 'a1', name: 'ARIA',  role: 'research',  status: 'Working',   roomId: 'r1', pct: 72, level: 3 },
   { id: 'a2', name: 'STRAT', role: 'strategy',  status: 'Working',   roomId: 'r2', pct: 55, level: 4 },
@@ -187,6 +205,7 @@ export class StationScene {
   onLevelUpLabel?: (x: number, y: number, name: string, level: number) => void;
   onRevenueChange?: (delta: number) => void;
   onIncidentDismissed?: (roomId: string) => void;
+  onRoomMissionComplete?: (roomId: string, roomName: string, reward: { xp: number; revenue: number; unlockLabel: string }) => void;
 
   private scene: import('phaser').Scene | null = null;
   private agents: AgentState[] = [];
@@ -231,6 +250,11 @@ export class StationScene {
   // Incidents
   private incidents: Incident[] = [];
   private incidentTimer = (90 + Math.random() * 30) * 60;
+
+  // Room Mission system
+  private roomMissionProgress: Map<string, number> = new Map();
+  private roomMissionsComplete: Set<string> = new Set();
+  private roomMissionEffects: RoomMissionEffect[] = [];
 
   // Room-change timer for pathfinding demo
   private roomChangeTimer = 30 + Math.random() * 30;
@@ -596,6 +620,20 @@ export class StationScene {
         g.fillRect(px + 4, py + ph - 6, Math.max(0, barW), 4);
       }
 
+      // Mission complete star badge in top-left corner (two crossed triangles = 6-point star)
+      if (this.roomMissionsComplete.has(room.id)) {
+        const sx = px + 7;
+        const sy = py + 7;
+        const sr = 5;
+        g.fillStyle(0xffd700, 0.95);
+        g.fillTriangle(sx, sy - sr, sx - sr * 0.87, sy + sr * 0.5, sx + sr * 0.87, sy + sr * 0.5);
+        g.fillTriangle(sx, sy + sr, sx - sr * 0.87, sy - sr * 0.5, sx + sr * 0.87, sy - sr * 0.5);
+        g.fillStyle(0xffffff, 0.85);
+        g.fillCircle(sx, sy, 1.8);
+        g.lineStyle(1.5, 0xffd700, 0.55);
+        g.strokeCircle(sx, sy, sr + 3);
+      }
+
       const labelX = px + pw / 2;
       const labelY = py + T * 0.8;
       const lw = Math.min(pw - 8, 52);
@@ -749,6 +787,13 @@ export class StationScene {
         ag.xpFlashTimer = 90;
         ag.xpFlashLabel = `+${ag.level * 10}XP`;
         this.spawnXpText(ag.wx, ag.wy, ag.xpFlashLabel);
+        // Room mission progress
+        const prog = (this.roomMissionProgress.get(ag.roomId) ?? 0) + 1;
+        this.roomMissionProgress.set(ag.roomId, prog);
+        if (prog >= 5) {
+          this.roomMissionProgress.set(ag.roomId, 0);
+          this.triggerRoomMission(ag.roomId);
+        }
         // Reset pct
         ag.pct = 0;
       }
@@ -1290,6 +1335,48 @@ export class StationScene {
       g.fillRect(px + 2, py + this.tilePx + 2, pw - 4, 8);
     }
 
+    // Room mission burst effects
+    this.roomMissionEffects = this.roomMissionEffects.filter(e => e.timer > 0);
+    for (const e of this.roomMissionEffects) {
+      e.timer -= dt;
+      e.goldFlash = Math.max(0, e.goldFlash - 0.013 * dt);
+      const room = DUNGEON_ROOMS.find(r => r.id === e.roomId);
+      if (!room) continue;
+      const px = this.tp(room.tileX);
+      const py = this.tpy(room.tileY);
+      const pw = this.ts(room.tileW);
+      const ph = this.ts(room.tileH);
+      const cx = px + pw / 2;
+      const cy = py + ph / 2;
+      // Gold fill flash
+      if (e.goldFlash > 0) {
+        g.fillStyle(0xffd700, e.goldFlash * 0.22);
+        g.fillRect(px, py, pw, ph);
+        g.lineStyle(2.5, 0xffd700, Math.min(1, e.goldFlash * 1.2));
+        g.strokeRect(px + 1, py + 1, pw - 2, ph - 2);
+      }
+      // Expanding rings from room center
+      for (const ring of e.rings) {
+        ring.r += ring.speed * dt;
+        ring.alpha = Math.max(0, ring.alpha - 0.011 * dt);
+        if (ring.alpha > 0) {
+          g.lineStyle(2, 0xffd700, ring.alpha);
+          g.strokeCircle(cx, cy, ring.r);
+        }
+      }
+      // Particles
+      for (const p of e.particles) {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.vy += 0.06 * dt;
+        p.life -= 0.014 * dt;
+        if (p.life > 0) {
+          g.fillStyle(p.color, p.life * 0.92);
+          g.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+        }
+      }
+      e.particles = e.particles.filter(p => p.life > 0);
+    }
+
     // XP floating texts
     this.xpTexts = this.xpTexts.filter(entry => {
       entry.life -= 0.018 * dt;
@@ -1486,6 +1573,45 @@ export class StationScene {
       this.onRoomSelect?.(null);
       this.drawOverlay();
     }
+  }
+
+  // ─── Room Mission Complete ─────────────────────────────────────────────────
+  private triggerRoomMission(roomId: string) {
+    const room = DUNGEON_ROOMS.find(r => r.id === roomId);
+    if (!room) return;
+    this.roomMissionsComplete.add(roomId);
+
+    const px = this.tp(room.tileX);
+    const py = this.tpy(room.tileY);
+    const pw = this.ts(room.tileW);
+    const ph = this.ts(room.tileH);
+    const cx = px + pw / 2;
+    const cy = py + ph / 2;
+
+    const rings = Array.from({ length: 6 }, (_, i) => ({
+      r: i * 10, alpha: 0.9 - i * 0.12, speed: 1.4 + i * 0.5,
+    }));
+    const particles: BurstParticle[] = Array.from({ length: 52 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.8 + Math.random() * 4.5;
+      return {
+        x: cx + (Math.random() - 0.5) * pw * 0.7,
+        y: cy + (Math.random() - 0.5) * ph * 0.7,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2,
+        life: 0.7 + Math.random() * 0.6,
+        color: Math.random() > 0.4 ? 0xffd700 : room.color,
+      };
+    });
+
+    this.roomMissionEffects.push({ roomId, timer: 240, rings, particles, goldFlash: 1 });
+
+    const revenue = 200 + Math.floor(Math.random() * 300);
+    this.totalRevenue += revenue;
+    this.onRevenueChange?.(revenue);
+
+    const unlockLabel = ROOM_UNLOCK_LABELS[room.role] ?? 'UPGRADE UNLOCKED';
+    this.onRoomMissionComplete?.(roomId, room.name, { xp: 50, revenue, unlockLabel });
   }
 
   // ─── XP Text Spawn ────────────────────────────────────────────────────────
