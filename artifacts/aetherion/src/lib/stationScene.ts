@@ -205,6 +205,7 @@ export class StationScene {
   private fxGfx: import('phaser').GameObjects.Graphics | null = null;
   private minimapGfx: import('phaser').GameObjects.Graphics | null = null;
   private nameTexts: import('phaser').GameObjects.Text[] = [];
+  private xpTexts: Array<{ text: import('phaser').GameObjects.Text; vy: number; life: number; maxLife: number }> = [];
 
   private floorImages: import('phaser').GameObjects.Image[] = [];
   private furnitureImages: import('phaser').GameObjects.Image[] = [];
@@ -229,7 +230,7 @@ export class StationScene {
 
   // Incidents
   private incidents: Incident[] = [];
-  private incidentTimer = 90 + Math.random() * 30;
+  private incidentTimer = (90 + Math.random() * 30) * 60;
 
   // Room-change timer for pathfinding demo
   private roomChangeTimer = 30 + Math.random() * 30;
@@ -576,6 +577,25 @@ export class StationScene {
         g.strokeRect(px + 3, py + 3, pw - 6, ph - 6);
       }
 
+      // Incident border flash overlay
+      const incident = this.incidents.find(i => i.roomId === room.id && i.phase !== 'dismissed');
+      if (incident) {
+        const flash = Math.abs(Math.sin(incident.flashTimer * 0.15));
+        const pulse = 0.5 + flash * 0.5;
+        g.fillStyle(0xff2244, 0.08 * pulse);
+        g.fillRect(px, py, pw, ph);
+        g.lineStyle(3, 0xff2244, 0.9 * pulse);
+        g.strokeRect(px + 1, py + 1, pw - 2, ph - 2);
+        g.lineStyle(1, 0xff6677, 0.5 * pulse);
+        g.strokeRect(px + 3, py + 3, pw - 6, ph - 6);
+        // Countdown bar at bottom of room
+        const barW = (pw - 8) * (incident.countdown / incident.countdownMax);
+        g.fillStyle(0x330000, 0.8);
+        g.fillRect(px + 4, py + ph - 6, pw - 8, 4);
+        g.fillStyle(0xff2244, 0.9);
+        g.fillRect(px + 4, py + ph - 6, Math.max(0, barW), 4);
+      }
+
       const labelX = px + pw / 2;
       const labelY = py + T * 0.8;
       const lw = Math.min(pw - 8, 52);
@@ -728,6 +748,7 @@ export class StationScene {
         this.onRevenueChange?.(amount);
         ag.xpFlashTimer = 90;
         ag.xpFlashLabel = `+${ag.level * 10}XP`;
+        this.spawnXpText(ag.wx, ag.wy, ag.xpFlashLabel);
         // Reset pct
         ag.pct = 0;
       }
@@ -1169,8 +1190,6 @@ export class StationScene {
 
     // Clean up old dismissed ones
     this.incidents = this.incidents.filter(i => i.phase !== 'dismissed' || i.flashTimer < 300);
-    // Re-draw dungeon to show incident state
-    this.drawDungeon();
   }
 
   // ─── FX Layer ─────────────────────────────────────────────────────────────
@@ -1270,6 +1289,16 @@ export class StationScene {
       g.fillStyle(0xff2244, 0.75 * flash);
       g.fillRect(px + 2, py + this.tilePx + 2, pw - 4, 8);
     }
+
+    // XP floating texts
+    this.xpTexts = this.xpTexts.filter(entry => {
+      entry.life -= 0.018 * dt;
+      if (entry.life <= 0) { entry.text.destroy(); return false; }
+      entry.text.y += entry.vy * dt;
+      entry.vy *= 0.97;
+      entry.text.setAlpha(Math.min(1, entry.life * 2));
+      return true;
+    });
 
     // CRT scanline
     this.scanY = (this.scanY + 0.45 * dt) % H;
@@ -1385,7 +1414,8 @@ export class StationScene {
           const roomAgents = this.agents.filter(a => a.roomId === zone.room.id);
           for (const ag of roomAgents) {
             ag.xpFlashTimer = 90;
-            ag.xpFlashLabel = `+${20}XP`;
+            ag.xpFlashLabel = '+20XP';
+            this.spawnXpText(ag.wx, ag.wy, '+20XP');
           }
           this.onIncidentDismissed?.(zone.room.id);
           this.drawOverlay();
@@ -1456,6 +1486,20 @@ export class StationScene {
       this.onRoomSelect?.(null);
       this.drawOverlay();
     }
+  }
+
+  // ─── XP Text Spawn ────────────────────────────────────────────────────────
+  private spawnXpText(x: number, y: number, label: string) {
+    if (!this.scene) return;
+    const t = this.scene.add.text(x, y - 28, label, {
+      fontFamily: "'Press Start 2P', monospace",
+      fontSize: '6px',
+      color: '#ffd700',
+      stroke: '#000000',
+      strokeThickness: 3,
+      resolution: 2,
+    }).setOrigin(0.5, 1).setDepth(9).setAlpha(1);
+    this.xpTexts.push({ text: t, vy: -1.2, life: 1, maxLife: 1 });
   }
 
   // ─── Level Up ─────────────────────────────────────────────────────────────
