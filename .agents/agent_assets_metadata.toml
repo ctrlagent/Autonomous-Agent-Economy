@@ -12,3 +12,9 @@ id = "hglcXy1wPBoVc9UrmuzUa"
 uri = "file://AETHERION_CONTINUATION_PROMPT.md"
 type = "text"
 title = "AETHERION — Continuation Prompt"
+
+[[outputs]]
+id = "vbu0xC4vHOtrMfW2gnpT_"
+uri = "file://artifacts/aetherion/public/CONTINUATION_PROMPT.md"
+type = "text"
+title = "AETHERION — Continuation Prompt & UI Revolution Plan"
