@@ -199,6 +199,13 @@ const INCIDENT_LABELS: Record<string, string[]> = {
 // Day/Night cycle (seconds)
 const DAY_CYCLE_S = 300;
 
+export interface MinimapData {
+  rooms: Array<{ id: string; color: number; nx: number; ny: number; nw: number; nh: number; hasIncident: boolean }>;
+  corridors: Array<{ nx: number; ny: number; nw: number; nh: number }>;
+  agents: Array<{ nx: number; ny: number; color: number; isSelected: boolean }>;
+  viewport: { nx: number; ny: number; nw: number; nh: number };
+}
+
 export class StationScene {
   onAgentSelect?: (agent: AgentData | null) => void;
   onRoomSelect?: ((roomId: string | null) => void) | null;
@@ -294,6 +301,21 @@ export class StationScene {
     }
   }
   getZoom(): number { return this.zoomLevel; }
+
+  onMinimapData?: (data: MinimapData) => void;
+
+  panToNormalized(nx: number, ny: number): void {
+    if (!this.scene) return;
+    const cam = this.scene.cameras.main;
+    const dungW = DUNGEON_COLS * this.tilePx;
+    const dungH = DUNGEON_ROWS * this.tilePx;
+    const worldX = this.offX + nx * dungW;
+    const worldY = this.offY + ny * dungH;
+    const W = this.scene.scale.width;
+    const H = this.scene.scale.height;
+    cam.scrollX = worldX - W / (2 * cam.zoom);
+    cam.scrollY = worldY - H / (2 * cam.zoom);
+  }
 
   createPhaserScene(): import('phaser').Types.Scenes.CreateSceneFromObjectConfig {
     const self = this;
@@ -1472,93 +1494,59 @@ export class StationScene {
 
   // ─── Mini-map ────────────────────────────────────────────────────────────
   private drawMinimap() {
-    const g = this.minimapGfx;
-    if (!g || !this.scene) return;
-    g.clear();
+    this.minimapGfx?.clear(); // Phaser layer stays empty; minimap is rendered via React canvas
+    if (!this.scene || !this.onMinimapData) return;
 
-    const W = this.scene.scale.width;
-    const mmW = 120, mmH = 90;
-    const mmX = W - mmW - 8;
-    const mmY = 8;
-
-    // Background
-    g.fillStyle(0x000010, 0.82);
-    g.fillRect(mmX, mmY, mmW, mmH);
-    g.lineStyle(1.5, 0x4df0d8, 0.7);
-    g.strokeRect(mmX, mmY, mmW, mmH);
-
-    // Scale factors
+    const cam = this.scene.cameras.main;
+    const W   = this.scene.scale.width;
+    const H   = this.scene.scale.height;
     const dungW = DUNGEON_COLS * this.tilePx;
     const dungH = DUNGEON_ROWS * this.tilePx;
-    const scaleX = (mmW - 4) / dungW;
-    const scaleY = (mmH - 4) / dungH;
 
-    const worldToMini = (wx: number, wy: number) => ({
-      mx: mmX + 2 + (wx - this.offX) * scaleX,
-      my: mmY + 2 + (wy - this.offY) * scaleY,
+    const toNorm = (wx: number, wy: number) => ({
+      nx: (wx - this.offX) / dungW,
+      ny: (wy - this.offY) / dungH,
     });
 
-    // Draw rooms
-    for (const room of DUNGEON_ROOMS) {
-      const px = this.tp(room.tileX);
-      const py = this.tpy(room.tileY);
-      const { mx, my } = worldToMini(px, py);
-      const mw = this.ts(room.tileW) * scaleX;
-      const mh = this.ts(room.tileH) * scaleY;
+    const rooms = DUNGEON_ROOMS.map(room => {
+      const { nx, ny } = toNorm(this.tp(room.tileX), this.tpy(room.tileY));
+      return {
+        id: room.id, color: room.color, nx, ny,
+        nw: this.ts(room.tileW) / dungW,
+        nh: this.ts(room.tileH) / dungH,
+        hasIncident: this.incidents.some(i => i.roomId === room.id && i.phase !== 'dismissed'),
+      };
+    });
 
-      const incident = this.incidents.find(i => i.roomId === room.id && i.phase !== 'dismissed');
-      const roomColor = incident ? 0xff2244 : room.color;
+    const corridors = DUNGEON_CORRIDORS.map(cor => {
+      const { nx, ny } = toNorm(this.tp(cor.tileX), this.tpy(cor.tileY));
+      return { nx, ny, nw: this.ts(cor.tileW) / dungW, nh: this.ts(cor.tileH) / dungH };
+    });
 
-      g.fillStyle(roomColor, 0.3);
-      g.fillRect(mx, my, mw, mh);
-      g.lineStyle(1, roomColor, 0.8);
-      g.strokeRect(mx, my, mw, mh);
-    }
+    const agents = this.agents.map(ag => {
+      const { nx, ny } = toNorm(ag.wx, ag.wy);
+      return { nx, ny, color: ROLE_COLORS[ag.role] ?? 0x4d7fff, isSelected: ag.id === this.selectedAgentId };
+    });
 
-    // Draw corridors
-    for (const cor of DUNGEON_CORRIDORS) {
-      const px = this.tp(cor.tileX);
-      const py = this.tpy(cor.tileY);
-      const { mx, my } = worldToMini(px, py);
-      const mw = this.ts(cor.tileW) * scaleX;
-      const mh = this.ts(cor.tileH) * scaleY;
-      g.fillStyle(0x2a3860, 0.7);
-      g.fillRect(mx, my, mw, mh);
-    }
-
-    // Draw agent dots
-    for (const ag of this.agents) {
-      const { mx, my } = worldToMini(ag.wx, ag.wy);
-      const color = ROLE_COLORS[ag.role] ?? 0x4d7fff;
-      const isSelected = ag.id === this.selectedAgentId;
-
-      if (isSelected) {
-        g.lineStyle(1, 0xffffff, 0.9);
-        g.strokeCircle(mx, my, 4);
-      }
-
-      g.fillStyle(color, isSelected ? 1 : 0.85);
-      g.fillRect(mx - 1.5, my - 1.5, 3, 3);
-    }
-
-    // Minimap click handler is handled in handleClick
-  }
-
-  private getMinimapBounds() {
-    if (!this.scene) return null;
-    const W = this.scene.scale.width;
-    const mmW = 120, mmH = 90;
-    return { x: W - mmW - 8, y: 8, w: mmW, h: mmH };
+    this.onMinimapData({
+      rooms, corridors, agents,
+      viewport: {
+        nx: (cam.scrollX - this.offX) / dungW,
+        ny: (cam.scrollY - this.offY) / dungH,
+        nw: (W / cam.zoom) / dungW,
+        nh: (H / cam.zoom) / dungH,
+      },
+    });
   }
 
   // ─── Click Handling ──────────────────────────────────────────────────────
-  private handleClick(px: number, py: number) {
-    // Check minimap click
-    const mm = this.getMinimapBounds();
-    if (mm && px >= mm.x && px <= mm.x + mm.w && py >= mm.y && py <= mm.y + mm.h) {
-      this.handleMinimapClick(px, py, mm);
-      return;
-    }
+  private handleClick(screenX: number, screenY: number) {
+    if (!this.scene) return;
+    // Convert screen → world coords so clicks work correctly at any zoom/pan level
+    const cam = this.scene.cameras.main;
+    const worldPt = cam.getWorldPoint(screenX, screenY);
+    const px = worldPt.x;
+    const py = worldPt.y;
 
     // Check incident room click (dismiss)
     for (const zone of this.roomHitZones) {
@@ -1611,37 +1599,6 @@ export class StationScene {
     this.onAgentSelect?.(null);
     this.onRoomSelect?.(null);
     this.drawOverlay();
-  }
-
-  private handleMinimapClick(px: number, py: number, mm: { x: number; y: number; w: number; h: number }) {
-    if (!this.scene) return;
-    const dungW = DUNGEON_COLS * this.tilePx;
-    const dungH = DUNGEON_ROWS * this.tilePx;
-    const scaleX = (mm.w - 4) / dungW;
-    const scaleY = (mm.h - 4) / dungH;
-
-    // Reverse-project minimap coords to world coords
-    const worldX = this.offX + (px - mm.x - 2) / scaleX;
-    const worldY = this.offY + (py - mm.y - 2) / scaleY;
-
-    // Find closest agent
-    let closest: AgentState | null = null;
-    let minDist = 18;
-    for (const ag of this.agents) {
-      const mmAgX = mm.x + 2 + (ag.wx - this.offX) * scaleX;
-      const mmAgY = mm.y + 2 + (ag.wy - this.offY) * scaleY;
-      const dist = Math.sqrt((px - mmAgX) ** 2 + (py - mmAgY) ** 2);
-      if (dist < minDist) { minDist = dist; closest = ag; }
-    }
-    void worldX; void worldY;
-
-    if (closest) {
-      this.selectedAgentId = closest.id;
-      this.selectedRoomId = null;
-      this.onAgentSelect?.({ ...closest } as AgentData);
-      this.onRoomSelect?.(null);
-      this.drawOverlay();
-    }
   }
 
   // ─── Room Mission Complete ─────────────────────────────────────────────────

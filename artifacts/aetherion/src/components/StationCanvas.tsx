@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, MutableRefObject } from 'react';
-import type { AgentData } from '../lib/stationScene';
+import type { AgentData, MinimapData } from '../lib/stationScene';
 
 interface LevelUpLabel {
   x: number;
@@ -20,10 +20,89 @@ interface Props {
   sceneRef?: MutableRefObject<import('../lib/stationScene').StationScene | null>;
 }
 
+// ─── Minimap canvas drawing ────────────────────────────────────────────────
+function drawMinimapCanvas(ctx: CanvasRenderingContext2D, data: MinimapData, cw: number, ch: number) {
+  const pad = 2;
+  const iw = cw - pad * 2;
+  const ih = ch - pad * 2;
+
+  ctx.clearRect(0, 0, cw, ch);
+
+  // Background
+  ctx.fillStyle = 'rgba(0,0,16,0.88)';
+  ctx.fillRect(0, 0, cw, ch);
+
+  // Border — cyan glow
+  ctx.strokeStyle = 'rgba(77,240,216,0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(0.75, 0.75, cw - 1.5, ch - 1.5);
+
+  // "NAV" label
+  ctx.fillStyle = 'rgba(77,240,216,0.5)';
+  ctx.font = '5px "Press Start 2P", monospace';
+  ctx.fillText('NAV', pad + 2, pad + 7);
+
+  const toS = (nx: number, ny: number) => ({ sx: pad + nx * iw, sy: pad + ny * ih });
+
+  // Corridors
+  ctx.fillStyle = 'rgba(42,56,96,0.85)';
+  for (const cor of data.corridors) {
+    const { sx, sy } = toS(cor.nx, cor.ny);
+    ctx.fillRect(sx, sy, cor.nw * iw, cor.nh * ih);
+  }
+
+  // Rooms
+  for (const room of data.rooms) {
+    const { sx, sy } = toS(room.nx, room.ny);
+    const base = room.hasIncident ? 0xff2244 : room.color;
+    const hex = `#${base.toString(16).padStart(6, '0')}`;
+    ctx.fillStyle = `${hex}50`;
+    ctx.fillRect(sx, sy, room.nw * iw, room.nh * ih);
+    ctx.strokeStyle = `${hex}cc`;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(sx + 0.5, sy + 0.5, room.nw * iw - 1, room.nh * ih - 1);
+  }
+
+  // Agent dots
+  for (const ag of data.agents) {
+    const { sx, sy } = toS(ag.nx, ag.ny);
+    const hex = `#${ag.color.toString(16).padStart(6, '0')}`;
+    if (ag.isSelected) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = ag.isSelected ? hex : `${hex}dd`;
+    ctx.fillRect(sx - 1.5, sy - 1.5, 3, 3);
+  }
+
+  // Viewport rectangle
+  const { sx: vx, sy: vy } = toS(data.viewport.nx, data.viewport.ny);
+  const vw = data.viewport.nw * iw;
+  const vh = data.viewport.nh * ih;
+  const isZoomedOrPanned = data.viewport.nw < 0.98 || Math.abs(data.viewport.nx) > 0.01 || Math.abs(data.viewport.ny) > 0.01;
+
+  const cx1 = Math.max(pad, vx);
+  const cy1 = Math.max(pad, vy);
+  const cx2 = Math.min(cw - pad, vx + vw);
+  const cy2 = Math.min(ch - pad, vy + vh);
+
+  if (cx2 > cx1 && cy2 > cy1) {
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fillRect(cx1, cy1, cx2 - cx1, cy2 - cy1);
+    ctx.strokeStyle = `rgba(255,255,255,${isZoomedOrPanned ? 0.9 : 0.3})`;
+    ctx.lineWidth = isZoomedOrPanned ? 1.5 : 1;
+    ctx.strokeRect(cx1, cy1, cx2 - cx1, cy2 - cy1);
+  }
+}
+
 export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, onRoomMissionComplete, triggerRef, sceneRef }: Props) {
-  const mountRef = useRef<HTMLDivElement>(null);
-  const gameRef = useRef<unknown>(null);
-  const [label, setLabel] = useState<LevelUpLabel | null>(null);
+  const mountRef    = useRef<HTMLDivElement>(null);
+  const gameRef     = useRef<unknown>(null);
+  const minimapRef  = useRef<HTMLCanvasElement>(null);
+  const [label, setLabel]       = useState<LevelUpLabel | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1.0);
   const [isPanning, setIsPanning] = useState(false);
 
@@ -40,15 +119,25 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
 
       const stationScene = new StationScene();
       stationScene.onAgentSelect = onAgentSelect;
-      stationScene.onRoomSelect = onRoomSelect ?? null;
+      stationScene.onRoomSelect  = onRoomSelect ?? null;
       stationScene.onLevelUpLabel = (x, y, name, level) => {
         setLabel({ x, y, name, level, id: Date.now() });
         setTimeout(() => setLabel(null), 2000);
       };
-      stationScene.onRevenueChange = onRevenueChange ?? undefined;
+      stationScene.onRevenueChange     = onRevenueChange ?? undefined;
       stationScene.onRoomMissionComplete = onRoomMissionComplete ?? undefined;
-      stationScene.onZoomChange = setZoomLevel;
-      stationScene.onIsPanningChange = setIsPanning;
+      stationScene.onZoomChange        = setZoomLevel;
+      stationScene.onIsPanningChange   = setIsPanning;
+
+      // Wire minimap: scene calls this each frame with normalized layout data
+      stationScene.onMinimapData = (data: MinimapData) => {
+        const canvas = minimapRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        drawMinimapCanvas(ctx, data, canvas.width, canvas.height);
+      };
+
       triggerRef.current = (id) => stationScene.triggerLevelUp(id);
       if (sceneRef) sceneRef.current = stationScene;
 
@@ -96,6 +185,21 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
     return () => window.removeEventListener('keydown', handleKey);
   }, [sceneRef]);
 
+  // Minimap click → pan camera to that world position
+  const handleMinimapClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = minimapRef.current;
+    if (!canvas || !sceneRef?.current) return;
+    const rect = canvas.getBoundingClientRect();
+    const pad  = 2;
+    const cw   = canvas.width;
+    const ch   = canvas.height;
+    const cx   = (e.clientX - rect.left) * (cw / rect.width);
+    const cy   = (e.clientY - rect.top)  * (ch / rect.height);
+    const nx   = Math.max(0, Math.min(1, (cx - pad) / (cw - pad * 2)));
+    const ny   = Math.max(0, Math.min(1, (cy - pad) / (ch - pad * 2)));
+    sceneRef.current.panToNormalized(nx, ny);
+  };
+
   const zoomPct = Math.round(zoomLevel * 100);
 
   const btnBase: React.CSSProperties = {
@@ -126,6 +230,26 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
           height: '100%',
           imageRendering: 'pixelated',
           cursor: isPanning ? 'grabbing' : 'grab',
+        }}
+      />
+
+      {/* Minimap canvas — top-right, camera-independent */}
+      <canvas
+        ref={minimapRef}
+        width={120}
+        height={90}
+        onClick={handleMinimapClick}
+        title="Click to navigate"
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          width: 120,
+          height: 90,
+          cursor: 'crosshair',
+          imageRendering: 'pixelated',
+          zIndex: 20,
+          pointerEvents: 'all',
         }}
       />
 
