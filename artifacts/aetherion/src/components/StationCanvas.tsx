@@ -24,6 +24,7 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
   const mountRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<unknown>(null);
   const [label, setLabel] = useState<LevelUpLabel | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1.0);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -45,6 +46,7 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
       };
       stationScene.onRevenueChange = onRevenueChange ?? undefined;
       stationScene.onRoomMissionComplete = onRoomMissionComplete ?? undefined;
+      stationScene.onZoomChange = setZoomLevel;
       triggerRef.current = (id) => stationScene.triggerLevelUp(id);
       if (sceneRef) sceneRef.current = stationScene;
 
@@ -81,12 +83,115 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
     };
   }, []);
 
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === '+' || e.key === '=') sceneRef?.current?.zoomIn();
+      else if (e.key === '-') sceneRef?.current?.zoomOut();
+      else if (e.key === '0') sceneRef?.current?.zoomReset();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [sceneRef]);
+
+  const zoomPct = Math.round(zoomLevel * 100);
+
+  const btnBase: React.CSSProperties = {
+    fontFamily: "'Space Mono', monospace",
+    fontSize: 13,
+    fontWeight: 700,
+    lineHeight: 1,
+    width: 28,
+    height: 28,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(8,8,18,0.88)',
+    border: '1px solid var(--ae-border)',
+    color: 'var(--ae-text)',
+    cursor: 'pointer',
+    transition: 'border-color 0.15s, box-shadow 0.15s, color 0.15s',
+    userSelect: 'none',
+    flexShrink: 0,
+  };
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div
         ref={mountRef}
         style={{ width: '100%', height: '100%', imageRendering: 'pixelated' }}
       />
+
+      {/* Zoom controls — bottom-left */}
+      <div style={{
+        position: 'absolute',
+        bottom: 10,
+        left: 10,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        zIndex: 20,
+        pointerEvents: 'all',
+      }}>
+        <button
+          style={btnBase}
+          title="Zoom out (−)"
+          onClick={() => sceneRef?.current?.zoomOut()}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ae-cyan)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 8px var(--ae-cyan)55';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--ae-cyan)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ae-border)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--ae-text)';
+          }}
+        >−</button>
+
+        <button
+          style={btnBase}
+          title="Reset zoom (0)"
+          onClick={() => sceneRef?.current?.zoomReset()}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ae-cyan)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 8px var(--ae-cyan)55';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--ae-cyan)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ae-border)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--ae-text)';
+          }}
+        >⟳</button>
+
+        <button
+          style={btnBase}
+          title="Zoom in (+)"
+          onClick={() => sceneRef?.current?.zoomIn()}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ae-cyan)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 8px var(--ae-cyan)55';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--ae-cyan)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ae-border)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--ae-text)';
+          }}
+        >+</button>
+
+        <span style={{
+          fontFamily: "'Space Mono', monospace",
+          fontSize: 9,
+          color: zoomLevel === 1.0 ? 'var(--ae-muted)' : 'var(--ae-cyan)',
+          letterSpacing: '0.06em',
+          minWidth: 36,
+          textAlign: 'right',
+          paddingLeft: 4,
+        }}>{zoomPct}%</span>
+      </div>
+
       {label && (
         <div
           style={{

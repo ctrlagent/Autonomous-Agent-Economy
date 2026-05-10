@@ -262,6 +262,25 @@ export class StationScene {
   // Revenue
   private totalRevenue = 3840;
 
+  // Zoom
+  onZoomChange?: (zoom: number) => void;
+  private zoomLevel = 1.0;
+  private readonly ZOOM_MIN = 0.5;
+  private readonly ZOOM_MAX = 2.5;
+
+  setZoom(level: number): void {
+    this.zoomLevel = Math.min(this.ZOOM_MAX, Math.max(this.ZOOM_MIN, Math.round(level * 10) / 10));
+    if (this.scene) {
+      this.scene.cameras.main.setZoom(this.zoomLevel);
+    }
+    this.onZoomChange?.(this.zoomLevel);
+  }
+
+  zoomIn(): void  { this.setZoom(this.zoomLevel + 0.1); }
+  zoomOut(): void { this.setZoom(this.zoomLevel - 0.1); }
+  zoomReset(): void { this.setZoom(1.0); }
+  getZoom(): number { return this.zoomLevel; }
+
   createPhaserScene(): import('phaser').Types.Scenes.CreateSceneFromObjectConfig {
     const self = this;
     return {
@@ -290,6 +309,11 @@ export class StationScene {
 
         this.input.on('pointerdown', (ptr: import('phaser').Input.Pointer) => {
           self.handleClick(ptr.x, ptr.y);
+        });
+
+        this.input.on('wheel', (_ptr: unknown, _go: unknown, _dx: number, deltaY: number) => {
+          if (deltaY > 0) self.zoomOut();
+          else self.zoomIn();
         });
 
         this.scale.on('resize', (gameSize: import('phaser').Structs.Size) => {
