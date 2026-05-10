@@ -386,3 +386,99 @@ body::after {
 ::-webkit-scrollbar-track { background: var(--ae-bg); }
 ::-webkit-scrollbar-thumb { background: var(--ae-border-bright); }
 ::-webkit-scrollbar-thumb:hover { background: var(--ae-dim); }
+
+/* ── SHIMMER PROGRESS ── */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.progress-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.progress-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 25%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.22), transparent);
+  animation: shimmer 2.2s ease-in-out infinite;
+}
+
+/* ── MISSION CARD ── */
+@keyframes mission-glow-pulse {
+  0%,100% { box-shadow: 0 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 16px rgba(77,255,155,0.18); }
+}
+.mission-active {
+  animation: mission-glow-pulse 3s ease-in-out infinite;
+}
+
+/* ── STAT FLASH ── */
+@keyframes stat-flash {
+  0%   { color: #4dff9b; text-shadow: 0 0 16px #4dff9b; }
+  100% { color: inherit; text-shadow: inherit; }
+}
+.stat-flash { animation: stat-flash 0.8s ease-out forwards; }
+
+/* ── CREW CARD HOVER ── */
+@keyframes card-scan {
+  0%   { top: -100%; }
+  100% { top: 120%; }
+}
+.crew-card-hover {
+  position: relative;
+  overflow: hidden;
+}
+.crew-card-hover::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 30%;
+  background: linear-gradient(to bottom, transparent, rgba(77,240,216,0.04), transparent);
+  top: -100%;
+  pointer-events: none;
+  animation: card-scan 3.5s linear infinite;
+  z-index: 1;
+}
+
+/* ── GLOW BADGE ── */
+@keyframes badge-glow {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+.xp-badge {
+  animation: badge-glow 2s ease-in-out infinite;
+}
+
+/* ── PIXEL BTN enhanced ── */
+.pixel-btn.primary:active { transform: translateY(1px); }
+.pixel-btn.danger:hover  { background: rgba(255,77,109,0.1); box-shadow: 0 0 8px rgba(255,77,109,0.3); }
+.pixel-btn.warning:hover { background: rgba(255,184,77,0.1); box-shadow: 0 0 8px rgba(255,184,77,0.3); }
+
+/* ── NEON LINE ── */
+.neon-line-cyan   { border-color: var(--ae-cyan) !important;   box-shadow: 0 0 6px var(--ae-cyan); }
+.neon-line-green  { border-color: var(--ae-green) !important;  box-shadow: 0 0 6px var(--ae-green); }
+.neon-line-violet { border-color: var(--ae-violet) !important; box-shadow: 0 0 6px var(--ae-violet); }
+.neon-line-amber  { border-color: var(--ae-amber) !important;  box-shadow: 0 0 6px var(--ae-amber); }
+
+/* ── HOLOGRAPHIC PANEL ── */
+.holo-panel {
+  background: linear-gradient(135deg, rgba(77,240,216,0.03) 0%, rgba(155,109,255,0.03) 50%, rgba(77,127,255,0.03) 100%);
+  border: 1px solid var(--ae-border);
+  position: relative;
+}
+.holo-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(77,240,216,0.012) 6px, rgba(77,240,216,0.012) 7px);
+  pointer-events: none;
+}
+
+/* ── DANGER BLINK ── */
+@keyframes danger-blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+.danger-blink { animation: danger-blink 1s ease-in-out infinite; }
