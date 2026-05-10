@@ -1,0 +1,79 @@
+Kamu melanjutkan pengembangan project AETHERION — sebuah Autonomous Agent Economy OS Dashboard.
+Ini adalah pnpm monorepo yang sudah fully running. Berikut konteks lengkapnya:
+
+---
+
+## STACK & STRUKTUR
+
+Monorepo dengan pnpm workspaces:
+- artifacts/aetherion/       → Frontend: React 18 + Vite 7 + Tailwind CSS v4 + Phaser 3 + Framer Motion + Wouter
+- artifacts/api-server/      → Backend: Express 5 REST API
+- lib/db/                    → PostgreSQL schema + Drizzle ORM
+- lib/api-spec/              → OpenAPI spec (source of truth untuk codegen)
+- lib/api-client-react/      → React Query hooks (di-generate Orval dari OpenAPI)
+- lib/api-zod/               → Zod schemas (di-generate Orval, hanya boleh export * from "./generated/api")
+- scripts/                   → Seed data dan helpers
+
+TypeScript 5.9. Node.js 24. Package manager: pnpm.
+
+---
+
+## CARA MENJALANKAN
+
+Workflow yang harus aktif:
+1. Frontend: `BASE_PATH=/ PORT=5000 pnpm --filter @workspace/aetherion dev`
+2. API: `PORT=3001 pnpm --filter @workspace/api-server run dev`
+
+Port konfigurasi:
+- Port 5000 → Vite dev server (frontend)
+- Port 3001 → Express API server
+- artifact.toml di artifacts/aetherion/.replit-artifact/artifact.toml → localPort = 5000
+
+Key commands:
+- `pnpm run typecheck` → typecheck seluruh monorepo
+- `pnpm --filter @workspace/api-spec run codegen` → regenerate API hooks & Zod schemas
+- `pnpm --filter @workspace/db run push` → push DB schema changes
+
+---
+
+## DATABASE SCHEMA (PostgreSQL + Drizzle)
+
+Tabel yang ada:
+- templates    → Template marketplace bisnis
+- stations     → Space Station (bisnis) milik user
+- rooms        → Ruangan dalam station (6 tipe: research, development, design, marketing, operations, analytics)
+- agents       → AI agent dengan role: research, strategy, builder, content, growth, analytics
+- tasks        → Task yang dikerjakan agent (dengan progress %)
+- activity     → Feed log aktivitas agent
+
+Seed data: 3 stations, 18 rooms, 18 agents, 12 tasks, 10 activity entries.
+Seed script: `pnpm --filter @workspace/scripts exec tsx ./src/seed.ts`
+
+---
+
+## HALAMAN FRONTEND
+
+| Route        | Halaman   | Deskripsi |
+|--------------|-----------|-----------|
+| /            | STATION   | Dashboard utama: Phaser 3 dungeon canvas + activity log + detail panel |
+| /crew        | CREW      | Roster grid semua agent dengan filter role |
+| /missions    | MISSIONS  | Mission log dengan progress bar dan rewards |
+| /timeline    | TIMELINE  | Kronologi event dengan role-colored dots |
+| /templates   | MARKET    | Marketplace template station |
+| /ship-comms  | SHIP COMMS| Komunikasi internal |
+
+Routing menggunakan Wouter. Link pakai prop `href`, bukan `to`.
+
+---
+
+## PHASER 3 DUNGEON CANVAS (file kunci)
+
+File utama:
+- src/lib/stationScene.ts    → StationScene class (1660 baris) — logika utama dungeon
+- src/lib/dungeonLayout.ts   → DUNGEON_ROOMS (6 room, grid 3×2), DUNGEON_CORRIDORS (7), ROLE_COLORS
+- src/components/StationCanvas.tsx → React wrapper dengan dynamic import Phaser
+
+PENTING — cara import Phaser (WAJIB lazy):
+```ts
+const PhaserMod = await import('phaser');
+const Phaser = ((PhaserMod as any).default ?? PhaserMod) as typeof import('phaser');
