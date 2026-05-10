@@ -1,14 +1,15 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Settings, Zap, Users, Target, Radio, Store } from "lucide-react";
+import { Settings, Zap, Users, Target, Radio, Store, Clock } from "lucide-react";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 
 const NAV_ITEMS = [
-  { href: "/",          label: "STATION",    Icon: Zap },
-  { href: "/crew",      label: "CREW",       Icon: Users },
-  { href: "/missions",  label: "MISSIONS",   Icon: Target },
-  { href: "/timeline",  label: "SHIP COMMS", Icon: Radio },
-  { href: "/templates", label: "MARKET",     Icon: Store },
+  { href: "/",           label: "STATION",    Icon: Zap },
+  { href: "/crew",       label: "CREW",       Icon: Users },
+  { href: "/missions",   label: "MISSIONS",   Icon: Target },
+  { href: "/ship-comms", label: "SHIP COMMS", Icon: Radio },
+  { href: "/timeline",   label: "TIMELINE",   Icon: Clock },
+  { href: "/templates",  label: "MARKET",     Icon: Store },
 ];
 
 function useTick() {

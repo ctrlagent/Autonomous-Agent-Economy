@@ -7,6 +7,7 @@ import { Pause, ChevronDown, AlertTriangle, Star, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
+import { AssignTaskModal } from "@/components/AssignTaskModal";
 import type { AgentData as PhaserAgent } from "@/lib/stationScene";
 import type { StationScene } from "@/lib/stationScene";
 import { DUNGEON_ROOMS } from "@/lib/dungeonLayout";
@@ -49,6 +50,8 @@ export default function Dashboard() {
   const [selectedDungeonRoomId, setSelectedDungeonRoomId] = useState<string | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
   const [showStationDropdown, setShowStationDropdown] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignedTasks, setAssignedTasks] = useState<Record<number, { task: string; priority: string }>>({});
   const { data: agentTasks } = useListAgentTasks(selectedAgentId ?? 0, { query: { enabled: !!selectedAgentId } });
 
   // Revenue & Phaser scene state
@@ -369,13 +372,21 @@ export default function Dashboard() {
                     ))}
                   </div>
                 )}
+                {assignedTasks[selectedAgent.id] && (
+                  <div style={{ padding: "6px 10px", background: "rgba(77,255,155,0.07)", border: "1px solid rgba(77,255,155,0.3)" }}>
+                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.08em", marginBottom: 3 }}>
+                      ASSIGNED · <span style={{ color: { CRITICAL: "#ff4d6d", HIGH: "#ffb84d", NORMAL: "var(--ae-cyan)", LOW: "#9b6dff" }[assignedTasks[selectedAgent.id].priority] ?? "var(--ae-cyan)" }}>{assignedTasks[selectedAgent.id].priority}</span>
+                    </div>
+                    <div style={{ ...mono, fontSize: 9, color: "#4dff9b" }}>→ {assignedTasks[selectedAgent.id].task}</div>
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: 6, marginTop: "auto" }}>
                   <button className="pixel-btn primary" style={{ flex: 1, fontSize: 8 }}
                     onClick={() => {
                       const pId = `a${selectedAgent.id}`;
                       triggerRef.current?.(pId);
                     }}>UPGRADE</button>
-                  <button className="pixel-btn" style={{ flex: 1, fontSize: 8 }}>ASSIGN</button>
+                  <button className="pixel-btn" style={{ flex: 1, fontSize: 8 }} onClick={() => setShowAssignModal(true)}>ASSIGN</button>
                 </div>
               </motion.div>
 
@@ -549,6 +560,19 @@ export default function Dashboard() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Assign Task Modal */}
+      {showAssignModal && selectedAgent && (
+        <AssignTaskModal
+          agentName={selectedAgent.name}
+          agentRole={selectedAgent.role}
+          currentTask={assignedTasks[selectedAgent.id]?.task ?? selectedAgent.currentTask}
+          onAssign={(task, priority) => {
+            setAssignedTasks(prev => ({ ...prev, [selectedAgent.id]: { task, priority } }));
+          }}
+          onClose={() => setShowAssignModal(false)}
+        />
+      )}
     </div>
   );
 }

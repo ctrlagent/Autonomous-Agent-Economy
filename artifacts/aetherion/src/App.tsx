@@ -9,6 +9,7 @@ import Crew from "@/pages/Crew";
 import Missions from "@/pages/Missions";
 import Timeline from "@/pages/Timeline";
 import Market from "@/pages/Market";
+import ShipComms from "@/pages/ShipComms";
 import RoomDetail from "@/pages/RoomDetail";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ function Router() {
         <Route path="/crew" component={Crew} />
         <Route path="/missions" component={Missions} />
         <Route path="/timeline" component={Timeline} />
+        <Route path="/ship-comms" component={ShipComms} />
         <Route path="/templates" component={Market} />
         <Route path="/stations/:id" component={Dashboard} />
         <Route path="/rooms/:id" component={RoomDetail} />

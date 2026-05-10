@@ -3,6 +3,7 @@ import { useListAgents, useListAgentTasks } from "@workspace/api-client-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
+import { AssignTaskModal } from "@/components/AssignTaskModal";
 
 const FILTERS = ["ALL", "RESEARCH", "STRATEGY", "BUILDER", "CONTENT", "GROWTH", "ANALYTICS"];
 
@@ -16,6 +17,8 @@ export default function Crew() {
   const { data: agents } = useListAgents();
   const [filter, setFilter] = useState("ALL");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignedTasks, setAssignedTasks] = useState<Record<number, { task: string; priority: string }>>({});
 
   const filteredAgents = agents?.filter(
     a => filter === "ALL" || a.role.toUpperCase() === filter
@@ -193,9 +196,17 @@ export default function Crew() {
                 ))}
               </div>
 
+              {assignedTasks[selectedAgent.id] && (
+                <div style={{ padding: "6px 10px", background: "rgba(77,255,155,0.07)", border: "1px solid rgba(77,255,155,0.3)" }}>
+                  <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.08em", marginBottom: 3 }}>
+                    ASSIGNED · <span style={{ color: { CRITICAL: "#ff4d6d", HIGH: "#ffb84d", NORMAL: "var(--ae-cyan)", LOW: "#9b6dff" }[assignedTasks[selectedAgent.id].priority] ?? "var(--ae-cyan)" }}>{assignedTasks[selectedAgent.id].priority}</span>
+                  </div>
+                  <div style={{ ...mono, fontSize: 9, color: "#4dff9b" }}>→ {assignedTasks[selectedAgent.id].task}</div>
+                </div>
+              )}
               <div style={{ display: "flex", gap: 5 }}>
                 <button className="pixel-btn primary" style={{ flex: 1, fontSize: 7 }}>UPGRADE ↑</button>
-                <button className="pixel-btn warning" style={{ flex: 1, fontSize: 7 }}>ASSIGN</button>
+                <button className="pixel-btn warning" style={{ flex: 1, fontSize: 7 }} onClick={() => setShowAssignModal(true)}>ASSIGN</button>
                 <button className="pixel-btn danger" style={{ flex: 1, fontSize: 7 }}>REMOVE</button>
               </div>
 
@@ -232,6 +243,19 @@ export default function Crew() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Assign Task Modal */}
+      {showAssignModal && selectedAgent && (
+        <AssignTaskModal
+          agentName={selectedAgent.name}
+          agentRole={selectedAgent.role}
+          currentTask={assignedTasks[selectedAgent.id]?.task ?? selectedAgent.currentTask}
+          onAssign={(task, priority) => {
+            setAssignedTasks(prev => ({ ...prev, [selectedAgent.id]: { task, priority } }));
+          }}
+          onClose={() => setShowAssignModal(false)}
+        />
+      )}
     </div>
   );
 }
