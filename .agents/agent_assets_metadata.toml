@@ -6,3 +6,9 @@ id = "TucF05qbVf_q4Ns7KOBgv"
 uri = "file://AETHERION_PROJECT_DESCRIPTION.md"
 type = "text"
 title = "AETHERION — Project Description Lengkap"
+
+[[outputs]]
+id = "hglcXy1wPBoVc9UrmuzUa"
+uri = "file://AETHERION_CONTINUATION_PROMPT.md"
+type = "text"
+title = "AETHERION — Continuation Prompt"
