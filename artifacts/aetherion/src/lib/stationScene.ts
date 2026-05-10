@@ -268,6 +268,14 @@ export class StationScene {
   private readonly ZOOM_MIN = 0.5;
   private readonly ZOOM_MAX = 2.5;
 
+  // Pan (drag)
+  onIsPanningChange?: (v: boolean) => void;
+  private isPanning = false;
+  private hasDragged = false;
+  private dragLastX = 0;
+  private dragLastY = 0;
+  private readonly DRAG_THRESHOLD = 4;
+
   setZoom(level: number): void {
     this.zoomLevel = Math.min(this.ZOOM_MAX, Math.max(this.ZOOM_MIN, Math.round(level * 10) / 10));
     if (this.scene) {
@@ -278,7 +286,13 @@ export class StationScene {
 
   zoomIn(): void  { this.setZoom(this.zoomLevel + 0.1); }
   zoomOut(): void { this.setZoom(this.zoomLevel - 0.1); }
-  zoomReset(): void { this.setZoom(1.0); }
+  zoomReset(): void {
+    this.setZoom(1.0);
+    if (this.scene) {
+      this.scene.cameras.main.scrollX = 0;
+      this.scene.cameras.main.scrollY = 0;
+    }
+  }
   getZoom(): number { return this.zoomLevel; }
 
   createPhaserScene(): import('phaser').Types.Scenes.CreateSceneFromObjectConfig {
@@ -308,7 +322,36 @@ export class StationScene {
         self.drawOverlay();
 
         this.input.on('pointerdown', (ptr: import('phaser').Input.Pointer) => {
-          self.handleClick(ptr.x, ptr.y);
+          self.isPanning = true;
+          self.hasDragged = false;
+          self.dragLastX = ptr.x;
+          self.dragLastY = ptr.y;
+          self.onIsPanningChange?.(true);
+        });
+
+        this.input.on('pointermove', (ptr: import('phaser').Input.Pointer) => {
+          if (!self.isPanning) return;
+          const dx = ptr.x - self.dragLastX;
+          const dy = ptr.y - self.dragLastY;
+          if (!self.hasDragged && Math.sqrt(dx * dx + dy * dy) > self.DRAG_THRESHOLD) {
+            self.hasDragged = true;
+          }
+          if (self.hasDragged) {
+            const cam = self.scene!.cameras.main;
+            cam.scrollX -= dx / cam.zoom;
+            cam.scrollY -= dy / cam.zoom;
+          }
+          self.dragLastX = ptr.x;
+          self.dragLastY = ptr.y;
+        });
+
+        this.input.on('pointerup', (ptr: import('phaser').Input.Pointer) => {
+          if (self.isPanning && !self.hasDragged) {
+            self.handleClick(ptr.x, ptr.y);
+          }
+          self.isPanning = false;
+          self.hasDragged = false;
+          self.onIsPanningChange?.(false);
         });
 
         this.input.on('wheel', (_ptr: unknown, _go: unknown, _dx: number, deltaY: number) => {

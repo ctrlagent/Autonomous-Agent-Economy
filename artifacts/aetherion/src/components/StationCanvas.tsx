@@ -25,6 +25,7 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
   const gameRef = useRef<unknown>(null);
   const [label, setLabel] = useState<LevelUpLabel | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [isPanning, setIsPanning] = useState(false);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -47,6 +48,7 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
       stationScene.onRevenueChange = onRevenueChange ?? undefined;
       stationScene.onRoomMissionComplete = onRoomMissionComplete ?? undefined;
       stationScene.onZoomChange = setZoomLevel;
+      stationScene.onIsPanningChange = setIsPanning;
       triggerRef.current = (id) => stationScene.triggerLevelUp(id);
       if (sceneRef) sceneRef.current = stationScene;
 
@@ -119,7 +121,12 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div
         ref={mountRef}
-        style={{ width: '100%', height: '100%', imageRendering: 'pixelated' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          imageRendering: 'pixelated',
+          cursor: isPanning ? 'grabbing' : 'grab',
+        }}
       />
 
       {/* Zoom controls — bottom-left */}
