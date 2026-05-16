@@ -75,13 +75,13 @@ function BootSequence({ onDone }: { onDone: () => void }) {
     const tick = () => {
       if (i < BOOT_LINES.length) {
         setLines((prev) => [...prev, BOOT_LINES[i++]]);
-        setTimeout(tick, i === BOOT_LINES.length ? 500 : 180);
+        setTimeout(tick, i === BOOT_LINES.length ? 500 : 160);
       } else {
-        setTimeout(() => setDone(true), 400);
-        setTimeout(onDone, 1100);
+        setTimeout(() => setDone(true), 350);
+        setTimeout(onDone, 950);
       }
     };
-    setTimeout(tick, 200);
+    setTimeout(tick, 180);
   }, [onDone]);
   return (
     <AnimatePresence>
@@ -89,7 +89,7 @@ function BootSequence({ onDone }: { onDone: () => void }) {
         <motion.div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.7 }}
           style={{
             position: "fixed",
             inset: 0,
@@ -102,48 +102,112 @@ function BootSequence({ onDone }: { onDone: () => void }) {
             padding: 40,
           }}
         >
-          <div
-            style={{
-              ...px,
-              fontSize: 11,
-              color: C.cyan,
-              marginBottom: 32,
-              letterSpacing: "0.08em",
-              textShadow: `0 0 20px ${C.cyan}`,
-            }}
-          >
-            CTRL — CONTROL AGENT
-          </div>
-          <div
-            style={{
-              width: "min(500px,90vw)",
-              borderLeft: `2px solid ${C.cyan}`,
-              paddingLeft: 16,
-            }}
-          >
-            {lines.map((l, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                style={{
-                  ...mono,
-                  fontSize: 9,
-                  color: i === lines.length - 1 ? C.amber : "#6a8a7a",
-                  lineHeight: 2,
-                  letterSpacing: "0.06em",
-                }}
-              >
-                {l}
-              </motion.div>
-            ))}
-            <motion.span
-              animate={{ opacity: [1, 0] }}
-              transition={{ repeat: Infinity, duration: 0.6 }}
-              style={{ ...mono, fontSize: 9, color: C.cyan }}
+          {/* Atmospheric glow behind logo */}
+          <div style={{
+            position: "absolute",
+            width: 480,
+            height: 480,
+            borderRadius: "50%",
+            background: `radial-gradient(ellipse at center, ${C.cyan}18 0%, transparent 70%)`,
+            filter: "blur(40px)",
+            pointerEvents: "none",
+          }} />
+
+          {/* Logo block */}
+          <div style={{ position: "relative", textAlign: "center", marginBottom: 48 }}>
+            <motion.div
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              transition={{ repeat: Infinity, duration: 2.5 }}
+              style={{
+                ...mono,
+                fontSize: 10,
+                color: C.cyan,
+                letterSpacing: "0.28em",
+                marginBottom: 16,
+              }}
             >
-              █
-            </motion.span>
+              ◈ ◈ ◈ AUTONOMOUS AGENT OS ◈ ◈ ◈
+            </motion.div>
+            <div
+              style={{
+                ...px,
+                fontSize: 22,
+                color: C.cyan,
+                letterSpacing: "0.18em",
+                textShadow: `0 0 40px ${C.cyan}, 0 0 80px ${C.cyan}44`,
+              }}
+            >
+              CTRL
+            </div>
+          </div>
+
+          {/* Terminal panel */}
+          <div
+            style={{
+              width: "min(560px,90vw)",
+              border: `1px solid ${C.cyan}44`,
+              background: `${C.surface}cc`,
+              position: "relative",
+            }}
+          >
+            {/* Corner accents */}
+            {([["top","left"],["top","right"],["bottom","left"],["bottom","right"]] as const).map(([v,h]) => (
+              <div key={`${v}${h}`} style={{
+                position: "absolute",
+                [v]: -1, [h]: -1,
+                width: 14, height: 14,
+                borderTop: v === "top" ? `2px solid ${C.cyan}` : "none",
+                borderBottom: v === "bottom" ? `2px solid ${C.cyan}` : "none",
+                borderLeft: h === "left" ? `2px solid ${C.cyan}` : "none",
+                borderRight: h === "right" ? `2px solid ${C.cyan}` : "none",
+              }} />
+            ))}
+            {/* Header bar */}
+            <div style={{
+              padding: "8px 16px",
+              borderBottom: `1px solid ${C.border}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: `${C.bg}88`,
+            }}>
+              <span style={{ ...mono, fontSize: 8, color: "#5a7a6a", letterSpacing: "0.12em" }}>
+                CTRL://SYSTEM/BOOT_LOG
+              </span>
+              <motion.div
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, boxShadow: `0 0 6px ${C.green}`, marginLeft: "auto" }}
+              />
+            </div>
+            <div style={{ padding: "16px 20px 12px" }}>
+              {lines.map((l, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    ...mono,
+                    fontSize: 11,
+                    color: i === lines.length - 1 ? C.amber : "#5a7a6a",
+                    lineHeight: 2.2,
+                    letterSpacing: "0.05em",
+                    borderLeft: i === lines.length - 1 ? `2px solid ${C.amber}` : "2px solid transparent",
+                    paddingLeft: 8,
+                  }}
+                >
+                  {l}
+                </motion.div>
+              ))}
+              <motion.span
+                animate={{ opacity: [1, 0] }}
+                transition={{ repeat: Infinity, duration: 0.55 }}
+                style={{ ...mono, fontSize: 11, color: C.cyan, paddingLeft: 10 }}
+              >
+                █
+              </motion.span>
+            </div>
           </div>
         </motion.div>
       )}
@@ -152,7 +216,9 @@ function BootSequence({ onDone }: { onDone: () => void }) {
 }
 
 /* ─── Animated Grid Background ─────────────────────────────────────────────── */
+let _gridId = 0;
 function GridBg({ opacity = 0.08 }: { opacity?: number }) {
+  const id = useRef(`g${++_gridId}`).current;
   return (
     <div
       style={{
@@ -164,41 +230,42 @@ function GridBg({ opacity = 0.08 }: { opacity?: number }) {
     >
       <svg width="100%" height="100%" style={{ opacity }}>
         <defs>
-          <pattern
-            id="grid-sm"
-            width="40"
-            height="40"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M 40 0 L 0 0 0 40"
-              fill="none"
-              stroke={C.cyan}
-              strokeWidth="0.5"
-            />
+          <pattern id={`${id}-sm`} width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke={C.cyan} strokeWidth="0.5" />
           </pattern>
-          <pattern
-            id="grid-lg"
-            width="200"
-            height="200"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M 200 0 L 0 0 0 200"
-              fill="none"
-              stroke={C.cyan}
-              strokeWidth="1"
-            />
+          <pattern id={`${id}-lg`} width="200" height="200" patternUnits="userSpaceOnUse">
+            <path d="M 200 0 L 0 0 0 200" fill="none" stroke={C.cyan} strokeWidth="1" />
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#grid-sm)" />
-        <rect width="100%" height="100%" fill="url(#grid-lg)" />
+        <rect width="100%" height="100%" fill={`url(#${id}-sm)`} />
+        <rect width="100%" height="100%" fill={`url(#${id}-lg)`} />
       </svg>
+      {/* Atmospheric color orbs */}
+      <div style={{
+        position: "absolute",
+        top: "10%",
+        left: "15%",
+        width: 600,
+        height: 600,
+        borderRadius: "50%",
+        background: `radial-gradient(ellipse, ${C.cyan}0d 0%, transparent 65%)`,
+        filter: "blur(32px)",
+      }} />
+      <div style={{
+        position: "absolute",
+        bottom: "5%",
+        right: "10%",
+        width: 480,
+        height: 480,
+        borderRadius: "50%",
+        background: `radial-gradient(ellipse, ${C.violet}0b 0%, transparent 65%)`,
+        filter: "blur(32px)",
+      }} />
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: `radial-gradient(ellipse at center, transparent 30%, ${C.bg} 80%)`,
+          background: `radial-gradient(ellipse at center, transparent 20%, ${C.bg} 75%)`,
         }}
       />
     </div>
@@ -260,12 +327,12 @@ function SectionHeader({
       <h2
         style={{
           ...px,
-          fontSize: "clamp(12px,2.5vw,20px)",
+          fontSize: "clamp(15px,2.8vw,26px)",
           color: "#fff",
           letterSpacing: "0.04em",
-          lineHeight: 1.8,
-          textShadow: `0 0 30px ${C.cyan}44`,
-          marginBottom: 16,
+          lineHeight: 1.9,
+          textShadow: `0 0 40px ${C.cyan}55`,
+          marginBottom: 20,
         }}
       >
         {title}
@@ -273,12 +340,12 @@ function SectionHeader({
       <p
         style={{
           ...mono,
-          fontSize: 11,
-          color: C.muted,
-          maxWidth: 480,
+          fontSize: 12,
+          color: "#7a8aaa",
+          maxWidth: 520,
           margin: "0 auto",
-          lineHeight: 1.8,
-          letterSpacing: "0.06em",
+          lineHeight: 2,
+          letterSpacing: "0.05em",
         }}
       >
         {sub}
@@ -300,47 +367,37 @@ function StatCard({
   return (
     <div
       style={{
-        border: `1px solid ${color}44`,
-        background: `${color}08`,
-        padding: "14px 20px",
+        border: `1px solid ${color}55`,
+        background: `${color}0d`,
+        padding: "18px 24px",
         position: "relative",
+        boxShadow: `0 0 24px ${color}10`,
       }}
     >
-      <div
-        style={{
+      {[["top","left"],["top","right"],["bottom","left"],["bottom","right"]].map(([v,h]) => (
+        <div key={`${v}${h}`} style={{
           position: "absolute",
-          top: 0,
-          left: 0,
-          width: 8,
-          height: 8,
-          borderTop: `2px solid ${color}`,
-          borderLeft: `2px solid ${color}`,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          right: 0,
-          width: 8,
-          height: 8,
-          borderBottom: `2px solid ${color}`,
-          borderRight: `2px solid ${color}`,
-        }}
-      />
+          [v]: -1, [h]: -1,
+          width: 12, height: 12,
+          borderTop: v === "top" ? `2px solid ${color}` : "none",
+          borderBottom: v === "bottom" ? `2px solid ${color}` : "none",
+          borderLeft: h === "left" ? `2px solid ${color}` : "none",
+          borderRight: h === "right" ? `2px solid ${color}` : "none",
+        }} />
+      ))}
       <div
         style={{
           ...px,
-          fontSize: 18,
+          fontSize: 20,
           color,
-          textShadow: `0 0 20px ${color}`,
-          marginBottom: 6,
+          textShadow: `0 0 24px ${color}`,
+          marginBottom: 8,
         }}
       >
         {value}
       </div>
       <div
-        style={{ ...mono, fontSize: 8, color: C.muted, letterSpacing: "0.1em" }}
+        style={{ ...mono, fontSize: 9, color: "#6a7a9a", letterSpacing: "0.12em" }}
       >
         {label}
       </div>
@@ -360,37 +417,48 @@ function PixelBtn({
   href?: string;
   onClick?: () => void;
 }) {
-  const style: React.CSSProperties = {
-    ...px,
-    fontSize: 9,
-    padding: "14px 28px",
-    letterSpacing: "0.06em",
-    border: `2px solid ${primary ? C.cyan : C.border}`,
-    background: primary ? `${C.cyan}18` : "transparent",
-    color: primary ? C.cyan : C.muted,
-    cursor: "pointer",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    textDecoration: "none",
-    transition: "all 0.15s",
-    position: "relative",
-    boxShadow: primary ? `0 0 20px ${C.cyan}33` : "none",
-  };
   const [hovered, setHovered] = useState(false);
-  const hoverStyle: React.CSSProperties = hovered
+  const style: React.CSSProperties = primary
     ? {
-        background: primary ? `${C.cyan}30` : `${C.border}33`,
-        boxShadow: `0 0 28px ${primary ? C.cyan : C.muted}44`,
-        color: primary ? C.cyan : "#fff",
-        borderColor: primary ? C.cyan : "#fff",
+        ...px,
+        fontSize: 10,
+        padding: "16px 32px",
+        letterSpacing: "0.08em",
+        border: `2px solid ${C.cyan}`,
+        background: hovered ? C.cyan : `${C.cyan}22`,
+        color: hovered ? C.bg : C.cyan,
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+        textDecoration: "none",
+        transition: "all 0.18s ease",
+        position: "relative",
+        boxShadow: hovered
+          ? `0 0 40px ${C.cyan}66, 0 0 80px ${C.cyan}22`
+          : `0 0 24px ${C.cyan}33`,
       }
-    : {};
+    : {
+        ...px,
+        fontSize: 10,
+        padding: "16px 32px",
+        letterSpacing: "0.08em",
+        border: `2px solid ${hovered ? "#fff" : C.border}`,
+        background: hovered ? `${C.border}55` : "transparent",
+        color: hovered ? "#fff" : "#6a7a9a",
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+        textDecoration: "none",
+        transition: "all 0.18s ease",
+        position: "relative",
+      };
   if (href)
     return (
       <Link
         href={href}
-        style={{ ...style, ...hoverStyle }}
+        style={style}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
@@ -399,7 +467,7 @@ function PixelBtn({
     );
   return (
     <button
-      style={{ ...style, ...hoverStyle }}
+      style={style}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onClick}
@@ -444,32 +512,33 @@ function FloatingEvents() {
     <div
       style={{
         position: "absolute",
-        bottom: 80,
-        right: 24,
+        bottom: 16,
+        right: 16,
         zIndex: 20,
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        gap: 7,
         pointerEvents: "none",
+        maxWidth: 280,
       }}
     >
       <AnimatePresence>
         {events.map((ev) => (
           <motion.div
             key={ev.id}
-            initial={{ opacity: 0, x: 40, scale: 0.9 }}
+            initial={{ opacity: 0, x: 50, scale: 0.88 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ duration: 0.35 }}
+            exit={{ opacity: 0, x: 50, scale: 0.9 }}
+            transition={{ duration: 0.32, type: "spring", stiffness: 260, damping: 22 }}
             style={{
               ...mono,
-              fontSize: 8,
-              padding: "6px 12px",
-              background: `${ev.color}15`,
-              border: `1px solid ${ev.color}44`,
+              fontSize: 10,
+              padding: "8px 14px",
+              background: `${ev.color}18`,
+              border: `1px solid ${ev.color}55`,
               color: ev.color,
-              letterSpacing: "0.06em",
-              boxShadow: `0 0 12px ${ev.color}22`,
+              letterSpacing: "0.05em",
+              boxShadow: `0 0 16px ${ev.color}25`,
               whiteSpace: "nowrap",
             }}
           >
@@ -536,27 +605,27 @@ function HeroSection() {
           background: `${C.surface}cc`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width="22" height="22" viewBox="0 0 22 22">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <svg width="28" height="28" viewBox="0 0 28 28">
             <polygon
-              points="11,1 21,6 21,16 11,21 1,16 1,6"
+              points="14,2 26,8 26,20 14,26 2,20 2,8"
               fill="none"
               stroke={C.cyan}
-              strokeWidth="1.5"
+              strokeWidth="1.8"
             />
             <polygon
-              points="11,5 17,8.5 17,13.5 11,17 5,13.5 5,8.5"
+              points="14,7 21,11 21,17 14,21 7,17 7,11"
               fill="none"
               stroke={C.cyan}
-              strokeWidth="0.5"
-              opacity="0.35"
+              strokeWidth="0.6"
+              opacity="0.4"
             />
             <text
-              x="11"
-              y="15.5"
+              x="14"
+              y="19"
               textAnchor="middle"
               fill={C.amber}
-              fontSize="9"
+              fontSize="10"
               fontFamily="'Press Start 2P',monospace"
             >
               C
@@ -565,10 +634,10 @@ function HeroSection() {
           <span
             style={{
               ...px,
-              fontSize: 10,
+              fontSize: 12,
               color: "#fff",
-              letterSpacing: "0.06em",
-              textShadow: `0 0 12px ${C.cyan}55`,
+              letterSpacing: "0.08em",
+              textShadow: `0 0 16px ${C.cyan}66`,
             }}
           >
             CTRL
@@ -576,27 +645,39 @@ function HeroSection() {
           <span
             style={{
               ...mono,
-              fontSize: 7,
+              fontSize: 8,
               color: C.cyan,
-              padding: "2px 6px",
-              border: `1px solid ${C.cyan}44`,
-              marginLeft: 8,
+              padding: "3px 8px",
+              border: `1px solid ${C.cyan}55`,
+              background: `${C.cyan}10`,
+              marginLeft: 6,
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
             }}
           >
+            <motion.span
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ repeat: Infinity, duration: 1.4 }}
+              style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: C.green, boxShadow: `0 0 6px ${C.green}` }}
+            />
             ONLINE
           </span>
         </div>
-        <div style={{ display: "flex", gap: 24 }}>
+        <div style={{ display: "flex", gap: 28 }}>
           {["STATION", "CREW", "MISSIONS", "MARKET"].map((item) => (
             <span
               key={item}
               style={{
                 ...mono,
-                fontSize: 8,
-                color: C.muted,
-                letterSpacing: "0.1em",
+                fontSize: 9,
+                color: "#5a6a8a",
+                letterSpacing: "0.12em",
                 cursor: "pointer",
+                transition: "color 0.15s",
               }}
+              onMouseEnter={e => (e.currentTarget.style.color = C.cyan)}
+              onMouseLeave={e => (e.currentTarget.style.color = "#5a6a8a")}
             >
               {item}
             </span>
@@ -604,13 +685,15 @@ function HeroSection() {
         </div>
         <Link href="/app" style={{
               ...px,
-              fontSize: 8,
-              color: C.cyan,
+              fontSize: 9,
+              color: C.bg,
               textDecoration: "none",
-              padding: "8px 16px",
-              border: `1px solid ${C.cyan}`,
-              background: `${C.cyan}15`,
-              letterSpacing: "0.06em",
+              padding: "10px 20px",
+              border: `2px solid ${C.cyan}`,
+              background: C.cyan,
+              letterSpacing: "0.08em",
+              boxShadow: `0 0 20px ${C.cyan}44`,
+              transition: "all 0.18s",
             }}>
             ENTER APP →
         </Link>
@@ -629,49 +712,66 @@ function HeroSection() {
         }}
       >
         {/* Left copy */}
-        <div style={{ flexShrink: 0, width: "min(480px,42%)" }}>
+        <div style={{ flexShrink: 0, width: "min(520px,44%)" }}>
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, x: -36 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.35 }}
               style={{
                 ...mono,
-                fontSize: 8,
+                fontSize: 9,
                 color: C.cyan,
-                letterSpacing: "0.2em",
-                marginBottom: 20,
+                letterSpacing: "0.24em",
+                marginBottom: 24,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
               }}
             >
-              ◈ AUTONOMOUS AGENT OS ◈
-            </div>
+              <motion.span
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ repeat: Infinity, duration: 1.8 }}
+              >◈</motion.span>
+              AUTONOMOUS AGENT OS
+              <motion.span
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ repeat: Infinity, duration: 1.8, delay: 0.9 }}
+              >◈</motion.span>
+            </motion.div>
             <h1
               style={{
                 ...px,
-                fontSize: "clamp(20px,4vw,42px)",
+                fontSize: "clamp(22px,4.2vw,46px)",
                 color: "#fff",
-                lineHeight: 1.6,
+                lineHeight: 1.65,
                 letterSpacing: "0.04em",
-                textShadow: `0 0 40px ${C.cyan}44`,
-                marginBottom: 20,
+                textShadow: `0 0 60px ${C.cyan}44`,
+                marginBottom: 24,
               }}
             >
               CTRL
               <br />
-              <span style={{ color: C.cyan }}>Command</span>
+              <span style={{
+                color: C.cyan,
+                textShadow: `0 0 40px ${C.cyan}88, 0 0 80px ${C.cyan}33`,
+              }}>Command</span>
               <br />
               AI Economies.
             </h1>
             <p
               style={{
                 ...mono,
-                fontSize: 10,
-                color: C.muted,
-                lineHeight: 1.9,
+                fontSize: 12,
+                color: "#8a9ab8",
+                lineHeight: 2,
                 letterSpacing: "0.04em",
-                marginBottom: 36,
-                maxWidth: 380,
+                marginBottom: 40,
+                maxWidth: 400,
               }}
             >
               Build, deploy, and scale entire businesses with autonomous AI
@@ -680,18 +780,18 @@ function HeroSection() {
             <div
               style={{
                 display: "flex",
-                gap: 12,
+                gap: 14,
                 flexWrap: "wrap",
-                marginBottom: 40,
+                marginBottom: 44,
               }}
             >
               <PixelBtn primary href="/app">
-                ENTER STATION <ArrowRight size={12} />
+                ENTER STATION <ArrowRight size={14} />
               </PixelBtn>
               <PixelBtn>VIEW LIVE SYSTEM</PixelBtn>
             </div>
             {/* Live stats strip */}
-            <div style={{ display: "flex", gap: 24 }}>
+            <div style={{ display: "flex", gap: 0, borderTop: `1px solid ${C.border}`, paddingTop: 24 }}>
               {[
                 {
                   label: "AGENTS ACTIVE",
@@ -704,14 +804,19 @@ function HeroSection() {
                   color: C.green,
                 },
                 { label: "UPTIME", value: `${hh}:${mm}:${ss}`, color: C.amber },
-              ].map((s) => (
-                <div key={s.label}>
+              ].map((s, i) => (
+                <div key={s.label} style={{
+                  paddingRight: 28,
+                  marginRight: 28,
+                  borderRight: i < 2 ? `1px solid ${C.border}` : "none",
+                }}>
                   <div
                     style={{
                       ...px,
-                      fontSize: 14,
+                      fontSize: 15,
                       color: s.color,
-                      textShadow: `0 0 12px ${s.color}`,
+                      textShadow: `0 0 16px ${s.color}`,
+                      marginBottom: 6,
                     }}
                   >
                     {s.value}
@@ -719,10 +824,9 @@ function HeroSection() {
                   <div
                     style={{
                       ...mono,
-                      fontSize: 7,
-                      color: C.muted,
-                      letterSpacing: "0.1em",
-                      marginTop: 4,
+                      fontSize: 8,
+                      color: "#5a6a8a",
+                      letterSpacing: "0.12em",
                     }}
                   >
                     {s.label}
@@ -735,18 +839,30 @@ function HeroSection() {
 
         {/* Right: Live Phaser station */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-          style={{ flex: 1, minHeight: 480, position: "relative" }}
+          initial={{ opacity: 0, scale: 0.93, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 1.1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          style={{ flex: 1, minHeight: 540, position: "relative" }}
         >
+          {/* Outer atmospheric glow */}
+          <div style={{
+            position: "absolute",
+            inset: -32,
+            borderRadius: 4,
+            background: `radial-gradient(ellipse, ${C.cyan}10 0%, transparent 70%)`,
+            filter: "blur(24px)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }} />
+
           {/* Monitor frame */}
           <div
             style={{
-              border: `2px solid ${C.cyan}44`,
+              border: `2px solid ${C.cyan}66`,
               position: "relative",
-              boxShadow: `0 0 60px ${C.cyan}20, inset 0 0 40px rgba(0,0,0,0.5)`,
-              background: "rgba(0,0,0,0.6)",
+              boxShadow: `0 0 80px ${C.cyan}22, 0 0 40px ${C.cyan}10, inset 0 0 40px rgba(0,0,0,0.5)`,
+              background: "rgba(0,0,0,0.7)",
+              zIndex: 1,
             }}
           >
             {/* Corner accents */}
@@ -762,8 +878,8 @@ function HeroSection() {
                   position: "absolute",
                   [v]: -2,
                   [h]: -2,
-                  width: 16,
-                  height: 16,
+                  width: 24,
+                  height: 24,
                   borderTop: v === "top" ? `3px solid ${C.cyan}` : "none",
                   borderBottom: v === "bottom" ? `3px solid ${C.cyan}` : "none",
                   borderLeft: h === "left" ? `3px solid ${C.cyan}` : "none",
@@ -774,30 +890,31 @@ function HeroSection() {
             {/* Status bar */}
             <div
               style={{
-                padding: "6px 12px",
+                padding: "8px 16px",
                 borderBottom: `1px solid ${C.border}`,
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
-                background: `${C.surface}cc`,
+                gap: 10,
+                background: `${C.surface}ee`,
               }}
             >
               <motion.div
-                animate={{ opacity: [1, 0.3, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
+                animate={{ opacity: [1, 0.25, 1] }}
+                transition={{ repeat: Infinity, duration: 1.8 }}
                 style={{
-                  width: 6,
-                  height: 6,
+                  width: 8,
+                  height: 8,
                   borderRadius: "50%",
                   background: C.green,
-                  boxShadow: `0 0 6px ${C.green}`,
+                  boxShadow: `0 0 8px ${C.green}`,
+                  flexShrink: 0,
                 }}
               />
               <span
                 style={{
                   ...mono,
-                  fontSize: 7,
-                  color: C.muted,
+                  fontSize: 9,
+                  color: "#8a9ab8",
                   letterSpacing: "0.1em",
                 }}
               >
@@ -806,15 +923,16 @@ function HeroSection() {
               <span
                 style={{
                   ...mono,
-                  fontSize: 7,
+                  fontSize: 9,
                   color: C.cyan,
                   marginLeft: "auto",
+                  letterSpacing: "0.08em",
                 }}
               >
                 SIGNAL: STABLE
               </span>
             </div>
-            <div style={{ height: 400 }}>
+            <div style={{ height: 480 }}>
               <StationCanvas
                 onAgentSelect={() => {}}
                 onRoomSelect={() => {}}
@@ -824,11 +942,12 @@ function HeroSection() {
             </div>
             <div
               style={{
-                padding: "6px 12px",
+                padding: "8px 16px",
                 borderTop: `1px solid ${C.border}`,
                 display: "flex",
-                gap: 16,
-                background: `${C.surface}cc`,
+                gap: 14,
+                flexWrap: "wrap",
+                background: `${C.surface}ee`,
               }}
             >
               {[
@@ -852,7 +971,7 @@ function HeroSection() {
                     key={r}
                     style={{
                       ...mono,
-                      fontSize: 6,
+                      fontSize: 8,
                       color: colors[i],
                       letterSpacing: "0.06em",
                     }}
@@ -871,22 +990,28 @@ function HeroSection() {
       <div
         style={{
           textAlign: "center",
-          padding: "20px 0",
+          padding: "24px 0",
           position: "relative",
           zIndex: 10,
         }}
       >
         <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
+          animate={{ y: [0, 8, 0], opacity: [0.5, 1, 0.5] }}
+          transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
           style={{
             ...mono,
-            fontSize: 8,
-            color: C.muted,
-            letterSpacing: "0.1em",
+            fontSize: 9,
+            color: "#4a5a70",
+            letterSpacing: "0.16em",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
           }}
         >
-          ▼ SCROLL TO EXPLORE ▼
+          <span style={{ width: 40, height: 1, background: `linear-gradient(to left, ${C.border}, transparent)`, display: "inline-block" }} />
+          SCROLL TO EXPLORE
+          <span style={{ width: 40, height: 1, background: `linear-gradient(to right, ${C.border}, transparent)`, display: "inline-block" }} />
         </motion.div>
       </div>
     </Section>
@@ -2704,8 +2829,27 @@ export default function Marketing() {
         html { scroll-behavior: smooth; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #0a0b0f; }
-        ::-webkit-scrollbar-thumb { background: #1e2130; }
+        ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4df0d844; }
         @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(0.8)} }
+        @keyframes scanline-sweep {
+          0% { transform: translateY(-100%); opacity: 0; }
+          10% { opacity: 0.06; }
+          90% { opacity: 0.06; }
+          100% { transform: translateY(100vh); opacity: 0; }
+        }
+        @keyframes crt-flicker {
+          0%,100% { opacity: 1; }
+          92% { opacity: 1; }
+          93% { opacity: 0.88; }
+          94% { opacity: 1; }
+          98% { opacity: 1; }
+          99% { opacity: 0.92; }
+        }
+        @keyframes neon-pulse {
+          0%,100% { text-shadow: 0 0 20px #4df0d844; }
+          50% { text-shadow: 0 0 40px #4df0d8aa, 0 0 80px #4df0d833; }
+        }
       `}</style>
 
       <BootSequence onDone={handleDone} />
