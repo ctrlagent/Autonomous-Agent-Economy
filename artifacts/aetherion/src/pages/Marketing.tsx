@@ -1130,7 +1130,7 @@ function TimelineSection() {
           {/* Timeline */}
           <div style={{ position: "relative" }}>
             <div style={{ position: "absolute", left: 16, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, ${C.cyan}44, transparent)` }} />
-            {(activity ?? []).slice(0, 10).map((item, i) => {
+            {(activity ?? []).slice(0, 5).map((item, i) => {
               const color = roleHex(item.agentRole ?? "");
               return (
                 <motion.div key={item.id} initial={{ opacity: 0, x: -20 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ delay: i * 0.06, duration: 0.4 }} style={{ display: "flex", gap: 18, marginBottom: 16, paddingLeft: 42, position: "relative" }}>
