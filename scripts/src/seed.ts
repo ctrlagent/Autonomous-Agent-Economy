@@ -131,18 +131,20 @@ async function seed() {
   ];
 
   await client.query(`
-    INSERT INTO tasks (agent_id, title, description, status, progress, priority)
+    INSERT INTO tasks (agent_id, title, description, status, progress, priority, completed_at)
     VALUES
-      ($1, 'ETH Alpha Signal Scan', 'Scan top 500 wallets for emerging alpha signals', 'in_progress', 67, 'high'),
-      ($1, 'Weekly Chain Analysis', 'Full on-chain analytics report generation', 'completed', 100, 'medium'),
-      ($1, 'MEV Opportunity Map', 'Identify MEV extraction opportunities on Uniswap v3', 'pending', 0, 'high'),
-      ($2, 'Whale Wallet Watch', 'Track top 100 whale wallets for unusual activity', 'in_progress', 45, 'critical'),
-      ($2, 'Sentiment Analysis Run', 'Cross-platform crypto sentiment scoring', 'completed', 100, 'medium'),
-      ($3, 'AAVE Yield Strategy', 'Model optimal yield allocation across AAVE pools', 'in_progress', 82, 'critical'),
-      ($3, 'Risk Assessment Report', 'Full portfolio risk assessment with VaR calculations', 'in_progress', 55, 'high'),
-      ($4, 'GMX Momentum Backtest', 'Historical backtest of momentum strategy 2023-2024', 'in_progress', 91, 'high'),
-      ($5, 'Smart Contract Deploy', 'Deploy vault contract to Arbitrum mainnet', 'in_progress', 38, 'critical'),
-      ($6, 'Liquidity Pool Monitor', 'Real-time monitoring of 20 key liquidity pools', 'in_progress', 71, 'high')
+      ($1, 'ETH Alpha Signal Scan', 'Scan top 500 wallets for emerging alpha signals', 'in_progress', 67, 'high', NULL),
+      ($1, 'Weekly Chain Analysis', 'Full on-chain analytics report generation', 'completed', 100, 'medium', NOW() - INTERVAL '2 hours'),
+      ($1, 'MEV Opportunity Map', 'Identify MEV extraction opportunities on Uniswap v3', 'pending', 0, 'high', NULL),
+      ($2, 'Whale Wallet Watch', 'Track top 100 whale wallets for unusual activity', 'in_progress', 45, 'critical', NULL),
+      ($2, 'Sentiment Analysis Run', 'Cross-platform crypto sentiment scoring', 'completed', 100, 'medium', NOW() - INTERVAL '4 hours'),
+      ($3, 'AAVE Yield Strategy', 'Model optimal yield allocation across AAVE pools', 'in_progress', 82, 'critical', NULL),
+      ($3, 'Risk Assessment Report', 'Full portfolio risk assessment with VaR calculations', 'completed', 100, 'high', NOW() - INTERVAL '1 hour'),
+      ($4, 'GMX Momentum Backtest', 'Historical backtest of momentum strategy 2023-2024', 'in_progress', 91, 'high', NULL),
+      ($5, 'Smart Contract Deploy', 'Deploy vault contract to Arbitrum mainnet', 'completed', 100, 'critical', NOW() - INTERVAL '3 hours'),
+      ($6, 'Liquidity Pool Monitor', 'Real-time monitoring of 20 key liquidity pools', 'in_progress', 71, 'high', NULL),
+      ($1, 'On-chain Flow Analysis', 'Deep analysis of cross-chain capital flows', 'completed', 100, 'medium', NOW() - INTERVAL '30 minutes'),
+      ($2, 'Whale Alert System', 'Configure automated whale movement alerts', 'completed', 100, 'high', NOW() - INTERVAL '90 minutes')
   `, [allAgentIds[0], allAgentIds[1], allAgentIds[2], allAgentIds[3], allAgentIds[4], allAgentIds[5]]);
 
   const now = new Date();
