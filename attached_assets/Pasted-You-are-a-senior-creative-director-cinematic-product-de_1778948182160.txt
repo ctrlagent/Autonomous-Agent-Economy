@@ -1,0 +1,512 @@
+You are a senior creative director, cinematic product designer, interaction designer, motion designer, and full-stack frontend architect.
+
+Your task is to design and build the official public marketing website for CTRL — Control Agent.
+
+This is NOT a SaaS landing page.
+This is NOT a normal AI startup website.
+This must feel like an interactive sci-fi operating system experience.
+
+The final result must feel like:
+“Apple-level polish meets retro cyberpunk command center meets live AI civilization simulation.”
+
+The website must look expensive.
+Every section must feel alive.
+Everything should feel rendered in real-time.
+No static mockup feeling.
+
+The website must heavily reuse REAL UI COMPONENTS and REAL LIVE SYSTEMS from the actual CTRL application.
+
+IMPORTANT:
+DO NOT use fake screenshots.
+DO NOT use static images.
+DO NOT use prerecorded videos.
+DO NOT fake app previews with PNGs.
+
+Instead:
+Embed and render REAL LIVE UI modules directly from the CTRL app frontend codebase.
+
+The marketing website must feel like a living window into the actual autonomous agent system.
+
+==================================================
+GLOBAL DESIGN DIRECTION
+=======================
+
+Visual Identity:
+
+* Retro CRT sci-fi command center
+* Pixel dungeon aesthetic
+* Neon holographic interface
+* Black space-station atmosphere
+* Live data-driven feeling
+* Dynamic futuristic dashboard
+* High-end cinematic interactions
+
+Mood:
+
+* A living AI civilization
+* Autonomous digital economy
+* Real-time operational intelligence
+* Deep space command terminal
+* Multi-agent empire management
+
+Main Experience Goals:
+
+* Visitors instantly understand CTRL is different
+* Every scroll reveals another layer of the AI economy
+* Motion and interactivity constantly reward exploration
+* The website itself feels like an operating system
+* Visitors feel they are entering a live AI station
+
+==================================================
+TECH STACK
+==========
+
+Use:
+
+* React 19
+* Vite
+* Tailwind CSS v4
+* Framer Motion
+* Phaser 3
+* TypeScript
+* GSAP for cinematic transitions
+* Lenis smooth scrolling
+* Motion One for subtle UI animations
+* React Three Fiber ONLY for optional background atmosphere
+* Wouter routing if needed
+
+==================================================
+WEBSITE STRUCTURE
+=================
+
+Create the following sections in order:
+
+1. HERO SECTION
+2. LIVE STATION PREVIEW
+3. AGENT CREW SYSTEM
+4. SHIP COMMS NETWORK
+5. MISSION ECONOMY
+6. TEMPLATE MARKETPLACE
+7. TIMELINE + LIVE ACTIVITY
+8. ARCHITECTURE SECTION
+9. FINAL CTA SECTION
+
+==================================================
+
+1. HERO SECTION
+   ==================================================
+
+The hero must be unforgettable.
+
+Layout:
+
+* Fullscreen immersive experience
+* Massive animated background
+* Floating grid
+* CRT scanlines
+* Holographic particles
+* Dynamic glowing borders
+* Subtle parallax camera movement
+
+Centerpiece:
+A LIVE MINI STATION rendered using REAL Phaser 3 code from the actual CTRL app.
+
+Requirements:
+
+* Real agents walking
+* Real room animations
+* Real task movement
+* Real room lighting
+* Real idle animations
+* Real pixel dungeon rendering
+* NOT a simplified mockup
+
+The station should appear embedded inside the page like:
+“A live operational station currently running.”
+
+Hero Copy:
+CTRL
+Command Autonomous AI Economies
+
+Subtext:
+Build, deploy, and scale entire businesses with autonomous AI crews operating inside living digital stations.
+
+CTA Buttons:
+
+* Enter Station
+* View Live System
+
+Hero Motion:
+
+* Agents walking continuously
+* Tiny XP popups
+* Random activity events
+* Floating holographic UI windows
+* Animated glowing grid
+* Scanline sweep every few seconds
+
+Add cinematic intro transition:
+
+* Boot sequence
+* Signal stabilization
+* System online animation
+
+==================================================
+2. LIVE STATION PREVIEW
+=======================
+
+This is the core showcase section.
+
+VERY IMPORTANT:
+This must directly render REAL APP COMPONENTS from the actual CTRL application.
+
+NOT screenshots.
+
+Create a giant immersive showcase:
+
+* Large Phaser station canvas
+* Dynamic room activity
+* Zoom transitions
+* Hover interactions
+* Real UI panels
+
+Layout:
+Left:
+
+* Giant live station simulation
+
+Right:
+
+* Live station data panels
+* Revenue
+* Active agents
+* Tasks
+* Rooms
+* Mission progress
+* Agent efficiency
+
+Interactive Features:
+
+* Hovering rooms highlights active agents
+* Clicking agents opens live profile modal
+* Floating event notifications
+* Dynamic task routing lines
+* Animated signal pings
+
+The section should feel like:
+“Visitors are peeking into a real autonomous economy.”
+
+==================================================
+3. AGENT CREW SYSTEM
+====================
+
+Showcase all agent classes.
+
+Render REAL agent cards from the app UI.
+
+Each agent card:
+
+* Pixel portrait
+* Live status
+* XP progress
+* Current task
+* Role color
+* Animated glow
+* Idle animation
+
+Create cinematic horizontal scrolling section.
+
+Add:
+
+* Auto-scrolling crew wall
+* Dynamic activity updates
+* Hover reveals detailed stats
+* Agent personality logs
+* Level-up animations
+
+Background:
+
+* Floating data streams
+* Subtle terminal noise
+* Moving starfield
+
+Special Feature:
+A giant center hologram displaying:
+“19 AGENTS ACTIVE”
+
+==================================================
+4. SHIP COMMS NETWORK
+=====================
+
+Build a cinematic communications center.
+
+Render REAL ship communications UI directly from app components.
+
+Features:
+
+* Live message feed
+* Typing animation
+* Agent signal activity
+* Role activity graphs
+* Frequency spectrum animation
+* Interactive channels sidebar
+
+Add ambient effects:
+
+* Signal flickers
+* Message popups
+* Scanning pulses
+* Data transmission waves
+
+This section should feel like:
+“A real AI civilization communicating internally.”
+
+==================================================
+5. MISSION ECONOMY
+==================
+
+Create a mission-control showcase.
+
+Render REAL mission components.
+
+Features:
+
+* Progress bars
+* Rewards
+* XP
+* Locked missions
+* Live updates
+* Animated completion effects
+
+Special visual:
+Huge animated mission map with connected nodes.
+
+Scrolling behavior:
+As users scroll:
+
+* Missions activate
+* Progress bars animate
+* Reward systems pulse
+* Network expands
+
+==================================================
+6. TEMPLATE MARKETPLACE
+=======================
+
+This section must feel like:
+“Steam marketplace for autonomous businesses.”
+
+Show template cards:
+
+* SaaS Station
+* E-Commerce Empire
+* Media Network
+* Trading Station
+* AI Research Lab
+* Meme Coin Factory
+
+Each template:
+
+* Animated preview
+* Crew composition
+* Mission type
+* Revenue profile
+* Difficulty level
+* Deployment animation
+
+Hover:
+
+* Opens holographic expansion
+* Shows internal station structure
+* Displays active crews
+
+==================================================
+7. TIMELINE + LIVE ACTIVITY
+===========================
+
+Build a real-time operational feed.
+
+Create:
+
+* Massive scrolling activity system
+* Dynamic live events
+* Agent deployment logs
+* Revenue spikes
+* Mission completions
+* Agent level-ups
+
+Features:
+
+* Auto-updating timeline
+* Colored event categories
+* Glowing event indicators
+* Smooth animated insertion
+
+Add:
+
+* Floating alert popups
+* Notification pulses
+* Real-time simulation feeling
+
+==================================================
+8. ARCHITECTURE SECTION
+=======================
+
+Present CTRL as a serious technology platform.
+
+Design:
+
+* Interactive system blueprint
+* Animated architecture diagrams
+* Live API connections
+* Data flow visualization
+
+Show:
+Frontend:
+React 19 + Vite + Tailwind + Phaser
+
+Backend:
+Express 5 + PostgreSQL + Drizzle
+
+Systems:
+
+* Autonomous agents
+* Mission engine
+* Agent memory
+* Marketplace
+* Ship communications
+* Multi-station economy
+
+Visual style:
+
+* Tactical command schematics
+* Cyberpunk engineering interface
+* Animated node routing
+
+==================================================
+9. FINAL CTA SECTION
+====================
+
+This section must feel legendary.
+
+Fullscreen cinematic ending.
+
+Massive glowing station floating in space.
+
+Agents actively moving inside.
+
+Copy:
+Command Your Agents.
+Control Your Economy.
+
+Subtext:
+The operating system for autonomous AI civilizations.
+
+Buttons:
+
+* Launch CTRL
+* Enter Command Center
+
+Ending animation:
+
+* Station powers up
+* Grid expands infinitely
+* Signal pulse radiates outward
+* Final CRT shutdown flicker
+
+==================================================
+ANIMATION SYSTEM
+================
+
+The ENTIRE website must feel alive.
+
+Use:
+
+* Framer Motion
+* GSAP
+* Smooth inertia
+* Cinematic transitions
+* Scanline sweeps
+* Pixel flickers
+* Neon glow pulses
+* Live data movement
+* Dynamic UI reactions
+
+Avoid:
+
+* Generic fade-ins
+* Basic startup animations
+* Normal SaaS motion
+
+Everything must feel custom-built.
+
+==================================================
+AUDIO SYSTEM
+============
+
+Add OPTIONAL atmospheric audio system:
+
+* Low ambient station hum
+* Data blips
+* Radar pings
+* Terminal typing
+* Signal sweeps
+
+Muted by default.
+
+==================================================
+PERFORMANCE REQUIREMENTS
+========================
+
+Despite heavy visuals:
+
+* Must stay performant
+* Lazy load sections
+* Virtualize large feeds
+* Optimize Phaser rendering
+* Reduce unnecessary re-renders
+* Mobile adaptive rendering modes
+
+==================================================
+IMPORTANT IMPLEMENTATION RULES
+==============================
+
+MOST IMPORTANT RULE:
+The website must reuse REAL UI and REAL CODE from the actual CTRL app.
+
+DO NOT:
+
+* Rebuild fake marketing versions
+* Use screenshots
+* Use static fake previews
+
+DO:
+
+* Extract live components
+* Reuse Phaser systems
+* Reuse real agent cards
+* Reuse real mission panels
+* Reuse real comms UI
+* Reuse real timeline feeds
+
+The marketing site must feel like:
+“A portal into the actual autonomous AI operating system.”
+
+==================================================
+FINAL QUALITY TARGET
+====================
+
+The final website should feel comparable to:
+
+* Love Death + Robots UI aesthetic
+* Star Citizen interface polish
+* Apple product storytelling
+* Arc browser interaction quality
+* High-budget sci-fi game menus
+* Premium AI operating system reveal
+
+People should immediately think:
+“This is not another AI tool.”
+“This feels like the future.”
+
+Now build the entire website architecture, layout system, interaction system, animation logic, section composition, component reuse strategy, and cinematic frontend implementation at production quality.
