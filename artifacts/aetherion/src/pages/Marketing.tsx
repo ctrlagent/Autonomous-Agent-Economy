@@ -342,20 +342,24 @@ function TiltCard({ children, strength = 8, style }: { children: React.ReactNode
 }
 
 /* ─── Stat Card ─────────────────────────────────────────────────────────────── */
-function StatCard({ label, value, color = C.cyan }: { label: string; value: string; color?: string }) {
+function StatCard({ label, value, color = C.cyan, desc, trend }: { label: string; value: string; color?: string; desc?: string; trend?: string }) {
   const tilt = use3DTilt(6);
   return (
     <div
       ref={tilt.ref}
       onMouseMove={tilt.onMouseMove}
       onMouseLeave={tilt.onMouseLeave}
-      style={{ border: `1px solid ${color}55`, background: `${color}0d`, padding: "16px 20px", position: "relative", boxShadow: `0 0 24px ${color}10`, cursor: "default" }}
+      style={{ border: `1px solid ${color}55`, background: `${color}0d`, padding: "14px 16px", position: "relative", boxShadow: `0 0 24px ${color}10`, cursor: "default" }}
       className="text-[14px]">
       {[["top","left"],["top","right"],["bottom","left"],["bottom","right"]].map(([v,h]) => (
         <div key={`${v}${h}`} style={{ position: "absolute", [v]: -1, [h]: -1, width: 10, height: 10, borderTop: v === "top" ? `2px solid ${color}` : "none", borderBottom: v === "bottom" ? `2px solid ${color}` : "none", borderLeft: h === "left" ? `2px solid ${color}` : "none", borderRight: h === "right" ? `2px solid ${color}` : "none" }} />
       ))}
-      <div style={{ ...px, fontSize: 17, color, textShadow: `0 0 24px ${color}`, marginBottom: 6 }}>{value}</div>
-      <div style={{ ...mono, fontSize: 8, color: "#6a7a9a", letterSpacing: "0.12em" }}>{label}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+        <div style={{ ...px, fontSize: 15, color, textShadow: `0 0 24px ${color}` }}>{value}</div>
+        {trend && <div style={{ ...mono, fontSize: 7, color: C.green, padding: "2px 6px", background: `${C.green}15`, border: `1px solid ${C.green}33` }}>{trend}</div>}
+      </div>
+      <div style={{ ...mono, fontSize: 8, color: "#6a7a9a", letterSpacing: "0.12em", marginBottom: desc ? 5 : 0 }}>{label}</div>
+      {desc && <div style={{ ...mono, fontSize: 7, color: "#4a5a6a", lineHeight: 1.6, borderTop: `1px solid ${color}22`, paddingTop: 5, marginTop: 2 }}>{desc}</div>}
     </div>
   );
 }
@@ -583,24 +587,53 @@ function StationPreviewSection() {
 
           {/* Stats panel */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <StatCard label="PLATFORM AGENTS" value={`${summary?.activeAgents ?? 19}/${summary?.totalAgents ?? 23}`} color={C.cyan} />
-            <StatCard label="ACTIVE STATIONS" value={String(summary?.activeStations ?? 3)} color={C.green} />
-            <StatCard label="TASKS TODAY" value={String(summary?.tasksCompletedToday ?? 6)} color={C.amber} />
-            <StatCard label="OVERALL PROGRESS" value={`${Math.round(summary?.overallProgress ?? 55.4)}%`} color={C.violet} />
+            <StatCard
+              label="PLATFORM AGENTS"
+              value={`${summary?.activeAgents ?? 19}/${summary?.totalAgents ?? 23}`}
+              color={C.cyan}
+              desc="Active agents currently processing tasks across all stations"
+              trend="↑ LIVE"
+            />
+            <StatCard
+              label="ACTIVE STATIONS"
+              value={String(summary?.activeStations ?? 3)}
+              color={C.green}
+              desc="Stations online and running autonomous agent operations"
+              trend="+1 TODAY"
+            />
+            <StatCard
+              label="TASKS TODAY"
+              value={String(summary?.tasksCompletedToday ?? 47)}
+              color={C.amber}
+              desc="Completed tasks executed by your crew in the last 24 hours"
+            />
+            <StatCard
+              label="OVERALL PROGRESS"
+              value={`${Math.round(summary?.overallProgress ?? 55)}%`}
+              color={C.violet}
+              desc="Aggregate mission completion rate across all active objectives"
+            />
             {/* Revenue sparkline */}
-            <div style={{ border: `1px solid ${C.border}`, padding: 14, background: `${C.surface}88` }}>
-              <div style={{ ...mono, fontSize: 7, color: C.muted, marginBottom: 8, letterSpacing: "0.1em" }}>REVENUE 24H</div>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 44 }}>
+            <div style={{ border: `1px solid ${C.border}`, padding: "12px 14px", background: `${C.surface}88` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.1em" }}>REVENUE 24H</div>
+                <div style={{ ...mono, fontSize: 6, color: C.muted }}>Autonomous earnings pipeline</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 40 }}>
                 {[40,55,48,72,88,76,92,84,96,88,100,94,108,116,102,120,112,128,118,136,124,142,132,148].map((v, i) => (
-                  <motion.div key={i} initial={{ height: 0 }} animate={inView ? { height: `${(v / 150) * 44}px` } : {}} transition={{ delay: i * 0.02, duration: 0.5 }} style={{ flex: 1, background: `${C.green}${Math.round((v / 150) * 99 + 30).toString(16)}`, minWidth: 2 }} />
+                  <motion.div key={i} initial={{ height: 0 }} animate={inView ? { height: `${(v / 150) * 40}px` } : {}} transition={{ delay: i * 0.02, duration: 0.5 }} style={{ flex: 1, background: `${C.green}${Math.round((v / 150) * 99 + 30).toString(16)}`, minWidth: 2 }} />
                 ))}
               </div>
-              <div style={{ ...mono, fontSize: 8, color: C.green, marginTop: 6, textAlign: "right" }}>$3,840 TODAY</div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7 }}>
+                <span style={{ ...mono, fontSize: 6, color: C.muted }}>Revenue generated by agents</span>
+                <span style={{ ...mono, fontSize: 8, color: C.green }}>$3,840 TODAY</span>
+              </div>
             </div>
             {/* Decorative ambient stats */}
             <div style={{ border: `1px solid ${C.border}`, padding: "12px 14px", background: `${C.surface}44` }}>
-              {[["NET I/O", "↑ 2.4 MB/s", C.blue], ["LATENCY", "12ms", C.green], ["PKT LOSS", "0.0%", C.cyan]].map(([k, v, c]) => (
-                <div key={String(k)} style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+              <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 8 }}>NETWORK TELEMETRY</div>
+              {[["NET I/O", "↑ 2.4 MB/s", C.blue], ["LATENCY", "12ms", C.green], ["PKT LOSS", "0.0%", C.cyan], ["SIGNAL", "STABLE", C.violet]].map(([k, v, c]) => (
+                <div key={String(k)} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                   <span style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.08em" }}>{k}</span>
                   <span style={{ ...mono, fontSize: 7, color: String(c) }}>{v}</span>
                 </div>
@@ -647,14 +680,52 @@ function AgentCrewSection() {
           <SectionHeader label="CREW SYSTEM" title="Your Autonomous Agent Army" sub="Specialized AI agents, each with defined roles, unique skills, and persistent memory — working 24/7 inside your stations." />
         </div>
 
-        {/* Central stat — reduced font size */}
-        <motion.div animate={{ scale: [1, 1.02, 1], opacity: [0.85, 1, 0.85] }} transition={{ repeat: Infinity, duration: 3 }} style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ ...mono, fontSize: 8, color: C.muted, letterSpacing: "0.2em", marginBottom: 6 }}>ACTIVE WORKFORCE</div>
-          <div style={{ ...px, fontSize: "clamp(22px,4vw,44px)", color: C.cyan, textShadow: `0 0 60px ${C.cyan}, 0 0 120px ${C.cyan}44` }}>
-            {displayAgents.length > 0 ? `${displayAgents.filter((a) => a.status === "working").length} AGENTS` : "19 AGENTS"}
+        {/* Central stat + role breakdown grid */}
+        <div style={{ padding: "0 60px", marginBottom: 40 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 32, alignItems: "center", maxWidth: 900, margin: "0 auto" }}>
+            {/* Left: role breakdown */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+              {Object.entries(ROLE_HEX).map(([role, color]) => (
+                <div key={role} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", border: `1px solid ${color}22`, background: `${color}08` }}>
+                  <div style={{ width: 6, height: 6, background: color, boxShadow: `0 0 6px ${color}`, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ ...mono, fontSize: 6, color, letterSpacing: "0.1em" }}>{role.toUpperCase()}</div>
+                    <div style={{ ...mono, fontSize: 6, color: C.muted, lineHeight: 1.5 }}>Autonomous specialist</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Center: live count */}
+            <motion.div animate={{ scale: [1, 1.02, 1], opacity: [0.85, 1, 0.85] }} transition={{ repeat: Infinity, duration: 3 }} style={{ textAlign: "center", padding: "20px 32px", border: `1px solid ${C.cyan}44`, background: `${C.cyan}08` }}>
+              <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.2em", marginBottom: 8 }}>ACTIVE WORKFORCE</div>
+              <div style={{ ...px, fontSize: "clamp(20px,3.5vw,36px)", color: C.cyan, textShadow: `0 0 60px ${C.cyan}, 0 0 120px ${C.cyan}44` }}>
+                {displayAgents.length > 0 ? `${displayAgents.filter((a) => a.status === "working").length}` : "19"}
+              </div>
+              <div style={{ ...mono, fontSize: 7, color: C.cyan, letterSpacing: "0.1em", marginTop: 4 }}>AGENTS ONLINE</div>
+              <div style={{ height: 1, background: `${C.cyan}22`, margin: "10px 0" }} />
+              <div style={{ ...mono, fontSize: 6, color: C.muted }}>ALL SYSTEMS NOMINAL</div>
+            </motion.div>
+            {/* Right: capabilities */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {[
+                { label: "Persistent Memory", desc: "Agents retain context across sessions" },
+                { label: "Role Specialization", desc: "Each agent trained for one domain" },
+                { label: "24/7 Operations", desc: "Runs continuously without intervention" },
+                { label: "Inter-Agent Comms", desc: "Crew coordinates via shared channels" },
+                { label: "XP & Leveling", desc: "Agents improve with every task" },
+                { label: "Mission Execution", desc: "Agents self-assign from mission queue" },
+              ].map(({ label, desc }) => (
+                <div key={label} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <span style={{ color: C.cyan, fontSize: 9, marginTop: 1, flexShrink: 0 }}>◈</span>
+                  <div>
+                    <div style={{ ...mono, fontSize: 7, color: "#c8d0e8", letterSpacing: "0.06em" }}>{label}</div>
+                    <div style={{ ...mono, fontSize: 6, color: C.muted }}>{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.2em", marginTop: 4 }}>ONLINE — ALL SYSTEMS NOMINAL</div>
-        </motion.div>
+        </div>
 
         {/* Scrolling crew wall with fade edges */}
         <div style={{ position: "relative" }}>
@@ -679,12 +750,17 @@ function AgentCrewSection() {
           </div>
         </div>
 
-        {/* Role legend */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 28, padding: "0 40px", flexWrap: "wrap" }}>
-          {Object.entries(ROLE_HEX).map(([role, color]) => (
-            <div key={role} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 7, height: 7, background: color, boxShadow: `0 0 5px ${color}` }} />
-              <span style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em" }}>{role.toUpperCase()}</span>
+        {/* Footer info strip */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 0, marginTop: 28, padding: "14px 60px 0", borderTop: `1px solid ${C.border}` }}>
+          {[
+            { label: "AUTONOMOUS", value: "No human prompting needed" },
+            { label: "PERSISTENT", value: "Memory survives restarts" },
+            { label: "SCALABLE", value: "Add agents at any time" },
+            { label: "COORDINATED", value: "Crew collaborates on missions" },
+          ].map((item, i) => (
+            <div key={item.label} style={{ flex: 1, textAlign: "center", padding: "10px 16px", borderRight: i < 3 ? `1px solid ${C.border}` : "none" }}>
+              <div style={{ ...mono, fontSize: 7, color: C.cyan, letterSpacing: "0.14em", marginBottom: 4 }}>{item.label}</div>
+              <div style={{ ...mono, fontSize: 7, color: C.muted }}>{item.value}</div>
             </div>
           ))}
         </div>
