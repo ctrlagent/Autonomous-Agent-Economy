@@ -345,7 +345,12 @@ function TiltCard({ children, strength = 8, style }: { children: React.ReactNode
 function StatCard({ label, value, color = C.cyan }: { label: string; value: string; color?: string }) {
   const tilt = use3DTilt(6);
   return (
-    <div ref={tilt.ref} onMouseMove={tilt.onMouseMove} onMouseLeave={tilt.onMouseLeave} style={{ border: `1px solid ${color}55`, background: `${color}0d`, padding: "16px 20px", position: "relative", boxShadow: `0 0 24px ${color}10`, cursor: "default" }}>
+    <div
+      ref={tilt.ref}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      style={{ border: `1px solid ${color}55`, background: `${color}0d`, padding: "16px 20px", position: "relative", boxShadow: `0 0 24px ${color}10`, cursor: "default" }}
+      className="text-[14px]">
       {[["top","left"],["top","right"],["bottom","left"],["bottom","right"]].map(([v,h]) => (
         <div key={`${v}${h}`} style={{ position: "absolute", [v]: -1, [h]: -1, width: 10, height: 10, borderTop: v === "top" ? `2px solid ${color}` : "none", borderBottom: v === "bottom" ? `2px solid ${color}` : "none", borderLeft: h === "left" ? `2px solid ${color}` : "none", borderRight: h === "right" ? `2px solid ${color}` : "none" }} />
       ))}
