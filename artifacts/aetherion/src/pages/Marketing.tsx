@@ -1191,12 +1191,12 @@ function TimelineSection() {
 /* ─── 8. ARCHITECTURE SECTION ────────────────────────────────────────────────── */
 
 const PIPELINE_NODES = [
-  { id: "CMD",   label: "COMMANDER", sub: "You",            color: C.amber,  icon: "👤" },
-  { id: "CTRL",  label: "CTRL OS",   sub: "Orchestrator",   color: C.cyan,   icon: "⚙" },
-  { id: "DISP",  label: "DISPATCHER",sub: "Task Router",    color: C.violet, icon: "⇌" },
-  { id: "AGENT", label: "AGENT CREW",sub: "AI Workers",     color: C.green,  icon: "🤖" },
-  { id: "MISS",  label: "MISSIONS",  sub: "Goal Tracker",   color: C.blue,   icon: "🎯" },
-  { id: "OUT",   label: "REVENUE",   sub: "Output Layer",   color: C.amber,  icon: "💰" },
+  { id: "CMD",   label: "COMMANDER", sub: "You",            color: C.amber  },
+  { id: "CTRL",  label: "CTRL OS",   sub: "Orchestrator",   color: C.cyan   },
+  { id: "DISP",  label: "DISPATCHER",sub: "Task Router",    color: C.violet },
+  { id: "AGENT", label: "AGENT CREW",sub: "AI Workers",     color: C.green  },
+  { id: "MISS",  label: "MISSIONS",  sub: "Goal Tracker",   color: C.blue   },
+  { id: "OUT",   label: "REVENUE",   sub: "Output Layer",   color: C.amber  },
 ];
 
 const AGENT_MODELS = [
@@ -1261,7 +1261,6 @@ function ArchSection() {
                     <div style={{ position: "absolute", top: 6, right: 8, ...px, fontSize: 5, color: `${node.color}88` }}>
                       {String(i + 1).padStart(2, "0")}
                     </div>
-                    <div style={{ fontSize: 18, marginBottom: 8 }}>{node.icon}</div>
                     <div style={{ ...px, fontSize: 6, color: isActive || isHover ? node.color : "#c0c8e0", letterSpacing: "0.04em", marginBottom: 5, lineHeight: 1.6 }}>
                       {node.label}
                     </div>
