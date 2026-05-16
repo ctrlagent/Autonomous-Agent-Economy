@@ -18,21 +18,27 @@ const queryClient = new QueryClient();
 function Router() {
   return (
     <Switch>
+      {/* Public marketing site — root + /marketing alias */}
+      <Route path="/" component={Marketing} />
       <Route path="/marketing" component={Marketing} />
+
+      {/* App — all routes live under /app */}
       <Route>
-        <AppShell>
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/crew" component={Crew} />
-            <Route path="/missions" component={Missions} />
-            <Route path="/timeline" component={Timeline} />
-            <Route path="/ship-comms" component={ShipComms} />
-            <Route path="/templates" component={Market} />
-            <Route path="/stations/:id" component={Dashboard} />
-            <Route path="/rooms/:id" component={RoomDetail} />
-            <Route component={NotFound} />
-          </Switch>
-        </AppShell>
+        <WouterRouter base="/app">
+          <AppShell>
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/crew" component={Crew} />
+              <Route path="/missions" component={Missions} />
+              <Route path="/timeline" component={Timeline} />
+              <Route path="/ship-comms" component={ShipComms} />
+              <Route path="/templates" component={Market} />
+              <Route path="/stations/:id" component={Dashboard} />
+              <Route path="/rooms/:id" component={RoomDetail} />
+              <Route component={NotFound} />
+            </Switch>
+          </AppShell>
+        </WouterRouter>
       </Route>
     </Switch>
   );

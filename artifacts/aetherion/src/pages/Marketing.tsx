@@ -602,7 +602,7 @@ function HeroSection() {
             </span>
           ))}
         </div>
-        <Link href="/" style={{
+        <Link href="/app" style={{
               ...px,
               fontSize: 8,
               color: C.cyan,
@@ -685,7 +685,7 @@ function HeroSection() {
                 marginBottom: 40,
               }}
             >
-              <PixelBtn primary href="/">
+              <PixelBtn primary href="/app">
                 ENTER STATION <ArrowRight size={12} />
               </PixelBtn>
               <PixelBtn>VIEW LIVE SYSTEM</PixelBtn>
@@ -2625,10 +2625,10 @@ function CTASection() {
               marginBottom: 60,
             }}
           >
-            <PixelBtn primary href="/">
+            <PixelBtn primary href="/app">
               LAUNCH CTRL <Zap size={12} />
             </PixelBtn>
-            <PixelBtn href="/">
+            <PixelBtn href="/app">
               ENTER COMMAND CENTER <ChevronRight size={12} />
             </PixelBtn>
           </motion.div>

@@ -12,6 +12,36 @@ const NAV_ITEMS = [
   { href: "/templates",  label: "MARKET",     Icon: Store },
 ];
 
+// Absolute link that escapes the nested /app router and goes to marketing root
+function HomeLink() {
+  return (
+    <a
+      href="/"
+      title="Back to home"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "0 10px",
+        height: "100%",
+        color: "var(--ae-muted)",
+        textDecoration: "none",
+        borderLeft: "1px solid var(--ae-border)",
+        fontFamily: "'Space Mono', monospace",
+        fontSize: 7,
+        letterSpacing: "0.08em",
+        transition: "color 0.15s",
+        whiteSpace: "nowrap",
+        gap: 4,
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--ae-cyan)"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--ae-muted)"; }}
+    >
+      ← HOME
+    </a>
+  );
+}
+
 function useTick() {
   const [tick, setTick] = useState(0);
   const startRef = useRef(Date.now());
@@ -139,6 +169,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               >{label}</Link>
             );
           })}
+          <HomeLink />
           <button
             onClick={() => setSettingsOpen(v => !v)}
             style={{
