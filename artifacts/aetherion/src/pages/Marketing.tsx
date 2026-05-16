@@ -378,6 +378,7 @@ function PixelBtn({ children, primary, href, onClick }: { children: React.ReactN
 interface FloatingEvent { id: number; text: string; color: string; }
 function FloatingEvents() {
   const [events, setEvents] = useState<FloatingEvent[]>([]);
+  const counterRef = useRef(0);
   const EVENTS = [
     { text: "NEXUS-1 completed task +340 XP", color: C.violet },
     { text: "Revenue spike +$240 detected", color: C.green },
@@ -388,11 +389,10 @@ function FloatingEvents() {
     { text: "Growth coefficient: 1.34 ↑", color: C.green },
   ];
   useEffect(() => {
-    let counter = 0;
     const tick = () => {
-      const ev = EVENTS[counter % EVENTS.length];
-      counter++;
-      setEvents((prev) => [...prev.slice(-3), { id: Date.now(), text: ev.text, color: ev.color }]);
+      const ev = EVENTS[counterRef.current % EVENTS.length];
+      counterRef.current++;
+      setEvents((prev) => [...prev.slice(-3), { id: counterRef.current, text: ev.text, color: ev.color }]);
     };
     tick();
     const id = setInterval(tick, 3200);
@@ -582,6 +582,77 @@ function StationPreviewSection() {
                   </TiltCard>
                 );
               })}
+            </div>
+
+            {/* Station Intel Footer */}
+            <div style={{ borderTop: `1px solid ${C.border}`, margin: "0 16px", padding: "14px 0 4px" }}>
+              <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.16em", marginBottom: 12 }}>◈ STATION INTEL — ALPHA-7 AGGREGATE</div>
+              {/* Aggregate stat row */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
+                {[
+                  { label: "TOTAL AGENTS", value: String(ROOMS.reduce((s, r) => s + r.agents, 0)), color: C.cyan },
+                  { label: "TOTAL TASKS", value: String(ROOMS.reduce((s, r) => s + r.tasks, 0)), color: C.amber },
+                  { label: "AVG PROGRESS", value: `${Math.round(ROOMS.reduce((s, r) => s + r.progress, 0) / ROOMS.length)}%`, color: C.green },
+                  { label: "ROOMS ONLINE", value: `${ROOMS.length}/6`, color: C.violet },
+                ].map(({ label, value, color }) => (
+                  <div key={label} style={{ border: `1px solid ${color}33`, background: `${color}08`, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ ...px, fontSize: 9, color, textShadow: `0 0 12px ${color}`, marginBottom: 3 }}>{value}</div>
+                    <div style={{ ...mono, fontSize: 5, color: C.muted, letterSpacing: "0.08em", lineHeight: 1.6 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Room progress breakdown bar */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                  <span style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em" }}>ROOM THROUGHPUT DISTRIBUTION</span>
+                  <span style={{ ...mono, fontSize: 6, color: C.green }}>ALL SYSTEMS NOMINAL</span>
+                </div>
+                <div style={{ display: "flex", height: 8, gap: 2, overflow: "hidden" }}>
+                  {ROOMS.map((room) => {
+                    const color = roleHex(room.role);
+                    const pct = (room.tasks / ROOMS.reduce((s, r) => s + r.tasks, 0)) * 100;
+                    return (
+                      <motion.div
+                        key={room.name}
+                        initial={{ width: 0 }}
+                        animate={inView ? { width: `${pct}%` } : {}}
+                        transition={{ delay: 0.8, duration: 1 }}
+                        title={`${room.name}: ${room.tasks} tasks`}
+                        style={{ background: `${color}cc`, boxShadow: `0 0 6px ${color}66`, position: "relative" }}
+                      />
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", gap: 12, marginTop: 5, flexWrap: "wrap" }}>
+                  {ROOMS.map((room) => (
+                    <div key={room.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 5, height: 5, background: roleHex(room.role) }} />
+                      <span style={{ ...mono, fontSize: 5, color: C.muted }}>{room.name.split(" ")[0]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Status log */}
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 7 }}>RECENT STATION LOG</div>
+                {[
+                  { time: "17:42", msg: "Research Lab completed deep-scan batch", color: C.cyan },
+                  { time: "17:38", msg: "Dev Lab deployed v2.4 to staging environment", color: C.blue },
+                  { time: "17:31", msg: "Analytics detected revenue spike +12%", color: C.red },
+                  { time: "17:18", msg: "Marketing Hub launched growth campaign", color: C.green },
+                ].map((entry, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={inView ? { opacity: 1, x: 0 } : {}}
+                    transition={{ delay: 0.9 + i * 0.08, duration: 0.3 }}
+                    style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 6, borderLeft: `2px solid ${entry.color}44`, paddingLeft: 8 }}
+                  >
+                    <span style={{ ...mono, fontSize: 6, color: C.muted, flexShrink: 0 }}>{entry.time}</span>
+                    <span style={{ ...mono, fontSize: 6, color: "#7a8aa8", lineHeight: 1.6 }}>{entry.msg}</span>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </PresentationFrame>
 
