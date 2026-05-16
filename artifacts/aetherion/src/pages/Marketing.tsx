@@ -1189,52 +1189,162 @@ function TimelineSection() {
 }
 
 /* ─── 8. ARCHITECTURE SECTION ────────────────────────────────────────────────── */
-const ARCH = [
-  { label: "React 19", icon: <Globe size={14} />, color: C.cyan, sub: "UI Layer", x: 0 },
-  { label: "Vite 7", icon: <Zap size={14} />, color: C.amber, sub: "Build", x: 1 },
-  { label: "Tailwind v4", icon: <Terminal size={14} />, color: C.violet, sub: "Styling", x: 2 },
-  { label: "Phaser 3", icon: <Target size={14} />, color: C.green, sub: "Station Engine", x: 3 },
-  { label: "Express 5", icon: <Radio size={14} />, color: C.blue, sub: "API Layer", x: 0 },
-  { label: "Drizzle ORM", icon: <Database size={14} />, color: C.cyan, sub: "Data Layer", x: 1 },
-  { label: "PostgreSQL", icon: <Database size={14} />, color: C.violet, sub: "Database", x: 2 },
-  { label: "Framer Motion", icon: <Cpu size={14} />, color: C.amber, sub: "Animation", x: 3 },
+
+const PIPELINE_NODES = [
+  { id: "CMD",   label: "COMMANDER", sub: "You",            color: C.amber,  icon: "👤" },
+  { id: "CTRL",  label: "CTRL OS",   sub: "Orchestrator",   color: C.cyan,   icon: "⚙" },
+  { id: "DISP",  label: "DISPATCHER",sub: "Task Router",    color: C.violet, icon: "⇌" },
+  { id: "AGENT", label: "AGENT CREW",sub: "AI Workers",     color: C.green,  icon: "🤖" },
+  { id: "MISS",  label: "MISSIONS",  sub: "Goal Tracker",   color: C.blue,   icon: "🎯" },
+  { id: "OUT",   label: "REVENUE",   sub: "Output Layer",   color: C.amber,  icon: "💰" },
+];
+
+const AGENT_MODELS = [
+  { role: "RESEARCH",  color: C.cyan,   model: "GPT-4o",           provider: "OpenAI",    task: "Web search, data gathering, on-chain analysis",        cost: "~$0.012/task" },
+  { role: "STRATEGY",  color: C.violet, model: "Claude 3.5 Sonnet",provider: "Anthropic", task: "Planning, risk modeling, market positioning",           cost: "~$0.018/task" },
+  { role: "BUILDER",   color: C.blue,   model: "Claude 3.5 Sonnet",provider: "Anthropic", task: "Code generation, deployment, API integration",          cost: "~$0.022/task" },
+  { role: "CONTENT",   color: C.amber,  model: "GPT-4o",           provider: "OpenAI",    task: "Writing, threads, newsletters, SEO copy",               cost: "~$0.009/task" },
+  { role: "GROWTH",    color: C.green,  model: "Gemini 1.5 Pro",   provider: "Google",    task: "A/B testing, campaign analysis, funnel optimization",   cost: "~$0.007/task" },
+  { role: "ANALYTICS", color: C.red,    model: "GPT-4o mini",      provider: "OpenAI",    task: "Data pipelines, metrics, reporting, anomaly detection", cost: "~$0.003/task" },
 ];
 
 function ArchSection() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [pulse, setPulse] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setPulse(p => (p + 1) % PIPELINE_NODES.length), 900);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <Section style={{ background: C.surface, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.05} />
       <FloatingDataBg color={C.cyan} />
       <div ref={ref} style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 10 }}>
-        <SectionHeader label="ARCHITECTURE" title="Built for Scale" sub="A full-stack autonomous agent platform — from pixel dungeon simulation to live API infrastructure." />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-          {ARCH.map((node, i) => (
-            <TiltCard key={node.label} strength={10}>
+        <SectionHeader label="HOW IT WORKS" title="Agent Pipeline" sub="From your command to autonomous execution — every agent knows its role, its model, and its mission." />
+
+        {/* ── PIPELINE FLOWCHART ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          style={{ marginBottom: 48, border: `1px solid ${C.border}`, background: C.bg, padding: "32px 24px" }}
+        >
+          <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.14em", marginBottom: 28, textAlign: "center" }}>
+            ▸ EXECUTION PIPELINE ▸
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, flexWrap: "nowrap", overflowX: "auto" }}>
+            {PIPELINE_NODES.map((node, i) => {
+              const isActive = pulse === i;
+              const isHover = activeNode === node.id;
+              return (
+                <div key={node.id} style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                  {/* Node box */}
+                  <motion.div
+                    onMouseEnter={() => setActiveNode(node.id)}
+                    onMouseLeave={() => setActiveNode(null)}
+                    animate={isActive ? { boxShadow: [`0 0 0px ${node.color}00`, `0 0 22px ${node.color}88`, `0 0 0px ${node.color}00`] } : {}}
+                    transition={{ duration: 0.9 }}
+                    style={{
+                      border: `2px solid ${isActive || isHover ? node.color : node.color + "44"}`,
+                      background: isActive || isHover ? `${node.color}18` : `${node.color}07`,
+                      padding: "16px 12px", textAlign: "center", cursor: "default",
+                      minWidth: 120, position: "relative", transition: "all 0.2s",
+                    }}
+                  >
+                    {/* top accent bar */}
+                    <div style={{ position: "absolute", top: -2, left: "20%", width: "60%", height: 2, background: node.color, boxShadow: `0 0 8px ${node.color}` }} />
+                    {/* step number */}
+                    <div style={{ position: "absolute", top: 6, right: 8, ...px, fontSize: 5, color: `${node.color}88` }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <div style={{ fontSize: 18, marginBottom: 8 }}>{node.icon}</div>
+                    <div style={{ ...px, fontSize: 6, color: isActive || isHover ? node.color : "#c0c8e0", letterSpacing: "0.04em", marginBottom: 5, lineHeight: 1.6 }}>
+                      {node.label}
+                    </div>
+                    <div style={{ ...mono, fontSize: 6, color: node.color + "99", letterSpacing: "0.08em" }}>
+                      {node.sub}
+                    </div>
+                    {/* pulse dot */}
+                    {isActive && (
+                      <motion.div
+                        initial={{ scale: 0 }} animate={{ scale: [0, 1.4, 0] }} transition={{ duration: 0.9 }}
+                        style={{ position: "absolute", bottom: 6, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: node.color, boxShadow: `0 0 8px ${node.color}` }}
+                      />
+                    )}
+                  </motion.div>
+
+                  {/* Arrow connector */}
+                  {i < PIPELINE_NODES.length - 1 && (
+                    <div style={{ display: "flex", alignItems: "center", width: 36, flexShrink: 0, position: "relative" }}>
+                      <motion.div
+                        animate={pulse === i ? { opacity: [0.3, 1, 0.3], scaleX: [0.7, 1, 0.7] } : { opacity: 0.3 }}
+                        transition={{ duration: 0.9 }}
+                        style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${PIPELINE_NODES[i].color}88, ${PIPELINE_NODES[i + 1].color}88)` }}
+                      />
+                      <div style={{ ...px, fontSize: 7, color: C.muted, marginLeft: -2 }}>▶</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* ── AGENT MODEL CARDS ── */}
+        <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.14em", marginBottom: 20, textAlign: "center" }}>
+          ◈ AI MODEL STACK — PER AGENT ROLE ◈
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          {AGENT_MODELS.map((agent, i) => (
+            <TiltCard key={agent.role} strength={8}>
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={inView ? { opacity: 1, scale: 1 } : {}}
-                transition={{ delay: i * 0.08, duration: 0.4 }}
-                style={{ border: `1px solid ${node.color}44`, background: `${node.color}08`, padding: "22px 14px", textAlign: "center", position: "relative", cursor: "default" }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: 0.4 + i * 0.08, duration: 0.4 }}
+                style={{ border: `1px solid ${agent.color}44`, background: `${agent.color}07`, padding: "18px 16px", position: "relative", cursor: "default" }}
               >
-                <div style={{ position: "absolute", top: -1, left: "50%", transform: "translateX(-50%)", width: "60%", height: 2, background: node.color, boxShadow: `0 0 8px ${node.color}` }} />
-                <div style={{ color: node.color, marginBottom: 10, display: "flex", justifyContent: "center" }}>{node.icon}</div>
-                <div style={{ ...px, fontSize: 7, color: "#fff", letterSpacing: "0.04em", marginBottom: 5 }}>{node.label}</div>
-                <div style={{ ...mono, fontSize: 6, color: node.color, letterSpacing: "0.1em" }}>{node.sub}</div>
+                {/* top bar */}
+                <div style={{ position: "absolute", top: -1, left: 0, right: 0, height: 2, background: `linear-gradient(to right, transparent, ${agent.color}, transparent)`, boxShadow: `0 0 10px ${agent.color}88` }} />
+
+                {/* Role badge */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ ...px, fontSize: 7, color: agent.color, letterSpacing: "0.06em" }}>
+                    [{agent.role}]
+                  </div>
+                  <div style={{ ...mono, fontSize: 6, color: agent.color + "88", border: `1px solid ${agent.color}33`, padding: "2px 6px", background: `${agent.color}10` }}>
+                    AGENT
+                  </div>
+                </div>
+
+                {/* Model */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 4 }}>MODEL</div>
+                  <div style={{ ...px, fontSize: 8, color: "#e0e8ff", letterSpacing: "0.02em", lineHeight: 1.7 }}>{agent.model}</div>
+                  <div style={{ ...mono, fontSize: 6, color: agent.color, marginTop: 2 }}>via {agent.provider}</div>
+                </div>
+
+                <div style={{ height: 1, background: `${agent.color}22`, margin: "10px 0" }} />
+
+                {/* Task */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 4 }}>HANDLES</div>
+                  <div style={{ ...mono, fontSize: 7, color: "#a0a8c0", lineHeight: 1.7 }}>{agent.task}</div>
+                </div>
+
+                {/* Cost */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+                  <div style={{ ...mono, fontSize: 6, color: agent.color + "bb", border: `1px solid ${agent.color}22`, padding: "3px 8px", background: `${agent.color}08` }}>
+                    {agent.cost}
+                  </div>
+                </div>
               </motion.div>
             </TiltCard>
           ))}
         </div>
-        {/* System flow */}
-        <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.8 }} style={{ marginTop: 40, border: `1px solid ${C.border}`, padding: "28px", background: C.bg }}>
-          <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.1em", marginBottom: 20, textAlign: "center" }}>SYSTEM DATA FLOW</div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, flexWrap: "wrap" }}>
-            {["Commander Input", "→", "CTRL OS", "→", "Agent Runtime", "→", "Mission Engine", "→", "Revenue Output"].map((item, i) => (
-              <span key={i} style={{ ...mono, fontSize: 7, color: item === "→" ? C.muted : C.cyan, padding: item === "→" ? "0" : "7px 12px", border: item === "→" ? "none" : `1px solid ${C.cyan}33`, background: item === "→" ? "transparent" : `${C.cyan}08`, letterSpacing: "0.06em" }}>{item}</span>
-            ))}
-          </div>
-        </motion.div>
       </div>
     </Section>
   );
