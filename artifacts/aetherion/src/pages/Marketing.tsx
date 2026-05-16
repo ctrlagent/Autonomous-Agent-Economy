@@ -169,10 +169,11 @@ function BootSequence({ onDone }: { onDone: () => void }) {
 
 /* ─── Ambient Floating Data Background ─────────────────────────────────────── */
 const AMBIENT_DATA = [
-  "0x4DF0D8", "SYS.READY", "0xFF4D6D", "A3:B7:2F:91", "NODE_OK",
-  "0x9B6DFF", "PKT: 4921", "SYNC ✓", "0x4D7FFF", "ERR: NULL",
-  "AGENT.RDY", "0xFFB84D", "TX: 0x8A3", "ONLINE", "0x4DFF9B",
-  "CPU: 12%", "MEM: 43%", "NET: ↑↓", "▶ TASK", "[ IDLE ]",
+  "$CTRL", "AGENT", "ECONOMY", "CONTROL", "SOLANA",
+  "STATION", "MISSION", "COMMANDER", "CREW", "REVENUE",
+  "STRATEGY", "BUILDER", "RESEARCH", "GROWTH", "ANALYTICS",
+  "DEPLOY", "RUNTIME", "SIGNAL", "PROTOCOL", "NETWORK",
+  "ALPHA", "EXECUTE", "STACK", "PIPELINE", "NODE",
 ];
 
 function FloatingDataBg({ color = C.cyan }: { color?: string }) {
