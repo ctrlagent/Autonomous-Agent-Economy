@@ -548,7 +548,7 @@ function StationPreviewSection() {
     { name: "Analytics", role: "analytics", agents: 1, tasks: 29, progress: 82 },
   ];
   return (
-    <Section style={{ background: C.surface, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
+    <Section style={{ background: C.surface, padding: "90px 60px 48px", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.05} />
       <FloatingDataBg color={C.violet} />
       <div ref={ref} style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
@@ -743,7 +743,7 @@ function AgentCrewSection() {
   const doubled = [...displayAgents, ...displayAgents];
 
   return (
-    <Section style={{ background: C.bg, padding: "90px 0", borderTop: `1px solid ${C.border}` }}>
+    <Section style={{ background: C.bg, padding: "48px 0 90px", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.07} />
       <FloatingDataBg color={C.cyan} />
       <div ref={ref} style={{ position: "relative", zIndex: 10 }}>
