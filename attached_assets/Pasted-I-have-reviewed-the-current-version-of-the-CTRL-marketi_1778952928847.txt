@@ -1,0 +1,43 @@
+I have reviewed the current version of the CTRL marketing webpage. While the core UI components and pixel aesthetics are good, the overall execution still feels too much like a flat, stacked dashboard rather than a cinematic, high-end marketing website.
+
+I need you to refactor and upgrade the layout, scale, density, and animation models across the entire page based on these strict directives:
+
+1. SCALE DOWN & FRAME THE UI COMPONENTS (Fixing the "Too Big" issue)
+
+Do not render the app components at 1:1 full width. They are currently too large and dominating.
+
+Wrap all live UI components in "Presentation Frames". Put them inside stylized, glowing cyberpunk terminal windows or browser mockups with subtle glassmorphism or CRT borders.
+
+Use scaling and perspective: Scale the UI containers down (e.g., transform: scale(0.85) or set max-width to 800px-1000px). For sections like the "Live Station Preview" and "Ship Comms", use slight 3D rotations or isometric perspectives to make them look like floating displays rather than flat web elements.
+
+Create Editorial Layouts: Instead of stacking everything vertically, use CSS Grid to create overlapping layouts. Put text content (titles, descriptions) on one side, and the scaled-down UI component overlapping it slightly on the other side.
+
+2. INCREASE VISUAL DENSITY (Making the page feel "Lebih Berisi")
+
+Eliminate empty dead space: The pure black backgrounds are too empty. Add a persistent, subtle animated background system across the site.
+
+Add background textures: Include a faint, glowing dot grid (background-image: radial-gradient(...)) or animated horizontal scanlines that cover the empty sections.
+
+Add "Floating Data" elements: Fill empty corners with small, low-opacity decorative elements like running terminal logs, random hexadecimal numbers, micro-graphs, or mini status dots ([ ONLINE ], SYS.RDY). These should not distract from the main content but make the space feel like a dense information hub.
+
+Tighten the typography hierarchy: Some headings are too massive. Reduce the font sizes of section titles slightly to create a more refined, expensive look. Add tight letter-spacing to the pixel fonts.
+
+3. ENHANCE ANIMATION MODELS (More cinematic motion)
+
+Scroll-Triggered Reveals: Implement Framer Motion (or GSAP) so that every time a new section enters the viewport, the text slides up while fading in, and the UI frames scale up smoothly from 0.95 to 1.0.
+
+Continuous Idle Animations: The webpage should never be completely still. Add subtle, continuous translateY floating animations to the UI presentation frames. Make the neon borders pulse slowly.
+
+Parallax Scrolling: Make background elements (grids, floating particles, background glows) move at a different speed than the foreground content when scrolling.
+
+Micro-interactions: When hovering over the Agent cards, Template cards, or UI frames, they should subtly tilt towards the mouse (3D tilt effect) and increase their border glow intensity.
+
+Actionable Section Fixes:
+
+Hero Section: Re-layout so the text and the Station Canvas feel integrated. The canvas should have a glowing frame and float.
+
+Agent Crew: Reduce the massive font sizes. Put the horizontal scroll inside a designated "carousel zone" with faded edges (mask-image: linear-gradient) so they look like they are scrolling into infinity.
+
+Mission Economy & Timeline: Do not let them stretch the full width of the screen. Contain them in max-width columns and place floating decorative stats next to them.
+
+Please implement these styling, layout, and animation upgrades directly into the code. Make it look dense, perfectly scaled, and highly animated.
