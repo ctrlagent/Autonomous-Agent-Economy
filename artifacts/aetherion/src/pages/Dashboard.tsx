@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   useListStations, useListRooms, useListStationAgents,
-  useGetDashboardSummary, useGetRecentActivity, useListAgentTasks,
+  useGetDashboardSummary, useListAgentTasks,
 } from "@workspace/api-client-react";
 import { Pause, ChevronDown, AlertTriangle, Star, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,7 +44,6 @@ export default function Dashboard() {
 
   const { data: rooms } = useListRooms(currentStationId ?? 0, { query: { enabled: !!currentStationId } });
   const { data: agents } = useListStationAgents(currentStationId ?? 0, { query: { enabled: !!currentStationId } });
-  const { data: activity } = useGetRecentActivity({ limit: 24 });
   const { data: summary } = useGetDashboardSummary();
 
   const [selectedDungeonRoomId, setSelectedDungeonRoomId] = useState<string | null>(null);
@@ -178,73 +177,6 @@ export default function Dashboard() {
 
       {/* 3-Column Body */}
       <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
-
-        {/* LEFT: ACTIVITY LOG */}
-        <div style={{ width: 205, flexShrink: 0, borderRight: "1px solid var(--ae-border)", display: "flex", flexDirection: "column", background: "rgba(0,0,0,0.15)" }}>
-          <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--ae-border)", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ae-red)", boxShadow: "0 0 6px var(--ae-red)", animation: "pulse-dot 1.5s ease-in-out infinite" }} />
-            <span style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.14em" }}>ACTIVITY LOG</span>
-            <span style={{ ...mono, fontSize: 7, color: "var(--ae-red)", marginLeft: "auto", letterSpacing: "0.1em" }}>● LIVE</span>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-            {/* Active incidents at top of log */}
-            {activeIncidents.map(inc => {
-              const room = DUNGEON_ROOMS.find(r => r.id === inc.roomId);
-              return (
-                <div key={inc.roomId} style={{
-                  display: "flex", gap: 8, padding: "5px 10px",
-                  borderBottom: "1px solid rgba(255,34,68,0.2)",
-                  background: "rgba(255,34,68,0.06)",
-                  animation: "pulse-dot 1.5s ease-in-out infinite",
-                }}>
-                  <AlertTriangle size={10} style={{ color: "#ff2244", flexShrink: 0, marginTop: 2 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ ...mono, fontSize: 8, color: "#ff4455", fontWeight: 700 }}>{inc.label}</div>
-                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)" }}>{room?.name} · click room to dismiss</div>
-                    <div style={{ height: 2, background: "var(--ae-border)", marginTop: 3 }}>
-                      <div style={{ height: "100%", width: `${(inc.countdown / inc.countdownMax) * 100}%`, background: "#ff2244", transition: "width 1s linear" }} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {activity?.map((item: { id: number; agentRole: string; agentName: string; timestamp: string; action: string }) => (
-              <div key={item.id} style={{
-                display: "flex", gap: 8, padding: "6px 10px",
-                borderBottom: "1px solid rgba(255,255,255,0.03)",
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(77,240,216,0.03)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                <div style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: getRoleHex(item.agentRole),
-                  boxShadow: `0 0 5px ${getRoleHex(item.agentRole)}`,
-                  flexShrink: 0, marginTop: 4,
-                }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4 }}>
-                    <span style={{ ...mono, fontSize: 9, fontWeight: 700, color: getRoleHex(item.agentRole) }}>{item.agentName}</span>
-                    <span style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", flexShrink: 0 }}>{formatTime(item.timestamp)}</span>
-                  </div>
-                  <div style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", lineHeight: 1.4, marginTop: 1 }}>{item.action}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ padding: "8px 10px", borderTop: "1px solid var(--ae-border)", display: "flex", gap: 6 }}>
-            <input
-              placeholder="Message of comm..."
-              style={{
-                flex: 1, background: "var(--ae-bg)", border: "1px solid var(--ae-border)",
-                padding: "4px 8px", ...mono, fontSize: 9, color: "var(--ae-text)", outline: "none",
-              }}
-              onFocus={e => (e.target.style.borderColor = "var(--ae-cyan)")}
-              onBlur={e => (e.target.style.borderColor = "var(--ae-border)")}
-            />
-            <button className="pixel-btn primary" style={{ fontSize: 8, padding: "3px 8px" }}>↑</button>
-          </div>
-        </div>
 
         {/* CENTER: DUNGEON PHASER CANVAS */}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", position: "relative" }}>
