@@ -1,8 +1,8 @@
-# AETHERION
+# CTRL — Control Agent
 
 ## Overview
 
-AETHERION is an Autonomous Agent Economy OS dashboard — an agentic AI operating system for building, running, and scaling businesses using AI agent networks. Users are "Commanders" managing "Space Stations" (businesses) staffed by specialized AI "crew" agents.
+CTRL (Control Agent) is an Autonomous Agent Economy OS dashboard — an agentic AI operating system for building, running, and scaling businesses using AI agent networks. Users are "Commanders" managing "Space Stations" (businesses) staffed by specialized AI "crew" agents.
 
 ## Stack
 
@@ -39,7 +39,7 @@ AETHERION is an Autonomous Agent Economy OS dashboard — an agentic AI operatin
 
 ### Navigation
 - Bottom nav bar: STATION / CREW / MISSIONS / TIMELINE / MARKET
-- Top bar: AETHERION logo + ONLINE badge + Revenue / Tasks / Agents stats + settings icon
+- Top bar: CTRL logo + ONLINE badge + Revenue / Tasks / Agents stats + settings icon
 
 ### Phaser Station Canvas — 2D Pixel Dungeon
 - `src/lib/dungeonLayout.ts` — DUNGEON_ROOMS (6 rooms in 3×2 grid), DUNGEON_CORRIDORS (7 corridors), ROLE_COLORS map

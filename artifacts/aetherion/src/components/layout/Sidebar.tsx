@@ -29,7 +29,7 @@ export function Sidebar() {
             <Rocket className="h-5 w-5" />
             <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-primary/30" />
           </div>
-          <span className="font-mono text-lg font-bold tracking-wider text-primary">AETHERION</span>
+          <span className="font-mono text-lg font-bold tracking-wider text-primary">CTRL</span>
         </Link>
       </div>
 

@@ -18,3 +18,9 @@ id = "vbu0xC4vHOtrMfW2gnpT_"
 uri = "file://artifacts/aetherion/public/CONTINUATION_PROMPT.md"
 type = "text"
 title = "AETHERION — Continuation Prompt & UI Revolution Plan"
+
+[[outputs]]
+id = "1cSIGGiK9Hfuj7e9_6Ksx"
+uri = "file://CTRL.md"
+type = "text"
+title = "CTRL — Control Agent: Project Overview"

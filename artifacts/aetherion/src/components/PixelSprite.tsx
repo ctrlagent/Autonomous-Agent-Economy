@@ -1,6 +1,6 @@
 
 /**
- * Pixel art sprites for AETHERION agents.
+ * Pixel art sprites for CTRL agents.
  * Each sprite is a 16×24 grid of color codes, rendered as SVG rects.
  * Inspired by free Kenney/OpenGameArt CC0 pixel art style.
  */

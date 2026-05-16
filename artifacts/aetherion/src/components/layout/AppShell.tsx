@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <svg width="22" height="22" viewBox="0 0 22 22" style={{ imageRendering: "pixelated", flexShrink: 0 }}>
             <polygon points="11,1 21,6 21,16 11,21 1,16 1,6" fill="none" stroke="#4df0d8" strokeWidth="1.5" />
             <polygon points="11,5 17,8.5 17,13.5 11,17 5,13.5 5,8.5" fill="none" stroke="#4df0d8" strokeWidth="0.5" opacity="0.35" />
-            <text x="11" y="15.5" textAnchor="middle" fill="#ffb84d" fontSize="9" fontFamily="'Press Start 2P',monospace">A</text>
+            <text x="11" y="15.5" textAnchor="middle" fill="#ffb84d" fontSize="9" fontFamily="'Press Start 2P',monospace">C</text>
           </svg>
           <span style={{
             fontFamily: "'Press Start 2P', monospace",
@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             letterSpacing: "0.06em",
             lineHeight: 1,
             textShadow: "0 0 12px rgba(77,240,216,0.5)",
-          }}>AETHERION</span>
+          }}>CTRL</span>
         </div>
 
         {/* Stats strip */}
