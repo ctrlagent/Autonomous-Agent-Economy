@@ -1350,48 +1350,209 @@ function ArchSection() {
   );
 }
 
-/* ─── 9. FINAL CTA ───────────────────────────────────────────────────────────── */
+/* ─── 9. $CTRL TOKEN SECTION ─────────────────────────────────────────────────── */
+
+const TOKEN_UTILITIES = [
+  {
+    key: "STAKE",
+    label: "AGENT CREDITS",
+    title: "Stake to Deploy",
+    color: C.cyan,
+    desc: "Lock $CTRL to generate Agent Credits — the fuel your crew runs on. Every staked token keeps your station operational and your agents working around the clock.",
+    stats: [["APY", "12–34%"], ["MIN STAKE", "1,000 $CTRL"], ["LOCK", "7 / 30 / 90d"]],
+    tag: "STAKING",
+  },
+  {
+    key: "GOV",
+    label: "GOVERNANCE",
+    title: "Vote on Protocol",
+    color: C.violet,
+    desc: "Hold $CTRL, shape CTRL OS. Vote on new agent models, mission parameters, fee structures, and which station templates enter the marketplace.",
+    stats: [["PROPOSALS", "Active"], ["QUORUM", "5% supply"], ["WEIGHT", "1 token = 1 vote"]],
+    tag: "GOVERNANCE",
+  },
+  {
+    key: "REV",
+    label: "REVENUE SHARE",
+    title: "Earn from the Network",
+    color: C.green,
+    desc: "A portion of every mission fee, agent task, and marketplace deployment is distributed to $CTRL holders. The more the network earns, the more you earn.",
+    stats: [["SHARE", "20% of fees"], ["PERIOD", "Weekly"], ["SOURCE", "All stations"]],
+    tag: "REVENUE",
+  },
+];
+
+const TOKEN_METRICS = [
+  { label: "TOTAL SUPPLY",   value: "1,000,000,000", unit: "$CTRL" },
+  { label: "CIRCULATING",    value: "210,000,000",   unit: "$CTRL" },
+  { label: "STAKED",         value: "63.4%",         unit: "of supply" },
+  { label: "NETWORK",        value: "Solana",        unit: "L1" },
+  { label: "EMISSION",       value: "Deflationary",  unit: "buy+burn" },
+];
+
 function CTASection() {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true });
-  const { scrollY } = useScroll();
-  const orbY = useTransform(scrollY, [0, 5000], [0, -120]);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const [activeUtil, setActiveUtil] = useState<string | null>(null);
+
   return (
-    <Section style={{ background: C.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px", borderTop: `1px solid ${C.border}` }}>
-      <GridBg opacity={0.12} />
-      <FloatingDataBg color={C.cyan} />
-      <motion.div style={{ position: "absolute", width: 600, height: 600, borderRadius: "50%", background: `radial-gradient(ellipse, ${C.cyan}15 0%, transparent 70%)`, pointerEvents: "none", y: orbY }} animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 4 }} />
-      <div ref={ref} style={{ position: "relative", zIndex: 10, textAlign: "center", maxWidth: 700 }}>
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>
-          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 30, ease: "linear" }} style={{ display: "inline-block", marginBottom: 36 }}>
-            <svg width="72" height="72" viewBox="0 0 80 80">
-              <polygon points="40,4 72,22 72,58 40,76 8,58 8,22" fill="none" stroke={C.cyan} strokeWidth="2" />
-              <polygon points="40,18 60,29 60,51 40,62 20,51 20,29" fill="none" stroke={C.cyan} strokeWidth="0.8" opacity="0.4" />
-              <text x="40" y="50" textAnchor="middle" fill={C.amber} fontSize="22" fontFamily="'Press Start 2P',monospace">C</text>
-            </svg>
-          </motion.div>
-          <motion.h2 initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.3 }} style={{ ...px, fontSize: "clamp(14px,3vw,30px)", color: "#fff", lineHeight: 1.8, letterSpacing: "0.04em", textShadow: `0 0 60px ${C.cyan}55`, marginBottom: 18 }}>
-            Command Your Agents.<br />
-            <span style={{ color: C.cyan }}>Control Your Economy.</span>
-          </motion.h2>
-          <motion.p initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.5 }} style={{ ...mono, fontSize: 11, color: C.muted, lineHeight: 1.9, marginBottom: 44, letterSpacing: "0.04em" }}>
-            The operating system for autonomous AI civilizations.<br />
-            Your crew is ready. Your station is waiting.
-          </motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.7 }} style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 56 }}>
-            <PixelBtn primary href="/app">LAUNCH CTRL <Zap size={12} /></PixelBtn>
-            <PixelBtn href="/app">ENTER COMMAND CENTER <ChevronRight size={12} /></PixelBtn>
-          </motion.div>
-          <div style={{ display: "flex", gap: 36, justifyContent: "center", flexWrap: "wrap" }}>
-            {[["23", "AGENTS"], ["3", "STATIONS"], ["6", "ROOM TYPES"], ["9", "MISSION TIERS"]].map(([v, l]) => (
-              <div key={l} style={{ textAlign: "center" }}>
-                <div style={{ ...px, fontSize: 18, color: C.cyan, textShadow: `0 0 20px ${C.cyan}` }}>{v}</div>
-                <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.12em", marginTop: 4 }}>{l}</div>
+    <Section style={{ background: C.bg, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
+      <GridBg opacity={0.1} />
+      <FloatingDataBg color={C.amber} />
+
+      {/* radial glow */}
+      <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: 700, height: 400, borderRadius: "50%", background: `radial-gradient(ellipse, ${C.amber}0a 0%, transparent 70%)`, pointerEvents: "none" }} />
+
+      <div ref={ref} style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 10 }}>
+        <SectionHeader
+          label="$CTRL TOKEN"
+          title="Fuel Your Agent Economy"
+          sub="$CTRL is the native token of the CTRL protocol — stake it, govern with it, and earn from every agent action across the network."
+        />
+
+        {/* ── TOKEN METRICS STRIP ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+          style={{ display: "flex", border: `1px solid ${C.amber}33`, background: `${C.amber}06`, marginBottom: 48, overflowX: "auto" }}
+        >
+          {TOKEN_METRICS.map((m, i) => (
+            <div key={m.label} style={{
+              flex: 1, minWidth: 140, padding: "18px 20px", textAlign: "center",
+              borderRight: i < TOKEN_METRICS.length - 1 ? `1px solid ${C.amber}22` : "none",
+            }}>
+              <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 8 }}>{m.label}</div>
+              <div style={{ ...px, fontSize: 9, color: C.amber, letterSpacing: "0.04em", lineHeight: 1.6 }}>{m.value}</div>
+              <div style={{ ...mono, fontSize: 6, color: `${C.amber}88`, marginTop: 4 }}>{m.unit}</div>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* ── THREE UTILITY PILLARS ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 56 }}>
+          {TOKEN_UTILITIES.map((u, i) => {
+            const isActive = activeUtil === u.key;
+            return (
+              <TiltCard key={u.key} strength={6}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={inView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ delay: 0.15 + i * 0.12, duration: 0.5 }}
+                  onMouseEnter={() => setActiveUtil(u.key)}
+                  onMouseLeave={() => setActiveUtil(null)}
+                  style={{
+                    border: `1px solid ${isActive ? u.color : u.color + "44"}`,
+                    background: isActive ? `${u.color}10` : `${u.color}06`,
+                    padding: "28px 22px", position: "relative", cursor: "default",
+                    transition: "all 0.25s",
+                    boxShadow: isActive ? `0 0 32px ${u.color}22` : "none",
+                  }}
+                >
+                  {/* top accent */}
+                  <div style={{ position: "absolute", top: -1, left: 0, right: 0, height: 2, background: `linear-gradient(to right, transparent, ${u.color}, transparent)`, boxShadow: `0 0 12px ${u.color}88` }} />
+
+                  {/* tag */}
+                  <div style={{ position: "absolute", top: 14, right: 14, ...mono, fontSize: 6, color: u.color + "99", border: `1px solid ${u.color}33`, padding: "2px 7px", background: `${u.color}0c`, letterSpacing: "0.1em" }}>
+                    {u.tag}
+                  </div>
+
+                  {/* label + title */}
+                  <div style={{ ...mono, fontSize: 6, color: u.color, letterSpacing: "0.14em", marginBottom: 10 }}>
+                    {u.label}
+                  </div>
+                  <div style={{ ...px, fontSize: 10, color: "#e8f0ff", letterSpacing: "0.04em", lineHeight: 1.7, marginBottom: 16 }}>
+                    {u.title}
+                  </div>
+
+                  {/* divider */}
+                  <div style={{ height: 1, background: `${u.color}22`, marginBottom: 16 }} />
+
+                  {/* description */}
+                  <div style={{ ...mono, fontSize: 8, color: "#8090b0", lineHeight: 1.8, marginBottom: 20 }}>
+                    {u.desc}
+                  </div>
+
+                  {/* stats */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    {u.stats.map(([k, v]) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ ...mono, fontSize: 7, color: C.muted }}>{k}</span>
+                        <span style={{ ...mono, fontSize: 7, color: u.color, fontWeight: 700 }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* bottom pulse bar */}
+                  <motion.div
+                    animate={isActive ? { scaleX: [0.3, 1, 0.3] } : { scaleX: 0.3 }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: u.color, transformOrigin: "left", opacity: 0.6 }}
+                  />
+                </motion.div>
+              </TiltCard>
+            );
+          })}
+        </div>
+
+        {/* ── TOKENOMICS PIE (text-based breakdown) ── */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.6 }}
+          style={{ border: `1px solid ${C.border}`, background: `${C.surface}cc`, padding: "28px 32px", marginBottom: 52 }}
+        >
+          <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.12em", marginBottom: 22, textAlign: "center" }}>
+            ◈ TOKENOMICS BREAKDOWN ◈
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 0 }}>
+            {[
+              { slice: "COMMUNITY",    pct: 40, color: C.cyan   },
+              { slice: "STAKING POOL", pct: 25, color: C.violet },
+              { slice: "TEAM",         pct: 15, color: C.blue   },
+              { slice: "ECOSYSTEM",    pct: 12, color: C.green  },
+              { slice: "TREASURY",     pct: 8,  color: C.amber  },
+            ].map((t, i, arr) => (
+              <div key={t.slice} style={{
+                padding: "16px 14px", textAlign: "center",
+                borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none",
+                position: "relative",
+              }}>
+                {/* mini bar */}
+                <div style={{ height: 3, background: C.border, marginBottom: 12, position: "relative" }}>
+                  <motion.div
+                    animate={inView ? { width: `${t.pct / 40 * 100}%` } : { width: 0 }}
+                    transition={{ delay: 0.7 + i * 0.08, duration: 0.6 }}
+                    style={{ position: "absolute", left: 0, top: 0, height: "100%", background: t.color, boxShadow: `0 0 6px ${t.color}` }}
+                  />
+                </div>
+                <div style={{ ...px, fontSize: 14, color: t.color, marginBottom: 8 }}>{t.pct}%</div>
+                <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.08em", lineHeight: 1.6 }}>{t.slice}</div>
               </div>
             ))}
           </div>
         </motion.div>
+
+        {/* ── FINAL CTA ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.8 }}
+          style={{ textAlign: "center" }}
+        >
+          <div style={{ ...px, fontSize: "clamp(12px,2.5vw,22px)", color: "#fff", lineHeight: 1.9, letterSpacing: "0.04em", textShadow: `0 0 40px ${C.cyan}44`, marginBottom: 14 }}>
+            Command Your Agents.
+          </div>
+          <div style={{ ...px, fontSize: "clamp(12px,2.5vw,22px)", color: C.cyan, lineHeight: 1.9, letterSpacing: "0.04em", textShadow: `0 0 40px ${C.cyan}88`, marginBottom: 40 }}>
+            Control Your Economy.
+          </div>
+          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+            <PixelBtn primary href="/app">LAUNCH CTRL <Zap size={12} /></PixelBtn>
+            <PixelBtn href="/app">GET $CTRL <ChevronRight size={12} /></PixelBtn>
+          </div>
+        </motion.div>
       </div>
+
       <div style={{ position: "absolute", bottom: 24, ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.1em" }}>
         CTRL v1.0 — CONTROL AGENT ECONOMY OS — ALL SYSTEMS NOMINAL
       </div>
