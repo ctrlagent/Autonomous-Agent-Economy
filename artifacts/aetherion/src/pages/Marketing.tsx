@@ -459,11 +459,11 @@ function HeroSection() {
           </span>
         </div>
         <div style={{ display: "flex", gap: 28 }}>
-          {["STATION", "CREW", "MISSIONS", "MARKET"].map((item) => (
-            <span key={item} style={{ ...mono, fontSize: 8, color: "#5a6a8a", letterSpacing: "0.12em", cursor: "pointer", transition: "color 0.15s" }} onMouseEnter={e => (e.currentTarget.style.color = C.cyan)} onMouseLeave={e => (e.currentTarget.style.color = "#5a6a8a")}>{item}</span>
+          {([["STATION", "/"], ["CREW", "/crew"], ["MISSIONS", "/missions"], ["TIMELINE", "/timeline"], ["MARKET", "/templates"]] as const).map(([label, href]) => (
+            <Link key={href} href={href} style={{ ...mono, fontSize: 8, color: "#5a6a8a", letterSpacing: "0.12em", cursor: "pointer", transition: "color 0.15s", textDecoration: "none" }} onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = C.cyan)} onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = "#5a6a8a")}>{label}</Link>
           ))}
         </div>
-        <Link href="/app" style={{ ...px, fontSize: 8, color: C.bg, textDecoration: "none", padding: "9px 18px", border: `2px solid ${C.cyan}`, background: C.cyan, letterSpacing: "0.08em", boxShadow: `0 0 20px ${C.cyan}44`, transition: "all 0.18s" }}>
+        <Link href="/" style={{ ...px, fontSize: 8, color: C.bg, textDecoration: "none", padding: "9px 18px", border: `2px solid ${C.cyan}`, background: C.cyan, letterSpacing: "0.08em", boxShadow: `0 0 20px ${C.cyan}44`, transition: "all 0.18s" }}>
           ENTER APP →
         </Link>
       </nav>
@@ -486,7 +486,7 @@ function HeroSection() {
             Build, deploy, and scale entire businesses with autonomous AI crews operating inside living digital stations.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
-            <PixelBtn primary href="/app">ENTER STATION <ArrowRight size={13} /></PixelBtn>
+            <PixelBtn primary href="/">ENTER STATION <ArrowRight size={13} /></PixelBtn>
             <PixelBtn>VIEW LIVE SYSTEM</PixelBtn>
           </div>
           {/* Live stats strip */}
@@ -1547,8 +1547,8 @@ function CTASection() {
             Control Your Economy.
           </div>
           <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <PixelBtn primary href="/app">LAUNCH CTRL <Zap size={12} /></PixelBtn>
-            <PixelBtn href="/app">GET $CTRL <ChevronRight size={12} /></PixelBtn>
+            <PixelBtn primary href="/">LAUNCH CTRL <Zap size={12} /></PixelBtn>
+            <PixelBtn href="/crew">MEET YOUR CREW <ChevronRight size={12} /></PixelBtn>
           </div>
         </motion.div>
       </div>
@@ -1593,7 +1593,6 @@ export default function Marketing() {
             <HeroSection />
             <StationPreviewSection />
             <AgentCrewSection />
-            <ShipCommsSection />
             <MissionSection />
             <MarketplaceSection />
             <TimelineSection />

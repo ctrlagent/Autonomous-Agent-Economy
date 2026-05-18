@@ -1,15 +1,14 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Settings, Zap, Users, Target, Radio, Store, Clock } from "lucide-react";
-import { useGetDashboardSummary } from "@workspace/api-client-react";
+import { Settings, Zap, Users, Target, Store, Clock } from "lucide-react";
+import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
 
 const NAV_ITEMS = [
-  { href: "/",           label: "STATION",    Icon: Zap },
-  { href: "/crew",       label: "CREW",       Icon: Users },
-  { href: "/missions",   label: "MISSIONS",   Icon: Target },
-  { href: "/ship-comms", label: "SHIP COMMS", Icon: Radio },
-  { href: "/timeline",   label: "TIMELINE",   Icon: Clock },
-  { href: "/templates",  label: "MARKET",     Icon: Store },
+  { href: "/",          label: "STATION",  Icon: Zap },
+  { href: "/crew",      label: "CREW",     Icon: Users },
+  { href: "/missions",  label: "MISSIONS", Icon: Target },
+  { href: "/timeline",  label: "TIMELINE", Icon: Clock },
+  { href: "/templates", label: "MARKET",   Icon: Store },
 ];
 
 // Absolute link that escapes the nested /app router and goes to marketing root
@@ -60,13 +59,19 @@ function useTick() {
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: summary } = useGetDashboardSummary();
+  const { data: stations } = useListStations();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const tick = useTick();
 
+  const totalTasksCompleted = (stations ?? []).reduce((sum, s) => sum + (s.tasksCompleted ?? 0), 0);
+  const totalTasksTotal = (stations ?? []).reduce((sum, s) => sum + (s.tasksTotal ?? 1), 0);
+  const xpPct = Math.round((totalTasksCompleted / Math.max(1, totalTasksTotal)) * 100);
+  const revenueEstimate = `$${(totalTasksCompleted * 27).toLocaleString()}`;
+
   const stats = [
-    { label: "REVENUE",  value: "$3,840",                                                       color: "#4dff9b" },
-    { label: "TASK",     value: String(summary?.tasksCompletedToday ?? 0),                      color: "#4d7fff" },
-    { label: "AGENT",    value: `${summary?.activeAgents ?? 0}/${summary?.totalAgents ?? 0}`,   color: "#4df0d8" },
+    { label: "REVENUE",  value: revenueEstimate,                                                color: "#4dff9b" },
+    { label: "TASKS",    value: String(summary?.tasksCompletedToday ?? 0),                      color: "#4d7fff" },
+    { label: "AGENTS",   value: `${summary?.activeAgents ?? 0}/${summary?.totalAgents ?? 0}`,   color: "#4df0d8" },
   ];
 
   return (
@@ -226,9 +231,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>XP</span>
           <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
-            <div style={{ height: "100%", width: "32%", background: "linear-gradient(to right, #4d7fff, #9b6dff)", boxShadow: "0 0 4px #4d7fff" }} />
+            <div style={{ height: "100%", width: `${xpPct}%`, background: "linear-gradient(to right, #4d7fff, #9b6dff)", boxShadow: "0 0 4px #4d7fff", transition: "width 1s" }} />
           </div>
-          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>0/10</span>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{totalTasksCompleted}/{totalTasksTotal}</span>
         </div>
         <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginLeft: "auto" }}>
           v1.0 · TICK {tick}
