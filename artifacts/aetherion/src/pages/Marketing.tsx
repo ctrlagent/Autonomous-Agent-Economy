@@ -439,7 +439,7 @@ function FloatingEvents() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div style={{ position: "absolute", bottom: 16, right: 16, zIndex: 20, display: "flex", flexDirection: "column", gap: 7, pointerEvents: "none", maxWidth: 260 }}>
+    <div className="floating-events" style={{ position: "absolute", bottom: 16, right: 16, zIndex: 20, display: "flex", flexDirection: "column", gap: 7, pointerEvents: "none", maxWidth: 260 }}>
       <AnimatePresence>
         {events.map((ev) => (
           <motion.div key={ev.id} initial={{ opacity: 0, x: 50, scale: 0.88 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 50, scale: 0.9 }} transition={{ duration: 0.32, type: "spring", stiffness: 260, damping: 22 }} style={{ ...mono, fontSize: 9, padding: "7px 12px", background: `${ev.color}18`, border: `1px solid ${ev.color}55`, color: ev.color, letterSpacing: "0.04em", boxShadow: `0 0 16px ${ev.color}25`, whiteSpace: "nowrap" }}>
@@ -1217,8 +1217,10 @@ export default function Marketing() {
 
           /* Hero */
           .hero-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
-          .hero-canvas { display: block !important; }
-          .hero-canvas-inner { height: 260px !important; }
+          .hero-canvas { display: block !important; overflow: hidden !important; }
+          .hero-canvas-inner { height: auto !important; aspect-ratio: 16/9 !important; }
+          .hero-canvas-inner > * { width: 100% !important; height: 100% !important; }
+          .floating-events { display: none !important; }
           .hero-copy h1 { font-size: 18px !important; }
           .hero-stats { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; border-top: none !important; padding-top: 0 !important; margin-top: 16px !important; }
           .hero-stats > div { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; margin-bottom: 0 !important; padding: 10px 12px !important; border: 1px solid rgba(255,255,255,0.06) !important; background: rgba(255,255,255,0.02) !important; }
