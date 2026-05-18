@@ -634,7 +634,7 @@ function HeroSection() {
         <motion.div initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 1.1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ position: "relative" }} className="hero-canvas">
           <div style={{ position: "absolute", inset: -40, borderRadius: 4, background: `radial-gradient(ellipse, ${C.cyan}12 0%, transparent 70%)`, filter: "blur(30px)", pointerEvents: "none", zIndex: 0 }} />
           <PresentationFrame color={C.cyan} title="ALPHA-7 DEFI OPS — LIVE FEED" float style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ height: 440, overflow: "hidden" }}>
+            <div className="hero-canvas-inner" style={{ height: 440, overflow: "hidden" }}>
               <StationCanvas onAgentSelect={() => {}} onRoomSelect={() => {}} triggerRef={triggerRef} sceneRef={sceneRef} />
             </div>
             <div style={{ padding: "7px 14px", borderTop: `1px solid ${C.border}`, display: "flex", gap: 12, flexWrap: "wrap", background: `${C.surface}dd` }}>
@@ -1217,7 +1217,8 @@ export default function Marketing() {
 
           /* Hero */
           .hero-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
-          .hero-canvas { display: none !important; }
+          .hero-canvas { display: block !important; }
+          .hero-canvas-inner { height: 260px !important; }
           .hero-copy h1 { font-size: 18px !important; }
           .hero-stats { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; border-top: none !important; padding-top: 0 !important; margin-top: 16px !important; }
           .hero-stats > div { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; margin-bottom: 0 !important; padding: 10px 12px !important; border: 1px solid rgba(255,255,255,0.06) !important; background: rgba(255,255,255,0.02) !important; }
@@ -1234,7 +1235,7 @@ export default function Marketing() {
 
           /* Station preview */
           .preview-grid { grid-template-columns: 1fr !important; }
-          .preview-stats { display: none !important; }
+          .preview-stats { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; flex-direction: unset !important; }
           .rooms-grid { grid-template-columns: repeat(2,1fr) !important; }
 
           /* Crew */
