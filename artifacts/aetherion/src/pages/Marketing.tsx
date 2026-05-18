@@ -366,7 +366,7 @@ function SectionHeader({ label, title, sub }: { label: string; title: string; su
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
-    <motion.div ref={ref} initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7 }} style={{ textAlign: "center", marginBottom: 48 }}>
+    <motion.div ref={ref} className="section-header" initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7 }} style={{ textAlign: "center", marginBottom: 48 }}>
       <div style={{ ...mono, fontSize: 8, color: C.cyan, letterSpacing: "0.24em", marginBottom: 14, textTransform: "uppercase" }}>◈ {label} ◈</div>
       <h2 style={{ ...px, fontSize: "clamp(13px,2.2vw,20px)", color: "#fff", letterSpacing: "0.06em", lineHeight: 1.9, textShadow: `0 0 40px ${C.cyan}55`, marginBottom: 16 }}>{title}</h2>
       <p style={{ ...mono, fontSize: 11, color: "#6a7a9a", maxWidth: 480, margin: "0 auto", lineHeight: 2, letterSpacing: "0.04em" }}>{sub}</p>
@@ -597,7 +597,7 @@ function HeroSection() {
       {/* Hero content */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.1fr", alignItems: "center", padding: "40px clamp(20px,5vw,56px)", gap: "clamp(24px,4vw,56px)", position: "relative", zIndex: 10, maxWidth: 1400, margin: "0 auto", width: "100%" }} className="hero-grid">
         {/* Left copy */}
-        <motion.div initial={{ opacity: 0, x: -36 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}>
+        <motion.div className="hero-copy" initial={{ opacity: 0, x: -36 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}>
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }} style={{ ...mono, fontSize: 8, color: C.cyan, letterSpacing: "0.24em", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
             <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 1.8 }}>◈</motion.span>
             AUTONOMOUS AGENT OS
@@ -615,8 +615,8 @@ function HeroSection() {
             <PixelBtn primary href="/" large>ENTER STATION <ArrowRight size={13} /></PixelBtn>
             <PixelBtn onClick={() => scrollTo("arch")}>HOW IT WORKS</PixelBtn>
           </div>
-          {/* Live stats strip */}
-          <div style={{ display: "flex", gap: 0, borderTop: `1px solid ${C.border}`, paddingTop: 20, flexWrap: "wrap" }}>
+          {/* Live stats — flex on desktop, bento grid on mobile */}
+          <div className="hero-stats" style={{ display: "flex", gap: 0, borderTop: `1px solid ${C.border}`, paddingTop: 20, flexWrap: "wrap" }}>
             {[
               { label: "AGENTS ACTIVE", value: `${summary?.activeAgents ?? 19}/${summary?.totalAgents ?? 23}`, color: C.cyan },
               { label: "STATIONS", value: String(summary?.activeStations ?? 3), color: C.green },
@@ -730,7 +730,7 @@ function StationPreviewSection() {
             </div>
           </PresentationFrame>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }} className="preview-stats">
             <StatCard label="PLATFORM AGENTS" value={`${summary?.activeAgents ?? 19}/${summary?.totalAgents ?? 23}`} color={C.cyan} desc="Active agents processing tasks across all stations" trend="↑ LIVE" />
             <StatCard label="ACTIVE STATIONS" value={String(summary?.activeStations ?? 3)} color={C.green} desc="Stations online running autonomous operations" trend="+1 TODAY" />
             <StatCard label="TASKS TODAY" value={String(summary?.tasksCompletedToday ?? 47)} color={C.amber} desc="Completed tasks executed by your crew in 24h" />
@@ -797,7 +797,7 @@ function AgentCrewSection() {
 
         <div style={{ padding: "0 clamp(20px,5vw,60px)", marginBottom: 40 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 32, alignItems: "center", maxWidth: 900, margin: "0 auto" }} className="crew-grid">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }} className="crew-roles">
               {Object.entries(ROLE_HEX).map(([role, color]) => (
                 <div key={role} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", border: `1px solid ${color}22`, background: `${color}08` }}>
                   <div style={{ width: 6, height: 6, background: color, boxShadow: `0 0 6px ${color}`, flexShrink: 0 }} />
@@ -808,14 +808,14 @@ function AgentCrewSection() {
                 </div>
               ))}
             </div>
-            <motion.div animate={{ scale: [1, 1.02, 1], opacity: [0.85, 1, 0.85] }} transition={{ repeat: Infinity, duration: 3 }} style={{ textAlign: "center", padding: "20px 32px", border: `1px solid ${C.cyan}44`, background: `${C.cyan}08` }}>
+            <motion.div className="crew-center" animate={{ scale: [1, 1.02, 1], opacity: [0.85, 1, 0.85] }} transition={{ repeat: Infinity, duration: 3 }} style={{ textAlign: "center", padding: "20px 32px", border: `1px solid ${C.cyan}44`, background: `${C.cyan}08` }}>
               <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.2em", marginBottom: 8 }}>ACTIVE WORKFORCE</div>
               <div style={{ ...px, fontSize: "clamp(20px,3.5vw,36px)", color: C.cyan, textShadow: `0 0 60px ${C.cyan}, 0 0 120px ${C.cyan}44` }}>
                 {displayAgents.filter((a) => a.status === "working").length || "19"}
               </div>
               <div style={{ ...mono, fontSize: 7, color: C.cyan, letterSpacing: "0.1em", marginTop: 4 }}>AGENTS ONLINE</div>
             </motion.div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }} className="crew-features">
               {[
                 { label: "Persistent Memory", desc: "Agents retain context across sessions" },
                 { label: "Role Specialization", desc: "Each agent trained for one domain" },
@@ -885,6 +885,15 @@ function MissionSection() {
       <FloatingDataBg color={C.green} />
       <div ref={ref} style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
         <SectionHeader label="MISSION ECONOMY" title="Progress. Reward. Scale." sub="Missions are the engine of your station economy. Complete objectives to unlock higher-tier capabilities and reward your crew." />
+        {/* Mobile-only bento stats */}
+        <div className="mission-bento" style={{ display: "none" }}>
+          {[["TOTAL XP POOL","2,050 XP",C.cyan],["COMPLETION","60.4%",C.green],["ACTIVE","3/5",C.amber],["TIER","CMD",C.violet]].map(([k,v,c])=>(
+            <div key={String(k)} style={{ border:`1px solid ${String(c)}44`, background:`${String(c)}08`, padding:"10px 12px", textAlign:"center" }}>
+              <div style={{ ...px, fontSize:10, color:String(c), textShadow:`0 0 12px ${String(c)}`, marginBottom:4 }}>{v}</div>
+              <div style={{ ...mono, fontSize:6, color:C.muted, letterSpacing:"0.08em" }}>{k}</div>
+            </div>
+          ))}
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 28, alignItems: "start" }} className="mission-grid">
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {MISSIONS.map((m, i) => (
@@ -960,13 +969,14 @@ function MarketplaceSection() {
       <FloatingDataBg color={C.amber} />
       <div ref={ref} style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
         <SectionHeader label="MARKETPLACE" title="Deploy a Station in Seconds" sub="Pre-built station blueprints for every business model. Choose a template, name your station, and watch your AI crew get to work." />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
+        <div className="carousel-track" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
           {(templates ?? []).map((t, i) => {
             const color = CAT_COLORS[t.category] ?? C.blue;
             const icon = ICONS[t.category] ?? "⚙️";
             return (
-              <TiltCard key={t.id} strength={9}>
+              <TiltCard key={t.id} strength={9} style={undefined}>
                 <motion.div
+                  className="carousel-item"
                   initial={{ opacity: 0, y: 20 }}
                   animate={inView ? { opacity: 1, y: 0 } : {}}
                   transition={{ delay: i * 0.08, duration: 0.5 }}
@@ -1048,13 +1058,14 @@ function ArchSection() {
           style={{ marginBottom: 48, border: `1px solid ${C.border}`, background: C.bg, padding: "32px clamp(12px,3vw,24px)", overflowX: "auto" }}
         >
           <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.14em", marginBottom: 28, textAlign: "center" }}>▸ EXECUTION PIPELINE ▸</div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, flexWrap: "nowrap", minWidth: "max-content", margin: "0 auto" }}>
+          <div className="pipeline-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, flexWrap: "nowrap", minWidth: "max-content", margin: "0 auto" }}>
             {PIPELINE_NODES.map((node, i) => {
               const isActive = pulse === i;
               const isHover = activeNode === node.id;
               return (
                 <div key={node.id} style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
                   <motion.div
+                    className="pipeline-node"
                     onMouseEnter={() => setActiveNode(node.id)}
                     onMouseLeave={() => setActiveNode(null)}
                     animate={isActive ? { boxShadow: [`0 0 0px ${node.color}00`, `0 0 22px ${node.color}88`, `0 0 0px ${node.color}00`] } : {}}
@@ -1070,7 +1081,7 @@ function ArchSection() {
                     )}
                   </motion.div>
                   {i < PIPELINE_NODES.length - 1 && (
-                    <div style={{ display: "flex", alignItems: "center", width: 36, flexShrink: 0 }}>
+                    <div className="pipeline-arrow" style={{ display: "flex", alignItems: "center", width: 36, flexShrink: 0 }}>
                       <motion.div animate={pulse === i ? { opacity: [0.3, 1, 0.3], scaleX: [0.7, 1, 0.7] } : { opacity: 0.3 }} transition={{ duration: 0.9 }} style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${PIPELINE_NODES[i].color}88, ${PIPELINE_NODES[i + 1].color}88)` }} />
                       <div style={{ ...px, fontSize: 7, color: C.muted, marginLeft: -2 }}>▶</div>
                     </div>
@@ -1083,10 +1094,11 @@ function ArchSection() {
 
         {/* Agent model cards */}
         <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.14em", marginBottom: 20, textAlign: "center" }}>◈ AI MODEL STACK — PER AGENT ROLE ◈</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 12 }}>
+        <div className="carousel-track" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 12 }}>
           {AGENT_MODELS.map((agent, i) => (
-            <TiltCard key={agent.role} strength={8}>
+            <TiltCard key={agent.role} strength={8} style={undefined}>
               <motion.div
+                className="carousel-item-sm"
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: 0.4 + i * 0.08, duration: 0.4 }}
@@ -1149,13 +1161,13 @@ function CTASection() {
             Deploy your first AI station in seconds. Pick a template, assign your crew, and let CTRL run your business autonomously — 24/7.
           </p>
         </motion.div>
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={inView ? { opacity: 1, scale: 1 } : {}} transition={{ delay: 0.4, type: "spring", stiffness: 200 }} style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={inView ? { opacity: 1, scale: 1 } : {}} transition={{ delay: 0.4, type: "spring", stiffness: 200 }} className="cta-buttons" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
           <PixelBtn primary href="/" large>LAUNCH CTRL <Zap size={14} /></PixelBtn>
           <PixelBtn href="/templates" large>BROWSE TEMPLATES <ChevronRight size={14} /></PixelBtn>
         </motion.div>
 
         {/* Trust strip */}
-        <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.7 }} style={{ marginTop: 64, display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap", borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
+        <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.7 }} className="cta-trust" style={{ marginTop: 64, display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap", borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
           {[
             { v: "23", l: "AGENTS ACTIVE" },
             { v: "3", l: "STATIONS LIVE" },
@@ -1196,18 +1208,67 @@ export default function Marketing() {
 
         /* ── Responsive ── */
         @media (max-width: 900px) {
-          .hero-grid { grid-template-columns: 1fr !important; }
-          .hero-canvas { display: none !important; }
-          .preview-grid { grid-template-columns: 1fr !important; }
-          .rooms-grid { grid-template-columns: repeat(2,1fr) !important; }
-          .crew-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
-          .mission-grid { grid-template-columns: 1fr !important; }
-          .mission-aside { display: none !important; }
+          /* Nav */
           .nav-desktop { display: none !important; }
           .nav-hamburger { display: flex !important; }
+
+          /* Section padding compact */
+          section { padding-top: 56px !important; padding-bottom: 56px !important; }
+
+          /* Hero */
+          .hero-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+          .hero-canvas { display: none !important; }
+          .hero-copy h1 { font-size: 18px !important; }
+          .hero-stats { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; border-top: none !important; padding-top: 0 !important; margin-top: 16px !important; }
+          .hero-stats > div { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; margin-bottom: 0 !important; padding: 10px 12px !important; border: 1px solid rgba(255,255,255,0.06) !important; background: rgba(255,255,255,0.02) !important; }
+
+          /* Bento stats grid */
+          .bento-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+          .bento-wide { grid-column: span 2 !important; }
+
+          /* Carousel */
+          .carousel-track { display: flex !important; overflow-x: auto !important; scroll-snap-type: x mandatory !important; gap: 10px !important; padding-bottom: 8px !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important; }
+          .carousel-track::-webkit-scrollbar { display: none !important; }
+          .carousel-item { flex: 0 0 75vw !important; scroll-snap-align: start !important; }
+          .carousel-item-sm { flex: 0 0 68vw !important; scroll-snap-align: start !important; }
+
+          /* Station preview */
+          .preview-grid { grid-template-columns: 1fr !important; }
+          .preview-stats { display: none !important; }
+          .rooms-grid { grid-template-columns: repeat(2,1fr) !important; }
+
+          /* Crew */
+          .crew-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+          .crew-center { display: none !important; }
+          .crew-roles { grid-template-columns: repeat(3,1fr) !important; gap: 6px !important; }
+          .crew-features { display: none !important; }
+
+          /* Missions */
+          .mission-grid { grid-template-columns: 1fr !important; }
+          .mission-aside { display: none !important; }
+          .mission-bento { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 7px !important; margin-bottom: 16px !important; }
+
+          /* Section headers */
+          .section-header { margin-bottom: 28px !important; }
+          .section-header p { font-size: 10px !important; }
+
+          /* Pipeline */
+          .pipeline-inner { flex-direction: column !important; align-items: stretch !important; min-width: unset !important; gap: 0 !important; }
+          .pipeline-node { min-width: unset !important; width: 100% !important; }
+          .pipeline-arrow { transform: rotate(90deg) !important; width: 24px !important; height: 24px !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+
+          /* CTA */
+          .cta-buttons { flex-direction: column !important; align-items: stretch !important; }
+          .cta-buttons a, .cta-buttons button { text-align: center !important; justify-content: center !important; width: 100% !important; }
+          .cta-trust { gap: 16px !important; }
         }
         @media (max-width: 540px) {
           .rooms-grid { grid-template-columns: 1fr !important; }
+          .crew-roles { grid-template-columns: repeat(2,1fr) !important; }
+          .bento-grid { grid-template-columns: 1fr 1fr !important; }
+          .hero-copy h1 { font-size: 15px !important; }
+          .carousel-item { flex: 0 0 88vw !important; }
+          .carousel-item-sm { flex: 0 0 82vw !important; }
         }
       `}</style>
 
