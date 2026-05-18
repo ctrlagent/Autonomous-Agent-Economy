@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 function HomeLink() {
   return (
     <a
-      href="/"
+      href="/marketing"
       title="Back to home"
       style={{
         display: "flex",
