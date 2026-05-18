@@ -22,12 +22,9 @@ import {
   Target,
   Store,
   Clock,
-  Terminal,
-  Cpu,
-  Database,
-  Globe,
   ArrowRight,
   ChevronRight,
+  X,
 } from "lucide-react";
 
 /* ─── Design Tokens ────────────────────────────────────────────────────────── */
@@ -91,26 +88,42 @@ const BOOT_LINES = [
 function BootSequence({ onDone }: { onDone: () => void }) {
   const [lines, setLines] = useState<string[]>([]);
   const [done, setDone] = useState(false);
+
+  const handleSkip = useCallback(() => {
+    setDone(true);
+    sessionStorage.setItem("ctrl_booted", "1");
+    setTimeout(onDone, 300);
+  }, [onDone]);
+
   useEffect(() => {
     let i = 0;
+    let cancelled = false;
     const tick = () => {
+      if (cancelled) return;
       if (i < BOOT_LINES.length) {
         setLines((prev) => [...prev, BOOT_LINES[i++]]);
-        setTimeout(tick, i === BOOT_LINES.length ? 500 : 160);
+        setTimeout(tick, i === BOOT_LINES.length ? 400 : 130);
       } else {
-        setTimeout(() => setDone(true), 350);
-        setTimeout(onDone, 950);
+        setTimeout(() => { if (!cancelled) setDone(true); }, 300);
+        setTimeout(() => {
+          if (!cancelled) {
+            sessionStorage.setItem("ctrl_booted", "1");
+            onDone();
+          }
+        }, 800);
       }
     };
-    setTimeout(tick, 180);
+    setTimeout(tick, 150);
+    return () => { cancelled = true; };
   }, [onDone]);
+
   return (
     <AnimatePresence>
       {!done && (
         <motion.div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: 0.5 }}
           style={{
             position: "fixed",
             inset: 0,
@@ -123,6 +136,38 @@ function BootSequence({ onDone }: { onDone: () => void }) {
             padding: 40,
           }}
         >
+          {/* Skip button */}
+          <button
+            onClick={handleSkip}
+            style={{
+              position: "absolute",
+              top: 24,
+              right: 24,
+              ...mono,
+              fontSize: 9,
+              color: C.muted,
+              background: "transparent",
+              border: `1px solid ${C.border}`,
+              padding: "7px 14px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              letterSpacing: "0.1em",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.color = C.cyan;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = C.cyan;
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.color = C.muted;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = C.border;
+            }}
+          >
+            <X size={10} /> SKIP
+          </button>
+
           <div style={{
             position: "absolute",
             width: 480,
@@ -189,7 +234,6 @@ function FloatingDataBg({ color = C.cyan }: { color?: string }) {
 
   return (
     <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
-      {/* Dot grid */}
       <div style={{
         position: "absolute",
         inset: 0,
@@ -197,7 +241,6 @@ function FloatingDataBg({ color = C.cyan }: { color?: string }) {
         backgroundSize: "32px 32px",
         opacity: 0.4,
       }} />
-      {/* Floating text data */}
       {positions.map((p, i) => (
         <motion.div
           key={i}
@@ -217,7 +260,6 @@ function FloatingDataBg({ color = C.cyan }: { color?: string }) {
           {p.text}
         </motion.div>
       ))}
-      {/* Scanning horizontal line */}
       <motion.div
         animate={{ top: ["-2%", "102%"] }}
         transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
@@ -267,11 +309,9 @@ function PresentationFrame({
           transformOrigin: "top center",
         }}
       >
-        {/* Corner accents */}
         {(([["top","left"],["top","right"],["bottom","left"],["bottom","right"]] as const)).map(([v,h]) => (
           <div key={`${v}${h}`} style={{ position: "absolute", [v]: -1, [h]: -1, width: 20, height: 20, borderTop: v === "top" ? `2px solid ${color}` : "none", borderBottom: v === "bottom" ? `2px solid ${color}` : "none", borderLeft: h === "left" ? `2px solid ${color}` : "none", borderRight: h === "right" ? `2px solid ${color}` : "none", zIndex: 2 }} />
         ))}
-        {/* Title bar */}
         <div style={{ padding: "7px 14px", borderBottom: `1px solid ${color}22`, display: "flex", alignItems: "center", gap: 8, background: `${C.surface}dd` }}>
           <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.6 }} style={{ width: 7, height: 7, borderRadius: "50%", background: color, boxShadow: `0 0 8px ${color}`, flexShrink: 0 }} />
           {title && <span style={{ ...mono, fontSize: 8, color, letterSpacing: "0.1em" }}>{title}</span>}
@@ -292,9 +332,7 @@ function GridBg({ opacity = 0.08 }: { opacity?: number }) {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 3000], [0, -180]);
   return (
-    <motion.div
-      style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", y }}
-    >
+    <motion.div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", y }}>
       <svg width="100%" height="100%" style={{ opacity }}>
         <defs>
           <pattern id={`${id}-sm`} width="40" height="40" patternUnits="userSpaceOnUse">
@@ -317,7 +355,7 @@ function GridBg({ opacity = 0.08 }: { opacity?: number }) {
 /* ─── Section Wrapper ───────────────────────────────────────────────────────── */
 function Section({ children, id, style }: { children: React.ReactNode; id?: string; style?: React.CSSProperties }) {
   return (
-    <section id={id} style={{ position: "relative", overflow: "hidden", ...style }}>
+    <section id={id} style={{ position: "relative", overflow: "hidden", scrollMarginTop: 60, ...style }}>
       {children}
     </section>
   );
@@ -336,7 +374,7 @@ function SectionHeader({ label, title, sub }: { label: string; title: string; su
   );
 }
 
-/* ─── Tilt Wrapper — safe single component wrapper for tilt hook ────────────── */
+/* ─── Tilt Wrapper ──────────────────────────────────────────────────────────── */
 function TiltCard({ children, strength = 8, style }: { children: React.ReactNode; strength?: number; style?: React.CSSProperties }) {
   const tilt = use3DTilt(strength);
   return <div ref={tilt.ref} onMouseMove={tilt.onMouseMove} onMouseLeave={tilt.onMouseLeave} style={style}>{children}</div>;
@@ -350,8 +388,7 @@ function StatCard({ label, value, color = C.cyan, desc, trend }: { label: string
       ref={tilt.ref}
       onMouseMove={tilt.onMouseMove}
       onMouseLeave={tilt.onMouseLeave}
-      style={{ border: `1px solid ${color}55`, background: `${color}0d`, padding: "14px 16px", position: "relative", boxShadow: `0 0 24px ${color}10`, cursor: "default" }}
-      className="text-[14px]">
+      style={{ border: `1px solid ${color}55`, background: `${color}0d`, padding: "14px 16px", position: "relative", boxShadow: `0 0 24px ${color}10`, cursor: "default" }}>
       {[["top","left"],["top","right"],["bottom","left"],["bottom","right"]].map(([v,h]) => (
         <div key={`${v}${h}`} style={{ position: "absolute", [v]: -1, [h]: -1, width: 10, height: 10, borderTop: v === "top" ? `2px solid ${color}` : "none", borderBottom: v === "bottom" ? `2px solid ${color}` : "none", borderLeft: h === "left" ? `2px solid ${color}` : "none", borderRight: h === "right" ? `2px solid ${color}` : "none" }} />
       ))}
@@ -366,11 +403,13 @@ function StatCard({ label, value, color = C.cyan, desc, trend }: { label: string
 }
 
 /* ─── Pixel Button ──────────────────────────────────────────────────────────── */
-function PixelBtn({ children, primary, href, onClick }: { children: React.ReactNode; primary?: boolean; href?: string; onClick?: () => void }) {
+function PixelBtn({ children, primary, href, onClick, large }: { children: React.ReactNode; primary?: boolean; href?: string; onClick?: () => void; large?: boolean }) {
   const [hovered, setHovered] = useState(false);
+  const basePad = large ? "18px 36px" : "14px 28px";
+  const baseFontSize = large ? 10 : 9;
   const style: React.CSSProperties = primary
-    ? { ...px, fontSize: 9, padding: "14px 28px", letterSpacing: "0.08em", border: `2px solid ${C.cyan}`, background: hovered ? C.cyan : `${C.cyan}22`, color: hovered ? C.bg : C.cyan, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none", transition: "all 0.18s ease", position: "relative", boxShadow: hovered ? `0 0 40px ${C.cyan}66, 0 0 80px ${C.cyan}22` : `0 0 24px ${C.cyan}33` }
-    : { ...px, fontSize: 9, padding: "14px 28px", letterSpacing: "0.08em", border: `2px solid ${hovered ? "#fff" : C.border}`, background: hovered ? `${C.border}55` : "transparent", color: hovered ? "#fff" : "#6a7a9a", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none", transition: "all 0.18s ease", position: "relative" };
+    ? { ...px, fontSize: baseFontSize, padding: basePad, letterSpacing: "0.08em", border: `2px solid ${C.cyan}`, background: hovered ? C.cyan : `${C.cyan}22`, color: hovered ? C.bg : C.cyan, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none", transition: "all 0.18s ease", position: "relative", boxShadow: hovered ? `0 0 40px ${C.cyan}66, 0 0 80px ${C.cyan}22` : `0 0 24px ${C.cyan}33` }
+    : { ...px, fontSize: baseFontSize, padding: basePad, letterSpacing: "0.08em", border: `2px solid ${hovered ? "#fff" : C.border}`, background: hovered ? `${C.border}55` : "transparent", color: hovered ? "#fff" : "#6a7a9a", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none", transition: "all 0.18s ease", position: "relative" };
   if (href) return <Link href={href} style={style} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>{children}</Link>;
   return <button style={style} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onClick={onClick}>{children}</button>;
 }
@@ -412,10 +451,121 @@ function FloatingEvents() {
   );
 }
 
-/* ─── Scanline overlay ──────────────────────────────────────────────────────── */
+/* ─── Scanlines ─────────────────────────────────────────────────────────────── */
 function Scanlines() {
   return (
     <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 5, background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)" }} />
+  );
+}
+
+/* ─── Sticky Navbar ─────────────────────────────────────────────────────────── */
+const NAV_SECTIONS = [
+  { label: "STATION", id: "hero" },
+  { label: "CREW", id: "crew" },
+  { label: "MISSIONS", id: "missions" },
+  { label: "MARKET", id: "marketplace" },
+  { label: "HOW IT WORKS", id: "arch" },
+];
+
+function scrollTo(id: string) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth" });
+}
+
+function StickyNav() {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { scrollY } = useScroll();
+
+  useEffect(() => {
+    return scrollY.on("change", (v) => setScrolled(v > 40));
+  }, [scrollY]);
+
+  return (
+    <motion.nav
+      animate={{ background: scrolled ? `${C.surface}f0` : `${C.surface}dd`, boxShadow: scrolled ? `0 2px 24px rgba(0,0,0,0.5)` : "none" }}
+      transition={{ duration: 0.2 }}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 clamp(16px,4vw,40px)",
+        height: 56,
+        borderBottom: `1px solid ${scrolled ? C.border : "transparent"}`,
+        backdropFilter: "blur(12px)",
+        transition: "border-color 0.2s",
+      }}
+    >
+      {/* Logo */}
+      <button onClick={() => scrollTo("hero")} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer" }}>
+        <svg width="22" height="22" viewBox="0 0 28 28">
+          <polygon points="14,2 26,8 26,20 14,26 2,20 2,8" fill="none" stroke={C.cyan} strokeWidth="1.8" />
+          <polygon points="14,7 21,11 21,17 14,21 7,17 7,11" fill="none" stroke={C.cyan} strokeWidth="0.6" opacity="0.4" />
+          <text x="14" y="19" textAnchor="middle" fill={C.amber} fontSize="10" fontFamily="'Press Start 2P',monospace">C</text>
+        </svg>
+        <span style={{ ...px, fontSize: 10, color: "#fff", letterSpacing: "0.08em", textShadow: `0 0 16px ${C.cyan}66` }}>CTRL</span>
+        <span style={{ ...mono, fontSize: 7, color: C.cyan, padding: "2px 7px", border: `1px solid ${C.cyan}55`, background: `${C.cyan}10`, display: "flex", alignItems: "center", gap: 4 }}>
+          <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.4 }} style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: C.green, boxShadow: `0 0 6px ${C.green}` }} />
+          ONLINE
+        </span>
+      </button>
+
+      {/* Desktop nav links */}
+      <div style={{ display: "flex", gap: 4, alignItems: "center" }} className="nav-desktop">
+        {NAV_SECTIONS.map(({ label, id }) => (
+          <button
+            key={id}
+            onClick={() => scrollTo(id)}
+            style={{ ...mono, fontSize: 8, color: "#5a6a8a", background: "none", border: "none", cursor: "pointer", padding: "6px 12px", letterSpacing: "0.1em", transition: "color 0.15s" }}
+            onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = C.cyan)}
+            onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = "#5a6a8a")}
+          >{label}</button>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Link
+          href="/"
+          style={{ ...px, fontSize: 8, color: C.bg, textDecoration: "none", padding: "9px 18px", border: `2px solid ${C.cyan}`, background: C.cyan, letterSpacing: "0.06em", boxShadow: `0 0 20px ${C.cyan}44`, transition: "all 0.18s", whiteSpace: "nowrap" }}
+        >
+          ENTER APP →
+        </Link>
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setMenuOpen(v => !v)}
+          style={{ display: "none", background: "none", border: `1px solid ${C.border}`, color: C.muted, padding: "6px 10px", cursor: "pointer" }}
+          className="nav-hamburger"
+        >
+          ☰
+        </button>
+      </div>
+
+      {/* Mobile dropdown */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{ position: "absolute", top: 56, left: 0, right: 0, background: `${C.surface}f8`, borderBottom: `1px solid ${C.border}`, padding: "12px 0", zIndex: 200 }}
+          >
+            {NAV_SECTIONS.map(({ label, id }) => (
+              <button
+                key={id}
+                onClick={() => { scrollTo(id); setMenuOpen(false); }}
+                style={{ display: "block", width: "100%", textAlign: "left", ...mono, fontSize: 9, color: C.muted, background: "none", border: "none", cursor: "pointer", padding: "12px 24px", letterSpacing: "0.1em" }}
+              >{label}</button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.nav>
   );
 }
 
@@ -437,39 +587,15 @@ function HeroSection() {
   const ss = String(tick % 60).padStart(2, "0");
 
   return (
-    <Section style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column" }}>
+    <Section id="hero" style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", paddingTop: 56 }}>
       <motion.div style={{ position: "absolute", inset: 0, y: bgY, pointerEvents: "none" }}>
         <GridBg opacity={0.1} />
         <FloatingDataBg color={C.cyan} />
       </motion.div>
       <Scanlines />
 
-      {/* Top nav */}
-      <nav style={{ position: "relative", zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 40px", borderBottom: `1px solid ${C.border}`, background: `${C.surface}dd`, backdropFilter: "blur(8px)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <svg width="26" height="26" viewBox="0 0 28 28">
-            <polygon points="14,2 26,8 26,20 14,26 2,20 2,8" fill="none" stroke={C.cyan} strokeWidth="1.8" />
-            <polygon points="14,7 21,11 21,17 14,21 7,17 7,11" fill="none" stroke={C.cyan} strokeWidth="0.6" opacity="0.4" />
-            <text x="14" y="19" textAnchor="middle" fill={C.amber} fontSize="10" fontFamily="'Press Start 2P',monospace">C</text>
-          </svg>
-          <span style={{ ...px, fontSize: 11, color: "#fff", letterSpacing: "0.08em", textShadow: `0 0 16px ${C.cyan}66` }}>CTRL</span>
-          <span style={{ ...mono, fontSize: 7, color: C.cyan, padding: "3px 8px", border: `1px solid ${C.cyan}55`, background: `${C.cyan}10`, marginLeft: 6, display: "flex", alignItems: "center", gap: 5 }}>
-            <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.4 }} style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: C.green, boxShadow: `0 0 6px ${C.green}` }} />
-            ONLINE
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 28 }}>
-          {([["STATION", "/"], ["CREW", "/crew"], ["MISSIONS", "/missions"], ["TIMELINE", "/timeline"], ["MARKET", "/templates"]] as const).map(([label, href]) => (
-            <Link key={href} href={href} style={{ ...mono, fontSize: 8, color: "#5a6a8a", letterSpacing: "0.12em", cursor: "pointer", transition: "color 0.15s", textDecoration: "none" }} onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = C.cyan)} onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = "#5a6a8a")}>{label}</Link>
-          ))}
-        </div>
-        <Link href="/" style={{ ...px, fontSize: 8, color: C.bg, textDecoration: "none", padding: "9px 18px", border: `2px solid ${C.cyan}`, background: C.cyan, letterSpacing: "0.08em", boxShadow: `0 0 20px ${C.cyan}44`, transition: "all 0.18s" }}>
-          ENTER APP →
-        </Link>
-      </nav>
-
-      {/* Hero content — editorial two-column */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.1fr", alignItems: "center", padding: "40px 56px", gap: 56, position: "relative", zIndex: 10, maxWidth: 1400, margin: "0 auto", width: "100%" }}>
+      {/* Hero content */}
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.1fr", alignItems: "center", padding: "40px clamp(20px,5vw,56px)", gap: "clamp(24px,4vw,56px)", position: "relative", zIndex: 10, maxWidth: 1400, margin: "0 auto", width: "100%" }} className="hero-grid">
         {/* Left copy */}
         <motion.div initial={{ opacity: 0, x: -36 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}>
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }} style={{ ...mono, fontSize: 8, color: C.cyan, letterSpacing: "0.24em", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
@@ -486,17 +612,17 @@ function HeroSection() {
             Build, deploy, and scale entire businesses with autonomous AI crews operating inside living digital stations.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
-            <PixelBtn primary href="/">ENTER STATION <ArrowRight size={13} /></PixelBtn>
-            <PixelBtn>VIEW LIVE SYSTEM</PixelBtn>
+            <PixelBtn primary href="/" large>ENTER STATION <ArrowRight size={13} /></PixelBtn>
+            <PixelBtn onClick={() => scrollTo("arch")}>HOW IT WORKS</PixelBtn>
           </div>
           {/* Live stats strip */}
-          <div style={{ display: "flex", gap: 0, borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
+          <div style={{ display: "flex", gap: 0, borderTop: `1px solid ${C.border}`, paddingTop: 20, flexWrap: "wrap" }}>
             {[
               { label: "AGENTS ACTIVE", value: `${summary?.activeAgents ?? 19}/${summary?.totalAgents ?? 23}`, color: C.cyan },
               { label: "STATIONS", value: String(summary?.activeStations ?? 3), color: C.green },
               { label: "UPTIME", value: `${hh}:${mm}:${ss}`, color: C.amber },
             ].map((s, i) => (
-              <div key={s.label} style={{ paddingRight: 24, marginRight: 24, borderRight: i < 2 ? `1px solid ${C.border}` : "none" }}>
+              <div key={s.label} style={{ paddingRight: 24, marginRight: 24, borderRight: i < 2 ? `1px solid ${C.border}` : "none", marginBottom: 8 }}>
                 <div style={{ ...px, fontSize: 13, color: s.color, textShadow: `0 0 16px ${s.color}`, marginBottom: 5 }}>{s.value}</div>
                 <div style={{ ...mono, fontSize: 7, color: "#5a6a8a", letterSpacing: "0.12em" }}>{s.label}</div>
               </div>
@@ -504,9 +630,8 @@ function HeroSection() {
           </div>
         </motion.div>
 
-        {/* Right: Live Phaser station in presentation frame */}
-        <motion.div initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 1.1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ position: "relative" }}>
-          {/* Atmospheric glow */}
+        {/* Right: Live Phaser station */}
+        <motion.div initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 1.1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ position: "relative" }} className="hero-canvas">
           <div style={{ position: "absolute", inset: -40, borderRadius: 4, background: `radial-gradient(ellipse, ${C.cyan}12 0%, transparent 70%)`, filter: "blur(30px)", pointerEvents: "none", zIndex: 0 }} />
           <PresentationFrame color={C.cyan} title="ALPHA-7 DEFI OPS — LIVE FEED" float style={{ position: "relative", zIndex: 1 }}>
             <div style={{ height: 440, overflow: "hidden" }}>
@@ -525,7 +650,12 @@ function HeroSection() {
 
       {/* Scroll hint */}
       <div style={{ textAlign: "center", padding: "20px 0", position: "relative", zIndex: 10 }}>
-        <motion.div animate={{ y: [0, 8, 0], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }} style={{ ...mono, fontSize: 8, color: "#4a5a70", letterSpacing: "0.16em", display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+        <motion.div
+          animate={{ y: [0, 8, 0], opacity: [0.5, 1, 0.5] }}
+          transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+          style={{ ...mono, fontSize: 8, color: "#4a5a70", letterSpacing: "0.16em", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer" }}
+          onClick={() => scrollTo("station-preview")}
+        >
           <span style={{ width: 40, height: 1, background: `linear-gradient(to left, ${C.border}, transparent)`, display: "inline-block" }} />
           SCROLL TO EXPLORE
           <span style={{ width: 40, height: 1, background: `linear-gradient(to right, ${C.border}, transparent)`, display: "inline-block" }} />
@@ -549,15 +679,14 @@ function StationPreviewSection() {
     { name: "Analytics", role: "analytics", agents: 1, tasks: 29, progress: 82 },
   ];
   return (
-    <Section style={{ background: C.surface, padding: "90px 60px 48px", borderTop: `1px solid ${C.border}` }}>
+    <Section id="station-preview" style={{ background: C.surface, padding: "90px clamp(20px,5vw,60px) 48px", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.05} />
       <FloatingDataBg color={C.violet} />
       <div ref={ref} style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
         <SectionHeader label="LIVE PREVIEW" title="Your Station at a Glance" sub="Every station is a living economy — six specialized rooms, each running autonomous agents around the clock." />
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 32, alignItems: "start" }}>
-          {/* Room grid in presentation frame */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 32, alignItems: "start" }} className="preview-grid">
           <PresentationFrame color={C.cyan} title="STATION_ALPHA-7 // ROOM OVERVIEW" float={false}>
-            <div style={{ padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            <div style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }} className="rooms-grid">
               {ROOMS.map((room, i) => {
                 const color = roleHex(room.role);
                 return (
@@ -584,12 +713,8 @@ function StationPreviewSection() {
                 );
               })}
             </div>
-
-            {/* Station Intel Footer */}
             <div style={{ borderTop: `1px solid ${C.border}`, margin: "0 16px", padding: "14px 0 4px" }}>
-              <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.16em", marginBottom: 12 }}>◈ STATION INTEL — ALPHA-7 AGGREGATE</div>
-              {/* Aggregate stat row */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 14 }}>
                 {[
                   { label: "TOTAL AGENTS", value: String(ROOMS.reduce((s, r) => s + r.agents, 0)), color: C.cyan },
                   { label: "TOTAL TASKS", value: String(ROOMS.reduce((s, r) => s + r.tasks, 0)), color: C.amber },
@@ -602,94 +727,17 @@ function StationPreviewSection() {
                   </div>
                 ))}
               </div>
-              {/* Room progress breakdown bar */}
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                  <span style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em" }}>ROOM THROUGHPUT DISTRIBUTION</span>
-                  <span style={{ ...mono, fontSize: 6, color: C.green }}>ALL SYSTEMS NOMINAL</span>
-                </div>
-                <div style={{ display: "flex", height: 8, gap: 2, overflow: "hidden" }}>
-                  {ROOMS.map((room) => {
-                    const color = roleHex(room.role);
-                    const pct = (room.tasks / ROOMS.reduce((s, r) => s + r.tasks, 0)) * 100;
-                    return (
-                      <motion.div
-                        key={room.name}
-                        initial={{ width: 0 }}
-                        animate={inView ? { width: `${pct}%` } : {}}
-                        transition={{ delay: 0.8, duration: 1 }}
-                        title={`${room.name}: ${room.tasks} tasks`}
-                        style={{ background: `${color}cc`, boxShadow: `0 0 6px ${color}66`, position: "relative" }}
-                      />
-                    );
-                  })}
-                </div>
-                <div style={{ display: "flex", gap: 12, marginTop: 5, flexWrap: "wrap" }}>
-                  {ROOMS.map((room) => (
-                    <div key={room.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <div style={{ width: 5, height: 5, background: roleHex(room.role) }} />
-                      <span style={{ ...mono, fontSize: 5, color: C.muted }}>{room.name.split(" ")[0]}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Status log */}
-              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-                <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 7 }}>RECENT STATION LOG</div>
-                {[
-                  { time: "17:42", msg: "Research Lab completed deep-scan batch", color: C.cyan },
-                  { time: "17:38", msg: "Dev Lab deployed v2.4 to staging environment", color: C.blue },
-                  { time: "17:31", msg: "Analytics detected revenue spike +12%", color: C.red },
-                  { time: "17:18", msg: "Marketing Hub launched growth campaign", color: C.green },
-                ].map((entry, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={inView ? { opacity: 1, x: 0 } : {}}
-                    transition={{ delay: 0.9 + i * 0.08, duration: 0.3 }}
-                    style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 6, borderLeft: `2px solid ${entry.color}44`, paddingLeft: 8 }}
-                  >
-                    <span style={{ ...mono, fontSize: 6, color: C.muted, flexShrink: 0 }}>{entry.time}</span>
-                    <span style={{ ...mono, fontSize: 6, color: "#7a8aa8", lineHeight: 1.6 }}>{entry.msg}</span>
-                  </motion.div>
-                ))}
-              </div>
             </div>
           </PresentationFrame>
 
-          {/* Stats panel */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <StatCard
-              label="PLATFORM AGENTS"
-              value={`${summary?.activeAgents ?? 19}/${summary?.totalAgents ?? 23}`}
-              color={C.cyan}
-              desc="Active agents currently processing tasks across all stations"
-              trend="↑ LIVE"
-            />
-            <StatCard
-              label="ACTIVE STATIONS"
-              value={String(summary?.activeStations ?? 3)}
-              color={C.green}
-              desc="Stations online and running autonomous agent operations"
-              trend="+1 TODAY"
-            />
-            <StatCard
-              label="TASKS TODAY"
-              value={String(summary?.tasksCompletedToday ?? 47)}
-              color={C.amber}
-              desc="Completed tasks executed by your crew in the last 24 hours"
-            />
-            <StatCard
-              label="OVERALL PROGRESS"
-              value={`${Math.round(summary?.overallProgress ?? 55)}%`}
-              color={C.violet}
-              desc="Aggregate mission completion rate across all active objectives"
-            />
-            {/* Revenue sparkline */}
+            <StatCard label="PLATFORM AGENTS" value={`${summary?.activeAgents ?? 19}/${summary?.totalAgents ?? 23}`} color={C.cyan} desc="Active agents processing tasks across all stations" trend="↑ LIVE" />
+            <StatCard label="ACTIVE STATIONS" value={String(summary?.activeStations ?? 3)} color={C.green} desc="Stations online running autonomous operations" trend="+1 TODAY" />
+            <StatCard label="TASKS TODAY" value={String(summary?.tasksCompletedToday ?? 47)} color={C.amber} desc="Completed tasks executed by your crew in 24h" />
+            <StatCard label="OVERALL PROGRESS" value={`${Math.round((summary as any)?.overallProgress ?? 55)}%`} color={C.violet} desc="Aggregate mission completion rate" />
             <div style={{ border: `1px solid ${C.border}`, padding: "12px 14px", background: `${C.surface}88` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.1em" }}>REVENUE 24H</div>
-                <div style={{ ...mono, fontSize: 6, color: C.muted }}>Autonomous earnings pipeline</div>
               </div>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 40 }}>
                 {[40,55,48,72,88,76,92,84,96,88,100,94,108,116,102,120,112,128,118,136,124,142,132,148].map((v, i) => (
@@ -697,22 +745,17 @@ function StationPreviewSection() {
                 ))}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7 }}>
-                <span style={{ ...mono, fontSize: 6, color: C.muted }}>Revenue generated by agents</span>
+                <span style={{ ...mono, fontSize: 6, color: C.muted }}>Autonomous earnings</span>
                 <span style={{ ...mono, fontSize: 8, color: C.green }}>$3,840 TODAY</span>
               </div>
             </div>
-            {/* Decorative ambient stats */}
-            <div style={{ border: `1px solid ${C.border}`, padding: "12px 14px", background: `${C.surface}44` }}>
-              <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 8 }}>NETWORK TELEMETRY</div>
-              {[["NET I/O", "↑ 2.4 MB/s", C.blue], ["LATENCY", "12ms", C.green], ["PKT LOSS", "0.0%", C.cyan], ["SIGNAL", "STABLE", C.violet]].map(([k, v, c]) => (
-                <div key={String(k)} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                  <span style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.08em" }}>{k}</span>
-                  <span style={{ ...mono, fontSize: 7, color: String(c) }}>{v}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
+
+        {/* CTA */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.6 }} style={{ textAlign: "center", marginTop: 48 }}>
+          <PixelBtn primary href="/" large>LAUNCH YOUR STATION <ArrowRight size={13} /></PixelBtn>
+        </motion.div>
       </div>
     </Section>
   );
@@ -744,18 +787,16 @@ function AgentCrewSection() {
   const doubled = [...displayAgents, ...displayAgents];
 
   return (
-    <Section style={{ background: C.bg, padding: "48px 0 90px", borderTop: `1px solid ${C.border}` }}>
+    <Section id="crew" style={{ background: C.bg, padding: "48px 0 90px", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.07} />
       <FloatingDataBg color={C.cyan} />
       <div ref={ref} style={{ position: "relative", zIndex: 10 }}>
-        <div style={{ padding: "0 60px" }}>
+        <div style={{ padding: "0 clamp(20px,5vw,60px)" }}>
           <SectionHeader label="CREW SYSTEM" title="Your Autonomous Agent Army" sub="Specialized AI agents, each with defined roles, unique skills, and persistent memory — working 24/7 inside your stations." />
         </div>
 
-        {/* Central stat + role breakdown grid */}
-        <div style={{ padding: "0 60px", marginBottom: 40 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 32, alignItems: "center", maxWidth: 900, margin: "0 auto" }}>
-            {/* Left: role breakdown */}
+        <div style={{ padding: "0 clamp(20px,5vw,60px)", marginBottom: 40 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 32, alignItems: "center", maxWidth: 900, margin: "0 auto" }} className="crew-grid">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
               {Object.entries(ROLE_HEX).map(([role, color]) => (
                 <div key={role} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", border: `1px solid ${color}22`, background: `${color}08` }}>
@@ -767,17 +808,13 @@ function AgentCrewSection() {
                 </div>
               ))}
             </div>
-            {/* Center: live count */}
             <motion.div animate={{ scale: [1, 1.02, 1], opacity: [0.85, 1, 0.85] }} transition={{ repeat: Infinity, duration: 3 }} style={{ textAlign: "center", padding: "20px 32px", border: `1px solid ${C.cyan}44`, background: `${C.cyan}08` }}>
               <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.2em", marginBottom: 8 }}>ACTIVE WORKFORCE</div>
               <div style={{ ...px, fontSize: "clamp(20px,3.5vw,36px)", color: C.cyan, textShadow: `0 0 60px ${C.cyan}, 0 0 120px ${C.cyan}44` }}>
-                {displayAgents.length > 0 ? `${displayAgents.filter((a) => a.status === "working").length}` : "19"}
+                {displayAgents.filter((a) => a.status === "working").length || "19"}
               </div>
               <div style={{ ...mono, fontSize: 7, color: C.cyan, letterSpacing: "0.1em", marginTop: 4 }}>AGENTS ONLINE</div>
-              <div style={{ height: 1, background: `${C.cyan}22`, margin: "10px 0" }} />
-              <div style={{ ...mono, fontSize: 6, color: C.muted }}>ALL SYSTEMS NOMINAL</div>
             </motion.div>
-            {/* Right: capabilities */}
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
               {[
                 { label: "Persistent Memory", desc: "Agents retain context across sessions" },
@@ -799,7 +836,7 @@ function AgentCrewSection() {
           </div>
         </div>
 
-        {/* Scrolling crew wall with fade edges */}
+        {/* Scrolling crew wall */}
         <div style={{ position: "relative" }}>
           <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: `linear-gradient(to right, ${C.bg}, transparent)`, zIndex: 10, pointerEvents: "none" }} />
           <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 10, pointerEvents: "none" }} />
@@ -822,162 +859,15 @@ function AgentCrewSection() {
           </div>
         </div>
 
-        {/* Footer info strip */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 0, marginTop: 28, padding: "14px 60px 0", borderTop: `1px solid ${C.border}` }}>
-          {[
-            { label: "AUTONOMOUS", value: "No human prompting needed" },
-            { label: "PERSISTENT", value: "Memory survives restarts" },
-            { label: "SCALABLE", value: "Add agents at any time" },
-            { label: "COORDINATED", value: "Crew collaborates on missions" },
-          ].map((item, i) => (
-            <div key={item.label} style={{ flex: 1, textAlign: "center", padding: "10px 16px", borderRight: i < 3 ? `1px solid ${C.border}` : "none" }}>
-              <div style={{ ...mono, fontSize: 7, color: C.cyan, letterSpacing: "0.14em", marginBottom: 4 }}>{item.label}</div>
-              <div style={{ ...mono, fontSize: 7, color: C.muted }}>{item.value}</div>
-            </div>
-          ))}
+        <div style={{ textAlign: "center", marginTop: 40, padding: "0 20px" }}>
+          <PixelBtn primary href="/crew" large>MEET YOUR CREW <ChevronRight size={13} /></PixelBtn>
         </div>
       </div>
     </Section>
   );
 }
 
-/* ─── 4. SHIP COMMS SECTION ──────────────────────────────────────────────────── */
-interface Msg { id: number; from: string; role: string; text: string; }
-const COMMS_MESSAGES = [
-  { from: "NEXUS-1", role: "strategy", text: "Commander, deep scan of sector 4 complete. No threats detected." },
-  { from: "FORGE-3", role: "builder", text: "Build pipeline deployed. 3 new endpoints live and passing all tests." },
-  { from: "GROW-4", role: "growth", text: "Viral loop coefficient at 1.34. Revenue trajectory optimal." },
-  { from: "VECTOR-9", role: "research", text: "Alpha signal detected — large wallet accumulating PENDLE." },
-  { from: "ECHO-1", role: "content", text: "22-tweet thread on restaking mechanics live — 4.2K impressions." },
-  { from: "LENS-9", role: "analytics", text: "Q1 report complete. KPIs all within green thresholds." },
-];
-
-const ROLE_BARS = [
-  { role: "research", pct: 87 },
-  { role: "strategy", pct: 72 },
-  { role: "builder", pct: 95 },
-  { role: "content", pct: 60 },
-  { role: "growth", pct: 81 },
-  { role: "analytics", pct: 44 },
-];
-
-function ShipCommsSection() {
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [typing, setTyping] = useState<string | null>(null);
-  const feedRef = useRef<HTMLDivElement>(null);
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true });
-
-  useEffect(() => {
-    if (!inView) return;
-    let i = 0;
-    const addNext = () => {
-      if (i >= COMMS_MESSAGES.length) i = 0;
-      const msg = COMMS_MESSAGES[i++];
-      setTyping(msg.from);
-      setTimeout(() => {
-        setTyping(null);
-        setMessages((prev) => [...prev.slice(-8), { ...msg, id: Date.now() }]);
-        setTimeout(addNext, 2800);
-      }, 1200);
-    };
-    setTimeout(addNext, 600);
-  }, [inView]);
-  useEffect(() => {
-    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
-  }, [messages]);
-
-  return (
-    <Section style={{ background: C.surface, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
-      <GridBg opacity={0.05} />
-      <FloatingDataBg color={C.blue} />
-      <div ref={ref} style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
-        <SectionHeader label="SHIP COMMS" title="AI Crew Communications" sub="Every agent reports directly to Command. Watch your autonomous crew coordinate in real time across all channels." />
-
-        <PresentationFrame color={C.cyan} title="CTRL://CREW/COMMS — #ALL-CREW" float={false}>
-          <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 220px", gap: 0 }}>
-            {/* Channels sidebar */}
-            <div style={{ borderRight: `1px solid ${C.border}`, padding: "14px 0" }}>
-              <div style={{ ...mono, fontSize: 6, color: C.muted, padding: "0 12px 10px", letterSpacing: "0.1em" }}>CREW CHANNELS</div>
-              {[{ label: "#all-crew", active: true }, { label: "#research", active: false }, { label: "#builders", active: false }, { label: "#alerts", active: false }].map((ch) => (
-                <div key={ch.label} style={{ ...mono, fontSize: 7, padding: "7px 12px", color: ch.active ? C.cyan : C.muted, background: ch.active ? `${C.cyan}12` : "transparent", borderLeft: ch.active ? `2px solid ${C.cyan}` : "2px solid transparent", cursor: "pointer", letterSpacing: "0.06em" }}>{ch.label}</div>
-              ))}
-              <div style={{ marginTop: 16, padding: "0 12px" }}>
-                <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>ONLINE AGENTS</div>
-                {["NEXUS-1", "FORGE-3", "VECTOR-9", "ECHO-1"].map((n) => (
-                  <div key={n} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.green, boxShadow: `0 0 4px ${C.green}` }} />
-                    <span style={{ ...mono, fontSize: 6, color: C.muted }}>{n}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Message feed */}
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ padding: "9px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 7 }}>
-                <Radio size={11} color={C.cyan} />
-                <span style={{ ...mono, fontSize: 7, color: C.cyan, letterSpacing: "0.1em" }}>#ALL-CREW</span>
-                <span style={{ ...mono, fontSize: 6, color: C.muted, marginLeft: "auto" }}>{messages.length} MESSAGES</span>
-              </div>
-              <div ref={feedRef} style={{ flex: 1, overflowY: "auto", padding: "14px", minHeight: 260, maxHeight: 260 }}>
-                {messages.map((msg) => (
-                  <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", gap: 9, marginBottom: 12 }}>
-                    <AgentAvatar role={msg.role} size={24} />
-                    <div>
-                      <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 2 }}>
-                        <span style={{ ...px, fontSize: 6, color: roleHex(msg.role) }}>{msg.from}</span>
-                        <span style={{ ...mono, fontSize: 6, color: C.muted }}>{new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
-                      </div>
-                      <div style={{ ...mono, fontSize: 8, color: "#c8d0e8", lineHeight: 1.6 }}>{msg.text}</div>
-                    </div>
-                  </motion.div>
-                ))}
-                {typing && (
-                  <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
-                    <span style={{ ...mono, fontSize: 6, color: C.muted }}>{typing} is typing</span>
-                    <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 0.8 }} style={{ ...mono, color: C.muted }}>...</motion.span>
-                  </div>
-                )}
-              </div>
-              <div style={{ padding: "9px 10px", borderTop: `1px solid ${C.border}`, display: "flex", gap: 7 }}>
-                <div style={{ flex: 1, ...mono, fontSize: 7, color: C.muted, padding: "7px 10px", background: `${C.surface}88`, border: `1px solid ${C.border}` }}>Enter command or message...</div>
-                <button style={{ ...mono, fontSize: 7, padding: "7px 12px", background: `${C.cyan}18`, border: `1px solid ${C.cyan}44`, color: C.cyan, cursor: "pointer" }}>SEND</button>
-              </div>
-            </div>
-            {/* Right panel */}
-            <div style={{ borderLeft: `1px solid ${C.border}`, padding: "14px" }}>
-              <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 10 }}>ROLE ACTIVITY</div>
-              {ROLE_BARS.map((r) => (
-                <div key={r.role} style={{ marginBottom: 8 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                    <span style={{ ...mono, fontSize: 6, color: roleHex(r.role), letterSpacing: "0.08em" }}>{r.role.toUpperCase()}</span>
-                    <span style={{ ...mono, fontSize: 6, color: C.muted }}>{r.pct}%</span>
-                  </div>
-                  <div style={{ height: 3, background: C.border }}>
-                    <motion.div animate={{ width: [`${r.pct - 8}%`, `${r.pct + 8}%`, `${r.pct - 8}%`] }} transition={{ repeat: Infinity, duration: 3 + r.pct / 30 }} style={{ height: "100%", background: roleHex(r.role), boxShadow: `0 0 6px ${roleHex(r.role)}` }} />
-                  </div>
-                </div>
-              ))}
-              <div style={{ marginTop: 16 }}>
-                <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>FREQ SPECTRUM</div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 1, height: 36 }}>
-                  {Array.from({ length: 28 }, (_, i) => {
-                    const h = Math.random() * 100;
-                    return (
-                      <motion.div key={i} animate={{ height: [`${h * 0.4}%`, `${h}%`, `${h * 0.6}%`] }} transition={{ repeat: Infinity, duration: 0.5 + Math.random(), delay: Math.random() }} style={{ flex: 1, background: `${C.cyan}88`, minHeight: 2 }} />
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </PresentationFrame>
-      </div>
-    </Section>
-  );
-}
-
-/* ─── 5. MISSION ECONOMY ─────────────────────────────────────────────────────── */
+/* ─── 4. MISSION ECONOMY ─────────────────────────────────────────────────────── */
 const MISSIONS = [
   { title: "Reach $5,000 Revenue", desc: "Drive autonomous revenue to the next tier", progress: 77, target: "$5,000", current: "$3,840", xp: 500, color: C.green, locked: false },
   { title: "Launch 10 Products", desc: "Ship products across all builder nodes", progress: 70, target: "10", current: "7", xp: 300, color: C.blue, locked: false },
@@ -990,14 +880,12 @@ function MissionSection() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
-    <Section style={{ background: C.bg, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
+    <Section id="missions" style={{ background: C.bg, padding: "90px clamp(20px,5vw,60px)", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.07} />
       <FloatingDataBg color={C.green} />
       <div ref={ref} style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
         <SectionHeader label="MISSION ECONOMY" title="Progress. Reward. Scale." sub="Missions are the engine of your station economy. Complete objectives to unlock higher-tier capabilities and reward your crew." />
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 28, alignItems: "start" }}>
-          {/* Mission list */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 28, alignItems: "start" }} className="mission-grid">
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {MISSIONS.map((m, i) => (
               <TiltCard key={m.title} strength={4}>
@@ -1011,7 +899,7 @@ function MissionSection() {
                   <div style={{ width: 40, height: 40, border: `2px solid ${m.color}44`, background: `${m.color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     {m.locked ? <span style={{ fontSize: 14 }}>🔒</span> : <Target size={16} color={m.color} />}
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ ...px, fontSize: 8, color: m.locked ? C.muted : "#fff", marginBottom: 5, letterSpacing: "0.04em" }}>{m.title}</div>
                     <div style={{ ...mono, fontSize: 7, color: C.muted, marginBottom: 7 }}>{m.desc}</div>
                     {!m.locked && (
@@ -1032,8 +920,7 @@ function MissionSection() {
             ))}
           </div>
 
-          {/* Floating side stats panel */}
-          <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }} style={{ display: "flex", flexDirection: "column", gap: 10 }} className="mission-aside">
             <div style={{ border: `1px solid ${C.cyan}44`, padding: "16px 14px", background: `${C.cyan}08`, position: "relative" }}>
               <div style={{ ...mono, fontSize: 7, color: C.cyan, letterSpacing: "0.1em", marginBottom: 12 }}>◈ ECONOMY STATUS</div>
               {[["TOTAL XP POOL", "2,050 XP", C.cyan], ["COMPLETION", "60.4%", C.green], ["ACTIVE MISSIONS", "3/5", C.amber], ["TIER", "COMMANDER", C.violet]].map(([k, v, c]) => (
@@ -1043,12 +930,6 @@ function MissionSection() {
                 </div>
               ))}
             </div>
-            <div style={{ border: `1px solid ${C.border}`, padding: "14px", background: `${C.surface}88` }}>
-              <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 8 }}>MISSION LOG</div>
-              {["[17:12] Revenue +$48", "[16:55] Task batch done", "[16:40] Agent LV UP", "[16:22] Mission 78%"].map((l, i) => (
-                <div key={i} style={{ ...mono, fontSize: 6, color: i === 0 ? C.green : "#4a5a70", marginBottom: 5, borderLeft: i === 0 ? `2px solid ${C.green}` : "2px solid transparent", paddingLeft: 6 }}>{l}</div>
-              ))}
-            </div>
             <div style={{ border: `1px solid ${C.violet}33`, padding: "14px", background: `${C.violet}08` }}>
               <div style={{ ...mono, fontSize: 6, color: C.violet, marginBottom: 8 }}>NEXT UNLOCK</div>
               <div style={{ ...px, fontSize: 7, color: "#fff", lineHeight: 1.8 }}>Deploy 3 Contracts</div>
@@ -1056,12 +937,16 @@ function MissionSection() {
             </div>
           </motion.div>
         </div>
+
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.6 }} style={{ textAlign: "center", marginTop: 48 }}>
+          <PixelBtn primary href="/missions" large>VIEW ALL MISSIONS <ArrowRight size={13} /></PixelBtn>
+        </motion.div>
       </div>
     </Section>
   );
 }
 
-/* ─── 6. TEMPLATE MARKETPLACE ────────────────────────────────────────────────── */
+/* ─── 5. TEMPLATE MARKETPLACE ────────────────────────────────────────────────── */
 function MarketplaceSection() {
   const { data: templates } = useListTemplates();
   const ref = useRef<HTMLDivElement>(null);
@@ -1070,12 +955,12 @@ function MarketplaceSection() {
   const CAT_COLORS: Record<string, string> = { crypto: C.amber, ecommerce: C.green, content: C.cyan, saas: C.violet };
 
   return (
-    <Section style={{ background: C.surface, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
+    <Section id="marketplace" style={{ background: C.surface, padding: "90px clamp(20px,5vw,60px)", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.05} />
       <FloatingDataBg color={C.amber} />
       <div ref={ref} style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
         <SectionHeader label="MARKETPLACE" title="Deploy a Station in Seconds" sub="Pre-built station blueprints for every business model. Choose a template, name your station, and watch your AI crew get to work." />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px,1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
           {(templates ?? []).map((t, i) => {
             const color = CAT_COLORS[t.category] ?? C.blue;
             const icon = ICONS[t.category] ?? "⚙️";
@@ -1109,88 +994,16 @@ function MarketplaceSection() {
             );
           })}
         </div>
+
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.5 }} style={{ textAlign: "center", marginTop: 48 }}>
+          <PixelBtn primary href="/templates" large>BROWSE FULL MARKETPLACE <Store size={13} /></PixelBtn>
+        </motion.div>
       </div>
     </Section>
   );
 }
 
-/* ─── 7. TIMELINE / ACTIVITY ─────────────────────────────────────────────────── */
-function TimelineSection() {
-  const { data: activity } = useGetRecentActivity({ limit: 20 });
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true });
-
-  return (
-    <Section style={{ background: C.bg, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
-      <GridBg opacity={0.07} />
-      <FloatingDataBg color={C.violet} />
-      <div ref={ref} style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
-        <SectionHeader label="LIVE ACTIVITY" title="Your Station, Live" sub="Every agent action, mission update, and revenue event — recorded in real time across your entire agent economy." />
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: 28, alignItems: "start" }}>
-          {/* Timeline */}
-          <div style={{ position: "relative" }}>
-            <div style={{ position: "absolute", left: 16, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, ${C.cyan}44, transparent)` }} />
-            {(activity ?? []).slice(0, 5).map((item, i) => {
-              const color = roleHex(item.agentRole ?? "");
-              return (
-                <motion.div key={item.id} initial={{ opacity: 0, x: -20 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ delay: i * 0.06, duration: 0.4 }} style={{ display: "flex", gap: 18, marginBottom: 16, paddingLeft: 42, position: "relative" }}>
-                  <div style={{ position: "absolute", left: 9, top: 4, width: 14, height: 14, border: `2px solid ${color}`, background: `${color}33`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
-                  </div>
-                  <div style={{ flex: 1, border: `1px solid ${color}22`, background: `${color}05`, padding: "11px 14px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ ...px, fontSize: 6, color }}>{item.agentName}</span>
-                      <span style={{ ...mono, fontSize: 6, color: C.muted }}>{new Date(item.timestamp ?? "").toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
-                    </div>
-                    <div style={{ ...mono, fontSize: 8, color: "#d0d8f0", marginBottom: 3 }}>{item.action}</div>
-                    {item.details && <div style={{ ...mono, fontSize: 7, color: C.muted, lineHeight: 1.6 }}>{item.details}</div>}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Floating side stats */}
-          <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ border: `1px solid ${C.cyan}44`, padding: "14px 12px", background: `${C.cyan}08` }}>
-              <div style={{ ...mono, fontSize: 6, color: C.cyan, marginBottom: 10, letterSpacing: "0.1em" }}>◈ LIVE METRICS</div>
-              {[["EVENTS/MIN", "12.4", C.green], ["AGENTS BUSY", "19/23", C.cyan], ["MSG VOLUME", "↑ 34%", C.amber], ["ERR RATE", "0.0%", C.green]].map(([k, v, c]) => (
-                <div key={String(k)} style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-                  <span style={{ ...mono, fontSize: 6, color: C.muted }}>{k}</span>
-                  <span style={{ ...mono, fontSize: 6, color: String(c) }}>{v}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ border: `1px solid ${C.border}`, padding: "12px", background: `${C.surface}88` }}>
-              <div style={{ ...mono, fontSize: 6, color: C.muted, marginBottom: 8 }}>ROLE DISTRIBUTION</div>
-              {Object.entries(ROLE_HEX).slice(0, 6).map(([role, color]) => (
-                <div key={role} style={{ marginBottom: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                    <span style={{ ...mono, fontSize: 6, color }}>{role.toUpperCase()}</span>
-                    <span style={{ ...mono, fontSize: 6, color: C.muted }}>{Math.floor(Math.random() * 30 + 50)}%</span>
-                  </div>
-                  <div style={{ height: 2, background: C.border }}>
-                    <motion.div animate={{ width: ["55%", "75%", "55%"] }} transition={{ repeat: Infinity, duration: 4, delay: Math.random() * 2 }} style={{ height: "100%", background: color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ border: `1px solid ${C.green}33`, padding: "12px", background: `${C.green}08` }}>
-              <div style={{ ...mono, fontSize: 6, color: C.green, marginBottom: 6 }}>SYS STATUS</div>
-              {["[ ONLINE ] Station Alpha-7", "[ OK ] Agent runtime", "[ STABLE ] Signal lock", "[ ACTIVE ] Mission engine"].map((l, i) => (
-                <div key={i} style={{ ...mono, fontSize: 6, color: "#4a6a5a", marginBottom: 4, lineHeight: 1.6 }}>{l}</div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </Section>
-  );
-}
-
-/* ─── 8. ARCHITECTURE SECTION ────────────────────────────────────────────────── */
-
+/* ─── 6. ARCHITECTURE / HOW IT WORKS ────────────────────────────────────────── */
 const PIPELINE_NODES = [
   { id: "CMD",   label: "COMMANDER", sub: "You",            color: C.amber  },
   { id: "CTRL",  label: "CTRL OS",   sub: "Orchestrator",   color: C.cyan   },
@@ -1201,12 +1014,12 @@ const PIPELINE_NODES = [
 ];
 
 const AGENT_MODELS = [
-  { role: "RESEARCH",  color: C.cyan,   model: "GPT-4o",           provider: "OpenAI",    task: "Web search, data gathering, on-chain analysis",        cost: "~$0.012/task" },
-  { role: "STRATEGY",  color: C.violet, model: "Claude 3.5 Sonnet",provider: "Anthropic", task: "Planning, risk modeling, market positioning",           cost: "~$0.018/task" },
-  { role: "BUILDER",   color: C.blue,   model: "Claude 3.5 Sonnet",provider: "Anthropic", task: "Code generation, deployment, API integration",          cost: "~$0.022/task" },
-  { role: "CONTENT",   color: C.amber,  model: "GPT-4o",           provider: "OpenAI",    task: "Writing, threads, newsletters, SEO copy",               cost: "~$0.009/task" },
-  { role: "GROWTH",    color: C.green,  model: "Gemini 1.5 Pro",   provider: "Google",    task: "A/B testing, campaign analysis, funnel optimization",   cost: "~$0.007/task" },
-  { role: "ANALYTICS", color: C.red,    model: "GPT-4o mini",      provider: "OpenAI",    task: "Data pipelines, metrics, reporting, anomaly detection", cost: "~$0.003/task" },
+  { role: "RESEARCH",  color: C.cyan,   model: "GPT-4o",            provider: "OpenAI",    task: "Web search, data gathering, on-chain analysis",        cost: "~$0.012/task" },
+  { role: "STRATEGY",  color: C.violet, model: "Claude 3.5 Sonnet", provider: "Anthropic", task: "Planning, risk modeling, market positioning",           cost: "~$0.018/task" },
+  { role: "BUILDER",   color: C.blue,   model: "Claude 3.5 Sonnet", provider: "Anthropic", task: "Code generation, deployment, API integration",          cost: "~$0.022/task" },
+  { role: "CONTENT",   color: C.amber,  model: "GPT-4o",            provider: "OpenAI",    task: "Writing, threads, newsletters, SEO copy",               cost: "~$0.009/task" },
+  { role: "GROWTH",    color: C.green,  model: "Gemini 1.5 Pro",    provider: "Google",    task: "A/B testing, campaign analysis, funnel optimization",   cost: "~$0.007/task" },
+  { role: "ANALYTICS", color: C.red,    model: "GPT-4o mini",       provider: "OpenAI",    task: "Data pipelines, metrics, reporting, anomaly detection", cost: "~$0.003/task" },
 ];
 
 function ArchSection() {
@@ -1221,70 +1034,44 @@ function ArchSection() {
   }, []);
 
   return (
-    <Section style={{ background: C.surface, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
+    <Section id="arch" style={{ background: C.surface, padding: "90px clamp(20px,5vw,60px)", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.05} />
       <FloatingDataBg color={C.cyan} />
       <div ref={ref} style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 10 }}>
         <SectionHeader label="HOW IT WORKS" title="Agent Pipeline" sub="From your command to autonomous execution — every agent knows its role, its model, and its mission." />
 
-        {/* ── PIPELINE FLOWCHART ── */}
+        {/* Pipeline */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
-          style={{ marginBottom: 48, border: `1px solid ${C.border}`, background: C.bg, padding: "32px 24px" }}
+          style={{ marginBottom: 48, border: `1px solid ${C.border}`, background: C.bg, padding: "32px clamp(12px,3vw,24px)", overflowX: "auto" }}
         >
-          <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.14em", marginBottom: 28, textAlign: "center" }}>
-            ▸ EXECUTION PIPELINE ▸
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, flexWrap: "nowrap", overflowX: "auto" }}>
+          <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.14em", marginBottom: 28, textAlign: "center" }}>▸ EXECUTION PIPELINE ▸</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, flexWrap: "nowrap", minWidth: "max-content", margin: "0 auto" }}>
             {PIPELINE_NODES.map((node, i) => {
               const isActive = pulse === i;
               const isHover = activeNode === node.id;
               return (
                 <div key={node.id} style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-                  {/* Node box */}
                   <motion.div
                     onMouseEnter={() => setActiveNode(node.id)}
                     onMouseLeave={() => setActiveNode(null)}
                     animate={isActive ? { boxShadow: [`0 0 0px ${node.color}00`, `0 0 22px ${node.color}88`, `0 0 0px ${node.color}00`] } : {}}
                     transition={{ duration: 0.9 }}
-                    style={{
-                      border: `2px solid ${isActive || isHover ? node.color : node.color + "44"}`,
-                      background: isActive || isHover ? `${node.color}18` : `${node.color}07`,
-                      padding: "16px 12px", textAlign: "center", cursor: "default",
-                      minWidth: 120, position: "relative", transition: "all 0.2s",
-                    }}
+                    style={{ border: `2px solid ${isActive || isHover ? node.color : node.color + "44"}`, background: isActive || isHover ? `${node.color}18` : `${node.color}07`, padding: "16px 12px", textAlign: "center", cursor: "default", minWidth: 110, position: "relative", transition: "all 0.2s" }}
                   >
-                    {/* top accent bar */}
                     <div style={{ position: "absolute", top: -2, left: "20%", width: "60%", height: 2, background: node.color, boxShadow: `0 0 8px ${node.color}` }} />
-                    {/* step number */}
-                    <div style={{ position: "absolute", top: 6, right: 8, ...px, fontSize: 5, color: `${node.color}88` }}>
-                      {String(i + 1).padStart(2, "0")}
-                    </div>
-                    <div style={{ ...px, fontSize: 6, color: isActive || isHover ? node.color : "#c0c8e0", letterSpacing: "0.04em", marginBottom: 5, lineHeight: 1.6 }}>
-                      {node.label}
-                    </div>
-                    <div style={{ ...mono, fontSize: 6, color: node.color + "99", letterSpacing: "0.08em" }}>
-                      {node.sub}
-                    </div>
-                    {/* pulse dot */}
+                    <div style={{ position: "absolute", top: 6, right: 8, ...px, fontSize: 5, color: `${node.color}88` }}>{String(i + 1).padStart(2, "0")}</div>
+                    <div style={{ ...px, fontSize: 6, color: isActive || isHover ? node.color : "#c0c8e0", letterSpacing: "0.04em", marginBottom: 5, lineHeight: 1.6 }}>{node.label}</div>
+                    <div style={{ ...mono, fontSize: 6, color: node.color + "99", letterSpacing: "0.08em" }}>{node.sub}</div>
                     {isActive && (
-                      <motion.div
-                        initial={{ scale: 0 }} animate={{ scale: [0, 1.4, 0] }} transition={{ duration: 0.9 }}
-                        style={{ position: "absolute", bottom: 6, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: node.color, boxShadow: `0 0 8px ${node.color}` }}
-                      />
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.4, 0] }} transition={{ duration: 0.9 }} style={{ position: "absolute", bottom: 6, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: node.color, boxShadow: `0 0 8px ${node.color}` }} />
                     )}
                   </motion.div>
-
-                  {/* Arrow connector */}
                   {i < PIPELINE_NODES.length - 1 && (
-                    <div style={{ display: "flex", alignItems: "center", width: 36, flexShrink: 0, position: "relative" }}>
-                      <motion.div
-                        animate={pulse === i ? { opacity: [0.3, 1, 0.3], scaleX: [0.7, 1, 0.7] } : { opacity: 0.3 }}
-                        transition={{ duration: 0.9 }}
-                        style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${PIPELINE_NODES[i].color}88, ${PIPELINE_NODES[i + 1].color}88)` }}
-                      />
+                    <div style={{ display: "flex", alignItems: "center", width: 36, flexShrink: 0 }}>
+                      <motion.div animate={pulse === i ? { opacity: [0.3, 1, 0.3], scaleX: [0.7, 1, 0.7] } : { opacity: 0.3 }} transition={{ duration: 0.9 }} style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${PIPELINE_NODES[i].color}88, ${PIPELINE_NODES[i + 1].color}88)` }} />
                       <div style={{ ...px, fontSize: 7, color: C.muted, marginLeft: -2 }}>▶</div>
                     </div>
                   )}
@@ -1294,11 +1081,9 @@ function ArchSection() {
           </div>
         </motion.div>
 
-        {/* ── AGENT MODEL CARDS ── */}
-        <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.14em", marginBottom: 20, textAlign: "center" }}>
-          ◈ AI MODEL STACK — PER AGENT ROLE ◈
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        {/* Agent model cards */}
+        <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.14em", marginBottom: 20, textAlign: "center" }}>◈ AI MODEL STACK — PER AGENT ROLE ◈</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 12 }}>
           {AGENT_MODELS.map((agent, i) => (
             <TiltCard key={agent.role} strength={8}>
               <motion.div
@@ -1307,253 +1092,85 @@ function ArchSection() {
                 transition={{ delay: 0.4 + i * 0.08, duration: 0.4 }}
                 style={{ border: `1px solid ${agent.color}44`, background: `${agent.color}07`, padding: "18px 16px", position: "relative", cursor: "default" }}
               >
-                {/* top bar */}
                 <div style={{ position: "absolute", top: -1, left: 0, right: 0, height: 2, background: `linear-gradient(to right, transparent, ${agent.color}, transparent)`, boxShadow: `0 0 10px ${agent.color}88` }} />
-
-                {/* Role badge */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <div style={{ ...px, fontSize: 7, color: agent.color, letterSpacing: "0.06em" }}>
-                    [{agent.role}]
-                  </div>
-                  <div style={{ ...mono, fontSize: 6, color: agent.color + "88", border: `1px solid ${agent.color}33`, padding: "2px 6px", background: `${agent.color}10` }}>
-                    AGENT
-                  </div>
+                  <div style={{ ...px, fontSize: 7, color: agent.color, letterSpacing: "0.06em" }}>[{agent.role}]</div>
+                  <div style={{ ...mono, fontSize: 6, color: agent.color + "88", border: `1px solid ${agent.color}33`, padding: "2px 6px", background: `${agent.color}10` }}>AGENT</div>
                 </div>
-
-                {/* Model */}
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 4 }}>MODEL</div>
                   <div style={{ ...px, fontSize: 8, color: "#e0e8ff", letterSpacing: "0.02em", lineHeight: 1.7 }}>{agent.model}</div>
                   <div style={{ ...mono, fontSize: 6, color: agent.color, marginTop: 2 }}>via {agent.provider}</div>
                 </div>
-
                 <div style={{ height: 1, background: `${agent.color}22`, margin: "10px 0" }} />
-
-                {/* Task */}
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 4 }}>HANDLES</div>
                   <div style={{ ...mono, fontSize: 7, color: "#a0a8c0", lineHeight: 1.7 }}>{agent.task}</div>
                 </div>
-
-                {/* Cost */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-                  <div style={{ ...mono, fontSize: 6, color: agent.color + "bb", border: `1px solid ${agent.color}22`, padding: "3px 8px", background: `${agent.color}08` }}>
-                    {agent.cost}
-                  </div>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ ...mono, fontSize: 6, color: agent.color + "bb", border: `1px solid ${agent.color}22`, padding: "3px 8px", background: `${agent.color}08` }}>{agent.cost}</div>
                 </div>
               </motion.div>
             </TiltCard>
           ))}
         </div>
+
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.7 }} style={{ textAlign: "center", marginTop: 48 }}>
+          <PixelBtn primary href="/" large>START COMMANDING <Zap size={13} /></PixelBtn>
+        </motion.div>
       </div>
     </Section>
   );
 }
 
-/* ─── 9. $CTRL TOKEN SECTION ─────────────────────────────────────────────────── */
-
-const TOKEN_UTILITIES = [
-  {
-    key: "STAKE",
-    label: "AGENT CREDITS",
-    title: "Stake to Deploy",
-    color: C.cyan,
-    desc: "Lock $CTRL to generate Agent Credits — the fuel your crew runs on. Every staked token keeps your station operational and your agents working around the clock.",
-    stats: [["APY", "12–34%"], ["MIN STAKE", "1,000 $CTRL"], ["LOCK", "7 / 30 / 90d"]],
-    tag: "STAKING",
-  },
-  {
-    key: "GOV",
-    label: "GOVERNANCE",
-    title: "Vote on Protocol",
-    color: C.violet,
-    desc: "Hold $CTRL, shape CTRL OS. Vote on new agent models, mission parameters, fee structures, and which station templates enter the marketplace.",
-    stats: [["PROPOSALS", "Active"], ["QUORUM", "5% supply"], ["WEIGHT", "1 token = 1 vote"]],
-    tag: "GOVERNANCE",
-  },
-  {
-    key: "REV",
-    label: "REVENUE SHARE",
-    title: "Earn from the Network",
-    color: C.green,
-    desc: "A portion of every mission fee, agent task, and marketplace deployment is distributed to $CTRL holders. The more the network earns, the more you earn.",
-    stats: [["SHARE", "20% of fees"], ["PERIOD", "Weekly"], ["SOURCE", "All stations"]],
-    tag: "REVENUE",
-  },
-];
-
-const TOKEN_METRICS = [
-  { label: "TOTAL SUPPLY",   value: "1,000,000,000", unit: "$CTRL" },
-  { label: "CIRCULATING",    value: "210,000,000",   unit: "$CTRL" },
-  { label: "STAKED",         value: "63.4%",         unit: "of supply" },
-  { label: "NETWORK",        value: "Solana",        unit: "L1" },
-  { label: "EMISSION",       value: "Deflationary",  unit: "buy+burn" },
-];
-
+/* ─── 7. FINAL CTA ───────────────────────────────────────────────────────────── */
 function CTASection() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
-  const [activeUtil, setActiveUtil] = useState<string | null>(null);
 
   return (
-    <Section style={{ background: C.bg, padding: "90px 60px", borderTop: `1px solid ${C.border}` }}>
+    <Section id="cta" style={{ background: C.bg, padding: "120px clamp(20px,5vw,60px)", borderTop: `1px solid ${C.border}` }}>
       <GridBg opacity={0.1} />
-      <FloatingDataBg color={C.amber} />
+      <FloatingDataBg color={C.cyan} />
+      <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: "min(700px,90vw)", height: 400, borderRadius: "50%", background: `radial-gradient(ellipse, ${C.cyan}10 0%, transparent 70%)`, pointerEvents: "none" }} />
 
-      {/* radial glow */}
-      <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: 700, height: 400, borderRadius: "50%", background: `radial-gradient(ellipse, ${C.amber}0a 0%, transparent 70%)`, pointerEvents: "none" }} />
+      <div ref={ref} style={{ maxWidth: 680, margin: "0 auto", position: "relative", zIndex: 10, textAlign: "center" }}>
+        <motion.div initial={{ opacity: 0, y: -12 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
+          <div style={{ ...mono, fontSize: 8, color: C.cyan, letterSpacing: "0.24em", marginBottom: 20 }}>◈ GET STARTED ◈</div>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.2 }}>
+          <h2 style={{ ...px, fontSize: "clamp(14px,2.8vw,26px)", color: "#fff", lineHeight: 1.9, letterSpacing: "0.04em", textShadow: `0 0 40px ${C.cyan}44`, marginBottom: 14 }}>
+            Command Your Agents.
+          </h2>
+          <h2 style={{ ...px, fontSize: "clamp(14px,2.8vw,26px)", color: C.cyan, lineHeight: 1.9, letterSpacing: "0.04em", textShadow: `0 0 40px ${C.cyan}88`, marginBottom: 24 }}>
+            Control Your Economy.
+          </h2>
+          <p style={{ ...mono, fontSize: 11, color: "#6a7a9a", lineHeight: 2, maxWidth: 480, margin: "0 auto 48px" }}>
+            Deploy your first AI station in seconds. Pick a template, assign your crew, and let CTRL run your business autonomously — 24/7.
+          </p>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={inView ? { opacity: 1, scale: 1 } : {}} transition={{ delay: 0.4, type: "spring", stiffness: 200 }} style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+          <PixelBtn primary href="/" large>LAUNCH CTRL <Zap size={14} /></PixelBtn>
+          <PixelBtn href="/templates" large>BROWSE TEMPLATES <ChevronRight size={14} /></PixelBtn>
+        </motion.div>
 
-      <div ref={ref} style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 10 }}>
-        <SectionHeader
-          label="$CTRL TOKEN"
-          title="Fuel Your Agent Economy"
-          sub="$CTRL is the native token of the CTRL protocol — stake it, govern with it, and earn from every agent action across the network."
-        />
-
-        {/* ── TOKEN METRICS STRIP ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          style={{ display: "flex", border: `1px solid ${C.amber}33`, background: `${C.amber}06`, marginBottom: 48, overflowX: "auto" }}
-        >
-          {TOKEN_METRICS.map((m, i) => (
-            <div key={m.label} style={{
-              flex: 1, minWidth: 140, padding: "18px 20px", textAlign: "center",
-              borderRight: i < TOKEN_METRICS.length - 1 ? `1px solid ${C.amber}22` : "none",
-            }}>
-              <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.1em", marginBottom: 8 }}>{m.label}</div>
-              <div style={{ ...px, fontSize: 9, color: C.amber, letterSpacing: "0.04em", lineHeight: 1.6 }}>{m.value}</div>
-              <div style={{ ...mono, fontSize: 6, color: `${C.amber}88`, marginTop: 4 }}>{m.unit}</div>
+        {/* Trust strip */}
+        <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.7 }} style={{ marginTop: 64, display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap", borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
+          {[
+            { v: "23", l: "AGENTS ACTIVE" },
+            { v: "3", l: "STATIONS LIVE" },
+            { v: "298", l: "TASKS COMPLETED" },
+            { v: "$3,840", l: "REVENUE TODAY" },
+          ].map(({ v, l }) => (
+            <div key={l} style={{ textAlign: "center" }}>
+              <div style={{ ...px, fontSize: 14, color: C.cyan, textShadow: `0 0 20px ${C.cyan}88`, marginBottom: 6 }}>{v}</div>
+              <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.12em" }}>{l}</div>
             </div>
           ))}
         </motion.div>
-
-        {/* ── THREE UTILITY PILLARS ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 56 }}>
-          {TOKEN_UTILITIES.map((u, i) => {
-            const isActive = activeUtil === u.key;
-            return (
-              <TiltCard key={u.key} strength={6}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={inView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: 0.15 + i * 0.12, duration: 0.5 }}
-                  onMouseEnter={() => setActiveUtil(u.key)}
-                  onMouseLeave={() => setActiveUtil(null)}
-                  style={{
-                    border: `1px solid ${isActive ? u.color : u.color + "44"}`,
-                    background: isActive ? `${u.color}10` : `${u.color}06`,
-                    padding: "28px 22px", position: "relative", cursor: "default",
-                    transition: "all 0.25s",
-                    boxShadow: isActive ? `0 0 32px ${u.color}22` : "none",
-                  }}
-                >
-                  {/* top accent */}
-                  <div style={{ position: "absolute", top: -1, left: 0, right: 0, height: 2, background: `linear-gradient(to right, transparent, ${u.color}, transparent)`, boxShadow: `0 0 12px ${u.color}88` }} />
-
-                  {/* tag */}
-                  <div style={{ position: "absolute", top: 14, right: 14, ...mono, fontSize: 6, color: u.color + "99", border: `1px solid ${u.color}33`, padding: "2px 7px", background: `${u.color}0c`, letterSpacing: "0.1em" }}>
-                    {u.tag}
-                  </div>
-
-                  {/* label + title */}
-                  <div style={{ ...mono, fontSize: 6, color: u.color, letterSpacing: "0.14em", marginBottom: 10 }}>
-                    {u.label}
-                  </div>
-                  <div style={{ ...px, fontSize: 10, color: "#e8f0ff", letterSpacing: "0.04em", lineHeight: 1.7, marginBottom: 16 }}>
-                    {u.title}
-                  </div>
-
-                  {/* divider */}
-                  <div style={{ height: 1, background: `${u.color}22`, marginBottom: 16 }} />
-
-                  {/* description */}
-                  <div style={{ ...mono, fontSize: 8, color: "#8090b0", lineHeight: 1.8, marginBottom: 20 }}>
-                    {u.desc}
-                  </div>
-
-                  {/* stats */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                    {u.stats.map(([k, v]) => (
-                      <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ ...mono, fontSize: 7, color: C.muted }}>{k}</span>
-                        <span style={{ ...mono, fontSize: 7, color: u.color, fontWeight: 700 }}>{v}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* bottom pulse bar */}
-                  <motion.div
-                    animate={isActive ? { scaleX: [0.3, 1, 0.3] } : { scaleX: 0.3 }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: u.color, transformOrigin: "left", opacity: 0.6 }}
-                  />
-                </motion.div>
-              </TiltCard>
-            );
-          })}
-        </div>
-
-        {/* ── TOKENOMICS PIE (text-based breakdown) ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.6 }}
-          style={{ border: `1px solid ${C.border}`, background: `${C.surface}cc`, padding: "28px 32px", marginBottom: 52 }}
-        >
-          <div style={{ ...px, fontSize: 6, color: C.muted, letterSpacing: "0.12em", marginBottom: 22, textAlign: "center" }}>
-            ◈ TOKENOMICS BREAKDOWN ◈
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 0 }}>
-            {[
-              { slice: "COMMUNITY",    pct: 40, color: C.cyan   },
-              { slice: "STAKING POOL", pct: 25, color: C.violet },
-              { slice: "TEAM",         pct: 15, color: C.blue   },
-              { slice: "ECOSYSTEM",    pct: 12, color: C.green  },
-              { slice: "TREASURY",     pct: 8,  color: C.amber  },
-            ].map((t, i, arr) => (
-              <div key={t.slice} style={{
-                padding: "16px 14px", textAlign: "center",
-                borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none",
-                position: "relative",
-              }}>
-                {/* mini bar */}
-                <div style={{ height: 3, background: C.border, marginBottom: 12, position: "relative" }}>
-                  <motion.div
-                    animate={inView ? { width: `${t.pct / 40 * 100}%` } : { width: 0 }}
-                    transition={{ delay: 0.7 + i * 0.08, duration: 0.6 }}
-                    style={{ position: "absolute", left: 0, top: 0, height: "100%", background: t.color, boxShadow: `0 0 6px ${t.color}` }}
-                  />
-                </div>
-                <div style={{ ...px, fontSize: 14, color: t.color, marginBottom: 8 }}>{t.pct}%</div>
-                <div style={{ ...mono, fontSize: 6, color: C.muted, letterSpacing: "0.08em", lineHeight: 1.6 }}>{t.slice}</div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* ── FINAL CTA ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.8 }}
-          style={{ textAlign: "center" }}
-        >
-          <div style={{ ...px, fontSize: "clamp(12px,2.5vw,22px)", color: "#fff", lineHeight: 1.9, letterSpacing: "0.04em", textShadow: `0 0 40px ${C.cyan}44`, marginBottom: 14 }}>
-            Command Your Agents.
-          </div>
-          <div style={{ ...px, fontSize: "clamp(12px,2.5vw,22px)", color: C.cyan, lineHeight: 1.9, letterSpacing: "0.04em", textShadow: `0 0 40px ${C.cyan}88`, marginBottom: 40 }}>
-            Control Your Economy.
-          </div>
-          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <PixelBtn primary href="/">LAUNCH CTRL <Zap size={12} /></PixelBtn>
-            <PixelBtn href="/crew">MEET YOUR CREW <ChevronRight size={12} /></PixelBtn>
-          </div>
-        </motion.div>
       </div>
 
-      <div style={{ position: "absolute", bottom: 24, ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.1em" }}>
+      <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
         CTRL v1.0 — CONTROL AGENT ECONOMY OS — ALL SYSTEMS NOMINAL
       </div>
     </Section>
@@ -1562,7 +1179,8 @@ function CTASection() {
 
 /* ─── MAIN EXPORT ────────────────────────────────────────────────────────────── */
 export default function Marketing() {
-  const [booted, setBooted] = useState(false);
+  const alreadyBooted = typeof sessionStorage !== "undefined" && sessionStorage.getItem("ctrl_booted") === "1";
+  const [booted, setBooted] = useState(alreadyBooted);
   const handleDone = useCallback(() => setBooted(true), []);
 
   return (
@@ -1574,28 +1192,36 @@ export default function Marketing() {
         ::-webkit-scrollbar-track { background: #0a0b0f; }
         ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: #4df0d844; }
-        @keyframes neon-pulse {
-          0%,100% { text-shadow: 0 0 20px #4df0d844; }
-          50% { text-shadow: 0 0 40px #4df0d8aa, 0 0 80px #4df0d833; }
-        }
-        @keyframes border-pulse {
-          0%,100% { box-shadow: 0 0 20px #4df0d822; }
-          50% { box-shadow: 0 0 50px #4df0d844, 0 0 100px #4df0d812; }
-        }
         * { box-sizing: border-box; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .hero-canvas { display: none !important; }
+          .preview-grid { grid-template-columns: 1fr !important; }
+          .rooms-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .crew-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+          .mission-grid { grid-template-columns: 1fr !important; }
+          .mission-aside { display: none !important; }
+          .nav-desktop { display: none !important; }
+          .nav-hamburger { display: flex !important; }
+        }
+        @media (max-width: 540px) {
+          .rooms-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
-      <BootSequence onDone={handleDone} />
+      {!alreadyBooted && <BootSequence onDone={handleDone} />}
+      <StickyNav />
 
       <AnimatePresence>
         {booted && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <HeroSection />
             <StationPreviewSection />
             <AgentCrewSection />
             <MissionSection />
             <MarketplaceSection />
-            <TimelineSection />
             <ArchSection />
             <CTASection />
           </motion.div>
