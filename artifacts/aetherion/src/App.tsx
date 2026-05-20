@@ -12,24 +12,28 @@ import Market from "@/pages/Market";
 import ShipComms from "@/pages/ShipComms";
 import RoomDetail from "@/pages/RoomDetail";
 import Marketing from "@/pages/Marketing";
+import { SolanaWalletProvider } from "@/lib/WalletProvider";
+import { WalletGate } from "@/components/WalletGate";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   return (
-    <AppShell>
-      <Switch>
-        <Route path="/app" component={Dashboard} />
-        <Route path="/app/crew" component={Crew} />
-        <Route path="/app/missions" component={Missions} />
-        <Route path="/app/timeline" component={Timeline} />
-        <Route path="/app/templates" component={Market} />
-        <Route path="/app/ship-comms" component={ShipComms} />
-        <Route path="/app/stations/:id" component={Dashboard} />
-        <Route path="/app/rooms/:id" component={RoomDetail} />
-        <Route component={NotFound} />
-      </Switch>
-    </AppShell>
+    <WalletGate>
+      <AppShell>
+        <Switch>
+          <Route path="/app" component={Dashboard} />
+          <Route path="/app/crew" component={Crew} />
+          <Route path="/app/missions" component={Missions} />
+          <Route path="/app/timeline" component={Timeline} />
+          <Route path="/app/templates" component={Market} />
+          <Route path="/app/ship-comms" component={ShipComms} />
+          <Route path="/app/stations/:id" component={Dashboard} />
+          <Route path="/app/rooms/:id" component={RoomDetail} />
+          <Route component={NotFound} />
+        </Switch>
+      </AppShell>
+    </WalletGate>
   );
 }
 
@@ -48,9 +52,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <SolanaWalletProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+        </SolanaWalletProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
