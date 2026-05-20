@@ -1,7 +1,9 @@
-import { ReactNode, useState, useEffect, useRef } from "react";
+import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import { Settings, Zap, Users, Target, Store, Clock, Home } from "lucide-react";
+import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy, Check } from "lucide-react";
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 const NAV_ITEMS = [
   { href: "/app",           label: "STATION",  Icon: Zap },
@@ -36,10 +38,249 @@ function useIsMobile() {
   return mobile;
 }
 
+function useWalletBalance() {
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
+  const [balance, setBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!publicKey) { setBalance(null); return; }
+    let cancelled = false;
+
+    const fetch = async () => {
+      try {
+        const lamports = await connection.getBalance(publicKey);
+        if (!cancelled) setBalance(lamports / LAMPORTS_PER_SOL);
+      } catch {
+        if (!cancelled) setBalance(null);
+      }
+    };
+
+    fetch();
+    const id = setInterval(fetch, 30000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [connection, publicKey]);
+
+  return balance;
+}
+
+function abbrev(addr: string) {
+  return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
+}
+
+/* ─── Wallet Chip ─────────────────────────────────────────────────────────── */
+function WalletChip({ compact = false }: { compact?: boolean }) {
+  const { publicKey, disconnect, wallet } = useWallet();
+  const balance = useWalletBalance();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const address = publicKey?.toBase58() ?? "";
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  }, [address]);
+
+  const handleDisconnect = useCallback(() => {
+    disconnect();
+    setMenuOpen(false);
+  }, [disconnect]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (!publicKey) return null;
+
+  const solDisplay = balance !== null ? `${balance.toFixed(3)} SOL` : "— SOL";
+
+  return (
+    <div ref={menuRef} style={{ position: "relative", display: "flex", alignItems: "center", height: "100%" }}>
+      <button
+        onClick={() => setMenuOpen(v => !v)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: compact ? 6 : 8,
+          height: "100%",
+          padding: compact ? "0 10px" : "0 14px",
+          background: menuOpen ? "rgba(77,240,216,0.08)" : "transparent",
+          border: "none",
+          borderLeft: "1px solid var(--ae-border)",
+          cursor: "pointer",
+          transition: "background 0.15s",
+        }}
+        onMouseEnter={e => { if (!menuOpen) (e.currentTarget as HTMLButtonElement).style.background = "rgba(77,240,216,0.05)"; }}
+        onMouseLeave={e => { if (!menuOpen) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+      >
+        {/* Status dot */}
+        <div style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: "#4dff9b",
+          boxShadow: "0 0 6px #4dff9b",
+          flexShrink: 0,
+          animation: "pulse-dot 2s ease-in-out infinite",
+        }} />
+
+        {!compact && (
+          <>
+            {/* SOL balance */}
+            <span style={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: 9,
+              fontWeight: 700,
+              color: "#4df0d8",
+              textShadow: "0 0 8px rgba(77,240,216,0.5)",
+              letterSpacing: "0.06em",
+              whiteSpace: "nowrap",
+            }}>
+              {solDisplay}
+            </span>
+
+            {/* Divider */}
+            <div style={{ width: 1, height: 14, background: "var(--ae-border)", flexShrink: 0 }} />
+          </>
+        )}
+
+        {/* Wallet icon + address */}
+        <Wallet size={compact ? 10 : 11} color="var(--ae-muted)" style={{ flexShrink: 0 }} />
+        <span style={{
+          fontFamily: "'Space Mono', monospace",
+          fontSize: compact ? 7 : 8,
+          color: "var(--ae-muted)",
+          letterSpacing: "0.06em",
+          whiteSpace: "nowrap",
+        }}>
+          {abbrev(address)}
+        </span>
+      </button>
+
+      {/* Dropdown menu */}
+      {menuOpen && (
+        <div style={{
+          position: "absolute",
+          top: "calc(100% + 2px)",
+          right: 0,
+          minWidth: 220,
+          background: "var(--ae-surface)",
+          border: "1px solid var(--ae-border)",
+          zIndex: 500,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: "10px 14px",
+            borderBottom: "1px solid var(--ae-border)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4dff9b", boxShadow: "0 0 6px #4dff9b", flexShrink: 0 }} />
+            <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, color: "#c0c8e0", letterSpacing: "0.08em" }}>
+              {wallet?.adapter.name?.toUpperCase() ?? "WALLET"}
+            </span>
+          </div>
+
+          {/* SOL balance */}
+          <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--ae-border)" }}>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 4 }}>BALANCE</div>
+            <div style={{
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: 14,
+              color: "#4df0d8",
+              textShadow: "0 0 16px rgba(77,240,216,0.6)",
+              letterSpacing: "0.04em",
+            }}>
+              {solDisplay}
+            </div>
+          </div>
+
+          {/* Full address + copy */}
+          <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--ae-border)" }}>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 6 }}>ADDRESS</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{
+                fontFamily: "'Space Mono', monospace",
+                fontSize: 8,
+                color: "#8090b0",
+                letterSpacing: "0.04em",
+                wordBreak: "break-all",
+                flex: 1,
+                lineHeight: 1.8,
+              }}>
+                {address}
+              </span>
+              <button
+                onClick={handleCopy}
+                title="Copy address"
+                style={{
+                  background: "none",
+                  border: "1px solid var(--ae-border)",
+                  cursor: "pointer",
+                  padding: "4px 6px",
+                  color: copied ? "#4dff9b" : "var(--ae-muted)",
+                  transition: "color 0.15s, border-color 0.15s",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#4df0d8"; (e.currentTarget as HTMLButtonElement).style.color = "#4df0d8"; }}
+                onMouseLeave={e => { if (!copied) { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ae-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ae-muted)"; } }}
+              >
+                {copied ? <Check size={11} /> : <Copy size={11} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Disconnect */}
+          <button
+            onClick={handleDisconnect}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 14px",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#ff4d6d",
+              fontFamily: "'Space Mono', monospace",
+              fontSize: 8,
+              letterSpacing: "0.1em",
+              transition: "background 0.15s",
+              textAlign: "left",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,77,109,0.08)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+          >
+            <LogOut size={12} />
+            DISCONNECT
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: summary } = useGetDashboardSummary();
   const { data: stations } = useListStations();
+  const { publicKey } = useWallet();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const tick = useTick();
   const isMobile = useIsMobile();
@@ -49,13 +290,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const xpPct = Math.round((totalTasksCompleted / Math.max(1, totalTasksTotal)) * 100);
   const revenueEstimate = `$${(totalTasksCompleted * 27).toLocaleString()}`;
 
-  // Count active (in-progress, not locked) missions — mirrors Missions.tsx logic
   const activeMissionsCount = [
-    (totalTasksCompleted * 27) < 5000,              // Reach $5K revenue
-    true,                                            // Launch 10 products (7/10)
-    true,                                            // Get 1K users (342/1000)
-    (summary?.totalAgents ?? 0) >= 2,               // Deploy 3 contracts (unlocked)
-    (summary?.tasksCompletedToday ?? 0) >= 5,       // 90% agent perf (unlocked)
+    (totalTasksCompleted * 27) < 5000,
+    true,
+    true,
+    (summary?.totalAgents ?? 0) >= 2,
+    (summary?.tasksCompletedToday ?? 0) >= 5,
   ].filter(Boolean).length;
 
   const stats = [
@@ -136,10 +376,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        {/* Mobile: compact stats in top bar */}
+        {/* Mobile: compact stats + wallet */}
         {isMobile && (
-          <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 12, padding: "0 12px", overflow: "hidden" }}>
-            {stats.map(s => (
+          <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 10, padding: "0 10px", overflow: "hidden" }}>
+            {stats.slice(0, 2).map(s => (
               <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
                 <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.06em" }}>{s.label}:</span>
                 <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, fontWeight: 700, color: s.color }}>{s.value}</span>
@@ -179,6 +419,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >{label}</Link>
               );
             })}
+
+            {/* Wallet chip */}
+            <WalletChip />
+
             <a
               href="/"
               style={{
@@ -203,17 +447,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        {/* Mobile: settings button in top-right */}
+        {/* Mobile: wallet chip (compact) + settings */}
         {isMobile && (
-          <button
-            onClick={() => setSettingsOpen(v => !v)}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 46, height: "100%", background: "none", border: "none",
-              borderLeft: "1px solid var(--ae-border)", cursor: "pointer", flexShrink: 0,
-              color: settingsOpen ? "var(--ae-cyan)" : "var(--ae-muted)", transition: "color 0.15s",
-            }}
-          ><Settings size={14} /></button>
+          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0 }}>
+            <WalletChip compact />
+            <button
+              onClick={() => setSettingsOpen(v => !v)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 46, height: "100%", background: "none", border: "none",
+                borderLeft: "1px solid var(--ae-border)", cursor: "pointer", flexShrink: 0,
+                color: settingsOpen ? "var(--ae-cyan)" : "var(--ae-muted)", transition: "color 0.15s",
+              }}
+            ><Settings size={14} /></button>
+          </div>
         )}
       </header>
 
@@ -258,6 +505,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{totalTasksCompleted}/{totalTasksTotal}</span>
           </div>
+
+          {/* Wallet address in status bar */}
+          {publicKey && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Wallet size={9} color="var(--ae-muted)" />
+              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.08em" }}>
+                {abbrev(publicKey.toBase58())}
+              </span>
+            </div>
+          )}
+
           <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginLeft: "auto" }}>
             v1.0 · TICK {tick}
           </span>
@@ -303,7 +561,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                   transition: "color 0.15s, background 0.15s",
                 }}
               >
-                {/* Active indicator line */}
                 {isActive && (
                   <div style={{
                     position: "absolute",
@@ -314,7 +571,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                   }} />
                 )}
 
-                {/* Icon + badge wrapper */}
                 <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Icon size={16} strokeWidth={isActive ? 2.5 : 1.5} />
                   {showBadge && (
