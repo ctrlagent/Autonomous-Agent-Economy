@@ -3,7 +3,7 @@ import {
   useListStations, useListRooms, useListStationAgents,
   useGetDashboardSummary, useListAgentTasks,
 } from "@workspace/api-client-react";
-import { Pause, ChevronDown, AlertTriangle, Star, X } from "lucide-react";
+import { Pause, ChevronDown, AlertTriangle, Star, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
@@ -71,6 +71,15 @@ export default function Dashboard() {
 
   const triggerRef = useRef<((id: string) => number) | null>(null);
   const sceneRef = useRef<StationScene | null>(null);
+
+  // Mobile detail panel toggle
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   // Poll scene for day phase and incidents
   useEffect(() => {
@@ -261,7 +270,68 @@ export default function Dashboard() {
         </div>
 
         {/* RIGHT: DETAIL PANEL */}
-        <div style={{ width: 265, flexShrink: 0, borderLeft: "1px solid var(--ae-border)", background: "rgba(0,0,0,0.2)", display: "flex", flexDirection: "column" }}>
+        {/* Mobile backdrop */}
+        <AnimatePresence>
+          {isMobile && detailPanelOpen && (
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setDetailPanelOpen(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 98, backdropFilter: "blur(2px)" }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Mobile toggle tab — always visible on right edge */}
+        {isMobile && (
+          <button
+            onClick={() => setDetailPanelOpen(v => !v)}
+            style={{
+              position: "fixed",
+              right: detailPanelOpen ? 265 : 0,
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 100,
+              width: 22,
+              height: 56,
+              background: "rgba(10,11,15,0.96)",
+              border: "1px solid var(--ae-cyan)66",
+              borderRight: detailPanelOpen ? "1px solid var(--ae-cyan)66" : "none",
+              borderRadius: detailPanelOpen ? "4px 0 0 4px" : "4px 0 0 4px",
+              color: "var(--ae-cyan)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: `0 0 10px rgba(77,240,216,0.2)`,
+              transition: "right 0.3s cubic-bezier(0.4,0,0.2,1)",
+            }}
+          >
+            {detailPanelOpen ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+          </button>
+        )}
+
+        <motion.div
+          animate={isMobile ? { x: detailPanelOpen ? 0 : 265 } : { x: 0 }}
+          transition={{ type: "spring", stiffness: 320, damping: 32 }}
+          style={{
+            width: 265,
+            flexShrink: 0,
+            borderLeft: "1px solid var(--ae-border)",
+            background: "var(--ae-bg)",
+            display: "flex",
+            flexDirection: "column",
+            ...(isMobile ? {
+              position: "fixed",
+              right: 0,
+              top: 0,
+              bottom: 0,
+              zIndex: 99,
+              boxShadow: detailPanelOpen ? "-4px 0 24px rgba(0,0,0,0.6)" : "none",
+            } : {}),
+          }}
+        >
           <AnimatePresence mode="wait">
             {selectedAgent ? (
               <motion.div key="agent" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
@@ -490,7 +560,7 @@ export default function Dashboard() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
       </div>
 
       {/* Assign Task Modal */}
