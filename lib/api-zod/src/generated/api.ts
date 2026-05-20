@@ -179,6 +179,33 @@ export const ListRoomsResponseItem = zod.object({
 export const ListRoomsResponse = zod.array(ListRoomsResponseItem);
 
 /**
+ * @summary Add a room to a station
+ */
+export const CreateRoomParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateRoomBody = zod.object({
+  name: zod.string(),
+  type: zod.enum([
+    "research",
+    "development",
+    "design",
+    "marketing",
+    "operations",
+    "analytics",
+  ]),
+});
+
+/**
+ * @summary Delete a room from a station
+ */
+export const DeleteRoomParams = zod.object({
+  id: zod.coerce.number(),
+  roomId: zod.coerce.number(),
+});
+
+/**
  * @summary List all agents in a station
  */
 export const ListStationAgentsParams = zod.object({
@@ -207,6 +234,26 @@ export const ListStationAgentsResponseItem = zod.object({
 export const ListStationAgentsResponse = zod.array(
   ListStationAgentsResponseItem,
 );
+
+/**
+ * @summary Add a new agent to a station
+ */
+export const CreateAgentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateAgentBody = zod.object({
+  name: zod.string(),
+  role: zod.enum([
+    "research",
+    "strategy",
+    "builder",
+    "content",
+    "growth",
+    "analytics",
+  ]),
+  roomId: zod.number(),
+});
 
 /**
  * @summary List all agents
@@ -292,6 +339,13 @@ export const UpdateAgentResponse = zod.object({
 });
 
 /**
+ * @summary Remove an agent
+ */
+export const DeleteAgentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary List tasks for an agent
  */
 export const ListAgentTasksParams = zod.object({
@@ -348,6 +402,13 @@ export const UpdateTaskResponse = zod.object({
   priority: zod.enum(["low", "medium", "high", "critical"]),
   createdAt: zod.coerce.date(),
   completedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Delete a task
+ */
+export const DeleteTaskParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, stationsTable, roomsTable, agentsTable, templatesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
 const router = Router();
@@ -8,6 +8,17 @@ const router = Router();
 const updateStationBody = z.object({
   name: z.string().optional(),
   status: z.enum(["idle", "running", "paused", "completed"]).optional(),
+});
+
+const createRoomBody = z.object({
+  name: z.string(),
+  type: z.enum(["research", "development", "design", "marketing", "operations", "analytics"]),
+});
+
+const createAgentBody = z.object({
+  name: z.string(),
+  role: z.enum(["research", "strategy", "builder", "content", "growth", "analytics"]),
+  roomId: z.number(),
 });
 
 router.get("/", async (req, res) => {
@@ -105,10 +116,64 @@ router.get("/:id/rooms", async (req, res) => {
   return res.json(rooms);
 });
 
+router.post("/:id/rooms", async (req, res) => {
+  const stationId = parseInt(req.params.id);
+  const parsed = createRoomBody.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid body" });
+
+  const [room] = await db.insert(roomsTable).values({
+    stationId,
+    name: parsed.data.name,
+    type: parsed.data.type,
+    status: "idle",
+    agentCount: 0,
+    tasksCompleted: 0,
+  }).returning();
+
+  // Update station roomCount
+  await db
+    .update(stationsTable)
+    .set({ roomCount: (await db.select().from(roomsTable).where(eq(roomsTable.stationId, stationId))).length })
+    .where(eq(stationsTable.id, stationId));
+
+  return res.status(201).json(room);
+});
+
+router.delete("/:id/rooms/:roomId", async (req, res) => {
+  const stationId = parseInt(req.params.id);
+  const roomId = parseInt(req.params.roomId);
+  await db.delete(agentsTable).where(and(eq(agentsTable.stationId, stationId), eq(agentsTable.roomId, roomId)));
+  await db.delete(roomsTable).where(and(eq(roomsTable.id, roomId), eq(roomsTable.stationId, stationId)));
+  return res.status(204).send();
+});
+
 router.get("/:id/agents", async (req, res) => {
   const id = parseInt(req.params.id);
   const agents = await db.select().from(agentsTable).where(eq(agentsTable.stationId, id));
   return res.json(agents);
+});
+
+router.post("/:id/agents", async (req, res) => {
+  const stationId = parseInt(req.params.id);
+  const parsed = createAgentBody.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid body" });
+
+  const [agent] = await db.insert(agentsTable).values({
+    stationId,
+    roomId: parsed.data.roomId,
+    name: parsed.data.name,
+    role: parsed.data.role,
+    status: "idle",
+    level: 1,
+    experience: 0,
+    tasksCompleted: 0,
+  }).returning();
+
+  // Update room agentCount
+  const roomAgents = await db.select().from(agentsTable).where(eq(agentsTable.roomId, parsed.data.roomId));
+  await db.update(roomsTable).set({ agentCount: roomAgents.length }).where(eq(roomsTable.id, parsed.data.roomId));
+
+  return res.status(201).json(agent);
 });
 
 export default router;

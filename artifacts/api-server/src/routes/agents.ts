@@ -42,6 +42,13 @@ router.patch("/:id", async (req, res) => {
   return res.json(agent);
 });
 
+router.delete("/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  await db.delete(tasksTable).where(eq(tasksTable.agentId, id));
+  await db.delete(agentsTable).where(eq(agentsTable.id, id));
+  return res.status(204).send();
+});
+
 router.get("/:id/tasks", async (req, res) => {
   const id = parseInt(req.params.id);
   const tasks = await db.select().from(tasksTable).where(eq(tasksTable.agentId, id));

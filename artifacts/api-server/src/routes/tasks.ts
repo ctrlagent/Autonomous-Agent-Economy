@@ -26,4 +26,10 @@ router.patch("/:id", async (req, res) => {
   return res.json(task);
 });
 
+router.delete("/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  await db.delete(tasksTable).where(eq(tasksTable.id, id));
+  return res.status(204).send();
+});
+
 export default router;

@@ -81,7 +81,8 @@ function fmtTime(ts: number) {
 export default function ShipComms() {
   const { data: stations } = useListStations();
   const stationId = stations?.[0]?.id ?? 0;
-  const { data: agents } = useListStationAgents(stationId, { query: { enabled: !!stationId } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: agents } = useListStationAgents(stationId, { query: { enabled: !!stationId } as any });
 
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, from: "SYSTEM", role: "system", text: "Ship communications online. All channels active.", ts: Date.now() - 300000, type: "system" },

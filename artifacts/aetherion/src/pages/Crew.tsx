@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { useListAgents, useListAgentTasks } from "@workspace/api-client-react";
+import { useListAgents, useListAgentTasks, useListStations, useListRooms, useDeleteAgent } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, TrendingUp, CheckCircle, ChevronDown } from "lucide-react";
+import { X, Zap, TrendingUp, CheckCircle, Plus, Trash2, ChevronDown } from "lucide-react";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
 import { AssignTaskModal } from "@/components/AssignTaskModal";
+import { AddAgentModal } from "@/components/AddAgentModal";
+import { CreateTaskModal } from "@/components/CreateTaskModal";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth <= 768);
@@ -32,13 +35,15 @@ type Agent = { id: number; name: string; role: string; level: number; experience
 type Task = { id: number; title: string; status: string };
 
 function AgentDetailContent({
-  agent, tasks, assignedTask, onClose, onAssign, mono, isMobile,
+  agent, tasks, assignedTask, onClose, onAssign, onCreateTask, onDelete, mono, isMobile,
 }: {
   agent: Agent;
   tasks: Task[];
   assignedTask?: { task: string; priority: string };
   onClose: () => void;
   onAssign: () => void;
+  onCreateTask: () => void;
+  onDelete: () => void;
   mono: React.CSSProperties;
   isMobile: boolean;
 }) {
@@ -161,8 +166,12 @@ function AgentDetailContent({
         <button className="pixel-btn primary" style={{ flex: 1, fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
           <Zap size={9} /> UPGRADE
         </button>
-        <button className="pixel-btn warning" style={{ flex: 1, fontSize: 7 }} onClick={onAssign}>ASSIGN</button>
-        <button className="pixel-btn danger" style={{ flex: 1, fontSize: 7 }}>REMOVE</button>
+        <button className="pixel-btn warning" style={{ flex: 1, fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={onCreateTask}>
+          <Plus size={9} /> TASK
+        </button>
+        <button className="pixel-btn danger" style={{ flex: 1, fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={onDelete}>
+          <Trash2 size={9} /> DEL
+        </button>
       </div>
 
       {/* Task history */}
@@ -185,17 +194,39 @@ function AgentDetailContent({
 
 export default function Crew() {
   const { data: agents } = useListAgents();
+  const { data: stations } = useListStations();
+  const firstStationId = stations?.[0]?.id ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: stationRooms } = useListRooms(firstStationId ?? 0, { query: { enabled: !!firstStationId } as any });
+  const queryClient = useQueryClient();
+
   const [filter, setFilter] = useState("ALL");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showAddAgent, setShowAddAgent] = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
   const [assignedTasks, setAssignedTasks] = useState<Record<number, { task: string; priority: string }>>({});
   const isMobile = useIsMobile();
+
+  const { mutateAsync: deleteAgent } = useDeleteAgent();
 
   const filteredAgents = agents?.filter(
     a => filter === "ALL" || a.role.toUpperCase() === filter
   ) ?? [];
   const selectedAgent = agents?.find(a => a.id === selectedId);
-  const { data: tasks } = useListAgentTasks(selectedId ?? 0, { query: { enabled: !!selectedId } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: tasks } = useListAgentTasks(selectedId ?? 0, { query: { enabled: !!selectedId } as any });
+
+  const handleDeleteAgent = async (agentId: number) => {
+    if (!window.confirm("Remove this agent from the station?")) return;
+    try {
+      await deleteAgent({ id: agentId });
+      await queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+      setSelectedId(null);
+    } catch {
+      // silent fail — agent may already be gone
+    }
+  };
 
   const mono = { fontFamily: "'Space Mono', monospace" };
 
@@ -225,6 +256,13 @@ export default function Crew() {
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--ae-cyan)", display: "inline-block", boxShadow: "0 0 6px var(--ae-cyan)", animation: "pulse-dot 2s ease-in-out infinite" }} />
               {filteredAgents.length} ACTIVE
             </div>
+            <button
+              className="pixel-btn primary"
+              style={{ marginLeft: "auto", fontSize: 7, display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }}
+              onClick={() => setShowAddAgent(true)}
+            >
+              <Plus size={9} /> DEPLOY AGENT
+            </button>
           </div>
           {/* Filter tabs — horizontal scroll on mobile */}
           <div style={{
@@ -408,6 +446,8 @@ export default function Crew() {
                 assignedTask={assignedTasks[selectedAgent.id]}
                 onClose={() => setSelectedId(null)}
                 onAssign={() => setShowAssignModal(true)}
+                onCreateTask={() => setShowCreateTask(true)}
+                onDelete={() => handleDeleteAgent(selectedAgent.id)}
                 mono={mono}
                 isMobile={false}
               />
@@ -496,6 +536,8 @@ export default function Crew() {
                   assignedTask={assignedTasks[selectedAgent.id]}
                   onClose={() => setSelectedId(null)}
                   onAssign={() => setShowAssignModal(true)}
+                  onCreateTask={() => setShowCreateTask(true)}
+                  onDelete={() => handleDeleteAgent(selectedAgent.id)}
                   mono={mono}
                   isMobile={true}
                 />
@@ -505,7 +547,7 @@ export default function Crew() {
         </AnimatePresence>
       )}
 
-      {/* Assign Task Modal */}
+      {/* Assign Task Modal (local state) */}
       {showAssignModal && selectedAgent && (
         <AssignTaskModal
           agentName={selectedAgent.name}
@@ -515,6 +557,25 @@ export default function Crew() {
             setAssignedTasks(prev => ({ ...prev, [selectedAgent.id]: { task, priority } }));
           }}
           onClose={() => setShowAssignModal(false)}
+        />
+      )}
+
+      {/* Add Agent Modal */}
+      {showAddAgent && firstStationId && (
+        <AddAgentModal
+          stationId={firstStationId}
+          rooms={(stationRooms as Array<{ id: number; name: string; type: string }>) ?? []}
+          onClose={() => setShowAddAgent(false)}
+        />
+      )}
+
+      {/* Create Task Modal */}
+      {showCreateTask && selectedAgent && (
+        <CreateTaskModal
+          agentId={selectedAgent.id}
+          agentName={selectedAgent.name}
+          agentRole={selectedAgent.role}
+          onClose={() => setShowCreateTask(false)}
         />
       )}
     </div>

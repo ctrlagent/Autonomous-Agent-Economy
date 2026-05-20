@@ -3,11 +3,14 @@ import {
   useListStations, useListRooms, useListStationAgents,
   useGetDashboardSummary, useListAgentTasks,
 } from "@workspace/api-client-react";
-import { Pause, ChevronDown, AlertTriangle, Star, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pause, ChevronDown, AlertTriangle, Star, X, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
 import { AssignTaskModal } from "@/components/AssignTaskModal";
+import { AddRoomModal } from "@/components/AddRoomModal";
+import { AddAgentModal } from "@/components/AddAgentModal";
+import { CreateTaskModal } from "@/components/CreateTaskModal";
 import type { AgentData as PhaserAgent } from "@/lib/stationScene";
 import type { StationScene } from "@/lib/stationScene";
 import { DUNGEON_ROOMS } from "@/lib/dungeonLayout";
@@ -42,16 +45,22 @@ export default function Dashboard() {
   const currentStationId = activeStationId ?? (stations?.[0]?.id ?? null);
   const currentStation = stations?.find((s: { id: number }) => s.id === currentStationId);
 
-  const { data: rooms } = useListRooms(currentStationId ?? 0, { query: { enabled: !!currentStationId } });
-  const { data: agents } = useListStationAgents(currentStationId ?? 0, { query: { enabled: !!currentStationId } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rooms } = useListRooms(currentStationId ?? 0, { query: { enabled: !!currentStationId } as any });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: agents } = useListStationAgents(currentStationId ?? 0, { query: { enabled: !!currentStationId } as any });
   const { data: summary } = useGetDashboardSummary();
 
   const [selectedDungeonRoomId, setSelectedDungeonRoomId] = useState<string | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
   const [showStationDropdown, setShowStationDropdown] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showAddRoom, setShowAddRoom] = useState(false);
+  const [showAddAgent, setShowAddAgent] = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
   const [assignedTasks, setAssignedTasks] = useState<Record<number, { task: string; priority: string }>>({});
-  const { data: agentTasks } = useListAgentTasks(selectedAgentId ?? 0, { query: { enabled: !!selectedAgentId } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: agentTasks } = useListAgentTasks(selectedAgentId ?? 0, { query: { enabled: !!selectedAgentId } as any });
 
   // Revenue & Phaser scene state
   const [revenue, setRevenue] = useState(3840);
@@ -388,7 +397,7 @@ export default function Dashboard() {
                       const pId = `a${selectedAgent.id}`;
                       triggerRef.current?.(pId);
                     }}>UPGRADE</button>
-                  <button className="pixel-btn" style={{ flex: 1, fontSize: 8 }} onClick={() => setShowAssignModal(true)}>ASSIGN</button>
+                  <button className="pixel-btn" style={{ flex: 1, fontSize: 8 }} onClick={() => setShowCreateTask(true)}>TASK</button>
                 </div>
               </motion.div>
 
@@ -557,13 +566,33 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
+
+                {/* Quick Actions */}
+                {currentStationId && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 4 }}>
+                    <button
+                      className="pixel-btn primary"
+                      style={{ fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+                      onClick={() => setShowAddRoom(true)}
+                    >
+                      <Plus size={9} /> ADD ROOM
+                    </button>
+                    <button
+                      className="pixel-btn"
+                      style={{ fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+                      onClick={() => setShowAddAgent(true)}
+                    >
+                      <Plus size={9} /> ADD AGENT
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
       </div>
 
-      {/* Assign Task Modal */}
+      {/* Assign Task Modal (local state, kept for legacy upgrade button) */}
       {showAssignModal && selectedAgent && (
         <AssignTaskModal
           agentName={selectedAgent.name}
@@ -573,6 +602,33 @@ export default function Dashboard() {
             setAssignedTasks(prev => ({ ...prev, [selectedAgent.id]: { task, priority } }));
           }}
           onClose={() => setShowAssignModal(false)}
+        />
+      )}
+
+      {/* Add Room Modal */}
+      {showAddRoom && currentStationId && (
+        <AddRoomModal
+          stationId={currentStationId}
+          onClose={() => setShowAddRoom(false)}
+        />
+      )}
+
+      {/* Add Agent Modal */}
+      {showAddAgent && currentStationId && (
+        <AddAgentModal
+          stationId={currentStationId}
+          rooms={(rooms as Array<{ id: number; name: string; type: string }>) ?? []}
+          onClose={() => setShowAddAgent(false)}
+        />
+      )}
+
+      {/* Create Task Modal */}
+      {showCreateTask && selectedAgent && (
+        <CreateTaskModal
+          agentId={selectedAgent.id}
+          agentName={selectedAgent.name}
+          agentRole={selectedAgent.role}
+          onClose={() => setShowCreateTask(false)}
         />
       )}
     </div>

@@ -70,7 +70,7 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [betaHovered, setBetaHovered] = useState(false);
   const [tick, setTick] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   // Animate progress bar "scanning" pulse
   useEffect(() => {

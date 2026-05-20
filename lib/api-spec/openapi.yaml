@@ -206,6 +206,49 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Room"
+    post:
+      operationId: createRoom
+      tags: [rooms]
+      summary: Add a room to a station
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoomBody"
+      responses:
+        "201":
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+
+  /stations/{id}/rooms/{roomId}:
+    delete:
+      operationId: deleteRoom
+      tags: [rooms]
+      summary: Delete a room from a station
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /stations/{id}/agents:
     get:
@@ -227,6 +270,29 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Agent"
+    post:
+      operationId: createAgent
+      tags: [agents]
+      summary: Add a new agent to a station
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentBody"
+      responses:
+        "201":
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
 
   /agents:
     get:
@@ -286,6 +352,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Agent"
+    delete:
+      operationId: deleteAgent
+      tags: [agents]
+      summary: Remove an agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Agent deleted
 
   /agents/{id}/tasks:
     get:
@@ -355,6 +434,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /dashboard/summary:
     get:
@@ -599,6 +691,33 @@ components:
         - level
         - experience
         - tasksCompleted
+
+    CreateRoomBody:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [research, development, design, marketing, operations, analytics]
+      required:
+        - name
+        - type
+
+    CreateAgentBody:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+          enum: [research, strategy, builder, content, growth, analytics]
+        roomId:
+          type: integer
+      required:
+        - name
+        - role
+        - roomId
 
     UpdateAgentBody:
       type: object
