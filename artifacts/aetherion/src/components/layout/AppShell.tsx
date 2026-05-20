@@ -49,6 +49,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const xpPct = Math.round((totalTasksCompleted / Math.max(1, totalTasksTotal)) * 100);
   const revenueEstimate = `$${(totalTasksCompleted * 27).toLocaleString()}`;
 
+  // Count active (in-progress, not locked) missions — mirrors Missions.tsx logic
+  const activeMissionsCount = [
+    (totalTasksCompleted * 27) < 5000,              // Reach $5K revenue
+    true,                                            // Launch 10 products (7/10)
+    true,                                            // Get 1K users (342/1000)
+    (summary?.totalAgents ?? 0) >= 2,               // Deploy 3 contracts (unlocked)
+    (summary?.tasksCompletedToday ?? 0) >= 5,       // 90% agent perf (unlocked)
+  ].filter(Boolean).length;
+
   const stats = [
     { label: "REVENUE",  value: revenueEstimate,                                                color: "#4dff9b" },
     { label: "TASKS",    value: String(summary?.tasksCompletedToday ?? 0),                      color: "#4d7fff" },
@@ -273,6 +282,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         }}>
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const isActive = href === "/" ? location === "/" : location.startsWith(href);
+            const isMissions = href === "/missions";
+            const showBadge = isMissions && activeMissionsCount > 0 && !isActive;
             return (
               <Link
                 key={href}
@@ -292,18 +303,47 @@ export function AppShell({ children }: { children: ReactNode }) {
                   transition: "color 0.15s, background 0.15s",
                 }}
               >
+                {/* Active indicator line */}
                 {isActive && (
                   <div style={{
                     position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
+                    top: 0, left: 0, right: 0,
                     height: 2,
                     background: "var(--ae-cyan)",
                     boxShadow: "0 0 8px var(--ae-cyan)",
                   }} />
                 )}
-                <Icon size={16} strokeWidth={isActive ? 2.5 : 1.5} />
+
+                {/* Icon + badge wrapper */}
+                <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon size={16} strokeWidth={isActive ? 2.5 : 1.5} />
+                  {showBadge && (
+                    <div style={{
+                      position: "absolute",
+                      top: -5,
+                      right: -8,
+                      minWidth: 14,
+                      height: 14,
+                      borderRadius: 7,
+                      background: "#ff4d6d",
+                      boxShadow: "0 0 8px #ff4d6d88",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 3px",
+                      animation: "pulse-dot 2s ease-in-out infinite",
+                    }}>
+                      <span style={{
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: 7,
+                        fontWeight: 700,
+                        color: "#fff",
+                        lineHeight: 1,
+                      }}>{activeMissionsCount}</span>
+                    </div>
+                  )}
+                </div>
+
                 <span style={{
                   fontFamily: "'Space Mono',monospace",
                   fontSize: 6,
