@@ -19,14 +19,14 @@ function AppRoutes() {
   return (
     <AppShell>
       <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/crew" component={Crew} />
-        <Route path="/missions" component={Missions} />
-        <Route path="/timeline" component={Timeline} />
-        <Route path="/templates" component={Market} />
-        <Route path="/ship-comms" component={ShipComms} />
-        <Route path="/stations/:id" component={Dashboard} />
-        <Route path="/rooms/:id" component={RoomDetail} />
+        <Route path="/app" component={Dashboard} />
+        <Route path="/app/crew" component={Crew} />
+        <Route path="/app/missions" component={Missions} />
+        <Route path="/app/timeline" component={Timeline} />
+        <Route path="/app/templates" component={Market} />
+        <Route path="/app/ship-comms" component={ShipComms} />
+        <Route path="/app/stations/:id" component={Dashboard} />
+        <Route path="/app/rooms/:id" component={RoomDetail} />
         <Route component={NotFound} />
       </Switch>
     </AppShell>
@@ -36,8 +36,9 @@ function AppRoutes() {
 function Router() {
   return (
     <Switch>
-      <Route path="/marketing" component={Marketing} />
+      <Route path="/" component={Marketing} />
       <Route path="/welcome" component={Marketing} />
+      <Route path="/marketing" component={Marketing} />
       <Route component={AppRoutes} />
     </Switch>
   );

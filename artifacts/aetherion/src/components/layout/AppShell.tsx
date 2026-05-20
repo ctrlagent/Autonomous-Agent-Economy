@@ -4,11 +4,11 @@ import { Settings, Zap, Users, Target, Store, Clock, Home } from "lucide-react";
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
 
 const NAV_ITEMS = [
-  { href: "/",          label: "STATION",  Icon: Zap },
-  { href: "/crew",      label: "CREW",     Icon: Users },
-  { href: "/missions",  label: "MISSIONS", Icon: Target },
-  { href: "/timeline",  label: "TIMELINE", Icon: Clock },
-  { href: "/templates", label: "MARKET",   Icon: Store },
+  { href: "/app",           label: "STATION",  Icon: Zap },
+  { href: "/app/crew",      label: "CREW",     Icon: Users },
+  { href: "/app/missions",  label: "MISSIONS", Icon: Target },
+  { href: "/app/timeline",  label: "TIMELINE", Icon: Clock },
+  { href: "/app/templates", label: "MARKET",   Icon: Store },
 ];
 
 function useTick() {
@@ -152,7 +152,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!isMobile && (
           <div style={{ display: "flex", flex: 1, height: "100%", justifyContent: "flex-end" }}>
             {NAV_ITEMS.map(({ href, label }) => {
-              const isActive = href === "/" ? location === "/" : location.startsWith(href);
+              const isActive = href === "/app" ? location === "/app" : location.startsWith(href);
               return (
                 <Link
                   key={href}
@@ -180,7 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
             <a
-              href="/marketing"
+              href="/"
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
                 padding: "0 10px", height: "100%", color: "var(--ae-muted)",
@@ -281,8 +281,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           boxShadow: "0 -4px 24px rgba(0,0,0,0.6)",
         }}>
           {NAV_ITEMS.map(({ href, label, Icon }) => {
-            const isActive = href === "/" ? location === "/" : location.startsWith(href);
-            const isMissions = href === "/missions";
+            const isActive = href === "/app" ? location === "/app" : location.startsWith(href);
+            const isMissions = href === "/app/missions";
             const showBadge = isMissions && activeMissionsCount > 0 && !isActive;
             return (
               <Link
@@ -356,7 +356,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
           {/* HOME button */}
           <a
-            href="/marketing"
+            href="/"
             style={{
               flex: 1,
               display: "flex",

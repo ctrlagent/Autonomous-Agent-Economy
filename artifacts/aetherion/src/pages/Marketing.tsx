@@ -531,7 +531,7 @@ function StickyNav() {
       {/* CTA */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Link
-          href="/"
+          href="/app"
           style={{ ...px, fontSize: 8, color: C.bg, textDecoration: "none", padding: "9px 18px", border: `2px solid ${C.cyan}`, background: C.cyan, letterSpacing: "0.06em", boxShadow: `0 0 20px ${C.cyan}44`, transition: "all 0.18s", whiteSpace: "nowrap" }}
         >
           ENTER APP →
@@ -612,7 +612,7 @@ function HeroSection() {
             Build, deploy, and scale entire businesses with autonomous AI crews operating inside living digital stations.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
-            <PixelBtn primary href="/" large>ENTER STATION <ArrowRight size={13} /></PixelBtn>
+            <PixelBtn primary href="/app" large>ENTER STATION <ArrowRight size={13} /></PixelBtn>
             <PixelBtn onClick={() => scrollTo("arch")}>HOW IT WORKS</PixelBtn>
           </div>
           {/* Live stats — flex on desktop, bento grid on mobile */}
@@ -754,7 +754,7 @@ function StationPreviewSection() {
 
         {/* CTA */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.6 }} style={{ textAlign: "center", marginTop: 48 }}>
-          <PixelBtn primary href="/" large>LAUNCH YOUR STATION <ArrowRight size={13} /></PixelBtn>
+          <PixelBtn primary href="/app" large>LAUNCH YOUR STATION <ArrowRight size={13} /></PixelBtn>
         </motion.div>
       </div>
     </Section>
@@ -860,7 +860,7 @@ function AgentCrewSection() {
         </div>
 
         <div style={{ textAlign: "center", marginTop: 40, padding: "0 20px" }}>
-          <PixelBtn primary href="/crew" large>MEET YOUR CREW <ChevronRight size={13} /></PixelBtn>
+          <PixelBtn primary href="/app/crew" large>MEET YOUR CREW <ChevronRight size={13} /></PixelBtn>
         </div>
       </div>
     </Section>
@@ -948,7 +948,7 @@ function MissionSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.6 }} style={{ textAlign: "center", marginTop: 48 }}>
-          <PixelBtn primary href="/missions" large>VIEW ALL MISSIONS <ArrowRight size={13} /></PixelBtn>
+          <PixelBtn primary href="/app/missions" large>VIEW ALL MISSIONS <ArrowRight size={13} /></PixelBtn>
         </motion.div>
       </div>
     </Section>
@@ -1006,7 +1006,7 @@ function MarketplaceSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.5 }} style={{ textAlign: "center", marginTop: 48 }}>
-          <PixelBtn primary href="/templates" large>BROWSE FULL MARKETPLACE <Store size={13} /></PixelBtn>
+          <PixelBtn primary href="/app/templates" large>BROWSE FULL MARKETPLACE <Store size={13} /></PixelBtn>
         </motion.div>
       </div>
     </Section>
@@ -1128,7 +1128,7 @@ function ArchSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.7 }} style={{ textAlign: "center", marginTop: 48 }}>
-          <PixelBtn primary href="/" large>START COMMANDING <Zap size={13} /></PixelBtn>
+          <PixelBtn primary href="/app" large>START COMMANDING <Zap size={13} /></PixelBtn>
         </motion.div>
       </div>
     </Section>
@@ -1162,8 +1162,8 @@ function CTASection() {
           </p>
         </motion.div>
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={inView ? { opacity: 1, scale: 1 } : {}} transition={{ delay: 0.4, type: "spring", stiffness: 200 }} className="cta-buttons" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-          <PixelBtn primary href="/" large>LAUNCH CTRL <Zap size={14} /></PixelBtn>
-          <PixelBtn href="/templates" large>BROWSE TEMPLATES <ChevronRight size={14} /></PixelBtn>
+          <PixelBtn primary href="/app" large>LAUNCH CTRL <Zap size={14} /></PixelBtn>
+          <PixelBtn href="/app/templates" large>BROWSE TEMPLATES <ChevronRight size={14} /></PixelBtn>
         </motion.div>
 
         {/* Trust strip */}
