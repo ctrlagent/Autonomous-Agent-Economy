@@ -6,6 +6,7 @@ import {
   agentsTable,
   tasksTable,
   activityTable,
+  missionsTable,
 } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { logger } from "./logger";
@@ -150,7 +151,15 @@ async function seed() {
     { agentName: "LENS-9", agentRole: "analytics", stationName: "CONTENT-3 NEXUS", action: "Content performance report", details: "Q1 2025: 1.2M impressions, 4.7% CTR, $0.034 CPC across channels", timestamp: ago(334) },
   ]);
 
-  logger.info("Auto-seed complete — 6 templates, 3 stations, 23 agents, 24 activity entries");
+  await db.insert(missionsTable).values([
+    { title: "Revenue Milestone", description: "Reach $5,000 in total station revenue", iconName: "TrendingUp", color: "#4dff9b", target: 5000, current: 3840, unit: "$", rewardXp: 500, status: "active", sortOrder: 1 },
+    { title: "Deploy 10 Contracts", description: "Builder agents deploy 10 smart contracts to testnet", iconName: "Code", color: "#4d7fff", target: 10, current: 7, unit: "", rewardXp: 300, status: "active", sortOrder: 2 },
+    { title: "Recruit 20 Agents", description: "Expand your crew to 20 active AI agents", iconName: "Users", color: "#9b6dff", target: 20, current: 18, unit: "", rewardXp: 400, status: "active", sortOrder: 3 },
+    { title: "Peak Performance", description: "Achieve 90% average agent performance rating", iconName: "Zap", color: "#ffb84d", target: 90, current: 0, unit: "%", rewardXp: 600, status: "active", sortOrder: 4 },
+    { title: "Station Expansion", description: "Launch 5 active space stations", iconName: "Star", color: "#ff4d6d", target: 5, current: 3, unit: "", rewardXp: 800, status: "active", sortOrder: 5 },
+  ]);
+
+  logger.info("Auto-seed complete — 6 templates, 3 stations, 23 agents, 24 activity entries, 5 missions");
 }
 
 export async function runAutoSeedIfEmpty() {

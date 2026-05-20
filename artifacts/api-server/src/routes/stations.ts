@@ -8,6 +8,7 @@ const router = Router();
 const updateStationBody = z.object({
   name: z.string().optional(),
   status: z.enum(["idle", "running", "paused", "completed"]).optional(),
+  revenue: z.number().optional(),
 });
 
 const createRoomBody = z.object({

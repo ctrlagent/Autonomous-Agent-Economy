@@ -5,6 +5,8 @@ import stationsRouter from "./stations";
 import agentsRouter from "./agents";
 import tasksRouter from "./tasks";
 import dashboardRouter from "./dashboard";
+import missionsRouter from "./missions";
+import aiRouter from "./ai";
 
 const router: IRouter = Router();
 
@@ -14,5 +16,7 @@ router.use("/stations", stationsRouter);
 router.use("/agents", agentsRouter);
 router.use("/tasks", tasksRouter);
 router.use("/dashboard", dashboardRouter);
+router.use("/missions", missionsRouter);
+router.use("/ai", aiRouter);
 
 export default router;

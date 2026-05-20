@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/app/missions",  label: "MISSIONS", Icon: Target },
   { href: "/app/timeline",  label: "TIMELINE", Icon: Clock },
   { href: "/app/templates", label: "MARKET",   Icon: Store },
+  { href: "/app/settings",  label: "SETTINGS", Icon: Settings },
 ];
 
 function useTick() {

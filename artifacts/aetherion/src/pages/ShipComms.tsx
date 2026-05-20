@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useListStationAgents, useListStations } from "@workspace/api-client-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Radio, Zap, ChevronRight } from "lucide-react";
-import { AgentAvatar, RoleBadge } from "@/components/PixelSprite";
+import { Send, Radio, Zap, ChevronRight, Key, AlertCircle } from "lucide-react";
+import { AgentAvatar } from "@/components/PixelSprite";
+import { Link } from "wouter";
 
 const mono = { fontFamily: "'Space Mono', monospace" };
 
@@ -21,7 +22,7 @@ interface Message {
   type: "agent" | "commander" | "system";
 }
 
-const AGENT_RESPONSES: Record<string, string[]> = {
+const FALLBACK_RESPONSES: Record<string, string[]> = {
   research: [
     "Acknowledged, Commander. Running deep scan protocol now.",
     "Data analysis underway. Estimated completion in 3 cycles.",
@@ -78,6 +79,13 @@ function fmtTime(ts: number) {
   return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
 }
 
+function getStoredAI(): { provider: string; apiKey: string } | null {
+  const apiKey = localStorage.getItem("ctrl_ai_key");
+  const provider = localStorage.getItem("ctrl_ai_provider") ?? "openai";
+  if (!apiKey) return null;
+  return { provider, apiKey };
+}
+
 export default function ShipComms() {
   const { data: stations } = useListStations();
   const stationId = stations?.[0]?.id ?? 0;
@@ -95,8 +103,14 @@ export default function ShipComms() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState<string | null>(null);
   const [signalStrength, setSignalStrength] = useState(98);
+  const [aiConfig, setAiConfig] = useState<{ provider: string; apiKey: string } | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setAiConfig(getStoredAI());
+  }, []);
 
   useEffect(() => {
     if (feedRef.current) {
@@ -104,8 +118,9 @@ export default function ShipComms() {
     }
   }, [messages, isTyping]);
 
-  // Simulate periodic incoming messages
+  // Simulate periodic incoming messages (only when no AI key, as ambient activity)
   useEffect(() => {
+    if (aiConfig) return;
     const agentList = agents?.length ? agents : [
       { name: "NEXUS-1", role: "research" }, { name: "FORGE-3", role: "builder" }, { name: "GROW-4", role: "growth" },
     ];
@@ -113,7 +128,7 @@ export default function ShipComms() {
       const ag = agentList[Math.floor(Math.random() * agentList.length)];
       if (!ag) return;
       const role = (ag as { role: string }).role?.toLowerCase() ?? "research";
-      const responses = AGENT_RESPONSES[role] ?? AGENT_RESPONSES.research;
+      const responses = FALLBACK_RESPONSES[role] ?? FALLBACK_RESPONSES.research;
       const text = responses[Math.floor(Math.random() * responses.length)];
       setIsTyping((ag as { name: string }).name);
       setTimeout(() => {
@@ -127,9 +142,9 @@ export default function ShipComms() {
           type: "agent",
         }]);
       }, 1400 + Math.random() * 800);
-    }, 8000 + Math.random() * 7000);
+    }, 12000 + Math.random() * 8000);
     return () => clearInterval(interval);
-  }, [agents]);
+  }, [agents, aiConfig]);
 
   // Signal flicker
   useEffect(() => {
@@ -137,38 +152,81 @@ export default function ShipComms() {
     return () => clearInterval(id);
   }, []);
 
-  function sendMessage(text: string, targetAgent?: string) {
+  async function getAIResponse(message: string, responder: { name: string; role: string }): Promise<string> {
+    const cfg = aiConfig ?? getStoredAI();
+    if (!cfg) {
+      const role = responder.role.toLowerCase();
+      const pool = FALLBACK_RESPONSES[role] ?? FALLBACK_RESPONSES.research;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    const resp = await fetch("/api/ai/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        agentName: responder.name,
+        agentRole: responder.role,
+        apiKey: cfg.apiKey,
+        provider: cfg.provider,
+      }),
+    });
+
+    const data = await resp.json() as { reply?: string; error?: string };
+    if (!resp.ok) throw new Error(data.error ?? "AI error");
+    setAiError(null);
+    return data.reply ?? "Acknowledged, Commander.";
+  }
+
+  async function sendMessage(text: string, targetAgent?: string) {
     if (!text.trim()) return;
-    const msg: Message = { id: Date.now(), from: "COMMANDER", role: "commander", text: targetAgent ? `[${targetAgent}] ${text}` : text, ts: Date.now(), type: "commander" };
+    const msg: Message = {
+      id: Date.now(), from: "COMMANDER", role: "commander",
+      text: targetAgent ? `[${targetAgent}] ${text}` : text,
+      ts: Date.now(), type: "commander",
+    };
     setMessages(prev => [...prev.slice(-40), msg]);
     setInput("");
 
-    // Random agent responds
     const agentList = agents?.length ? agents : [{ name: "NEXUS-1", role: "research" }];
     const responder = targetAgent
       ? agentList.find((a: { name: string }) => a.name === targetAgent) ?? agentList[0]
       : agentList[Math.floor(Math.random() * agentList.length)];
     if (!responder) return;
-    const role = (responder as { role: string }).role?.toLowerCase() ?? "research";
-    const responses = AGENT_RESPONSES[role] ?? AGENT_RESPONSES.research;
-    setIsTyping((responder as { name: string }).name);
-    setTimeout(() => {
+
+    const rName = (responder as { name: string }).name;
+    const rRole = (responder as { role: string }).role?.toLowerCase() ?? "research";
+    setIsTyping(rName);
+
+    try {
+      const reply = await getAIResponse(text, { name: rName, role: rRole });
       setIsTyping(null);
       setMessages(prev => [...prev.slice(-40), {
         id: Date.now() + 1,
-        from: (responder as { name: string }).name,
-        role,
-        text: responses[Math.floor(Math.random() * responses.length)],
+        from: rName,
+        role: rRole,
+        text: reply,
         ts: Date.now(),
         type: "agent",
       }]);
-    }, 1200 + Math.random() * 1000);
+    } catch (err) {
+      setIsTyping(null);
+      const errMsg = err instanceof Error ? err.message : "Connection failed";
+      setAiError(errMsg);
+      // Fall back to static response
+      const pool = FALLBACK_RESPONSES[rRole] ?? FALLBACK_RESPONSES.research;
+      setMessages(prev => [...prev.slice(-40), {
+        id: Date.now() + 1,
+        from: rName,
+        role: rRole,
+        text: pool[Math.floor(Math.random() * pool.length)],
+        ts: Date.now(),
+        type: "agent",
+      }]);
+    }
   }
 
-  function handleSend() {
-    sendMessage(input, selectedAgent ?? undefined);
-  }
-
+  function handleSend() { sendMessage(input, selectedAgent ?? undefined); }
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   }
@@ -178,11 +236,28 @@ export default function ShipComms() {
 
       {/* LEFT: AGENT ROSTER */}
       <div style={{ width: 200, flexShrink: 0, borderRight: "1px solid var(--ae-border)", background: "rgba(0,0,0,0.2)", display: "flex", flexDirection: "column" }}>
-        {/* Header */}
         <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--ae-border)", display: "flex", alignItems: "center", gap: 8 }}>
           <Radio size={12} style={{ color: "var(--ae-cyan)" }} />
           <span style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>CREW CHANNELS</span>
         </div>
+
+        {/* AI status badge */}
+        <div style={{ margin: "8px 10px 0", padding: "6px 8px", border: `1px solid ${aiConfig ? "var(--ae-green)" : "var(--ae-border)"}`, background: aiConfig ? "rgba(77,255,155,0.06)" : "rgba(0,0,0,0.2)", display: "flex", alignItems: "center", gap: 6 }}>
+          <Key size={9} style={{ color: aiConfig ? "var(--ae-green)" : "var(--ae-dim)", flexShrink: 0 }} />
+          <span style={{ ...mono, fontSize: 6, color: aiConfig ? "var(--ae-green)" : "var(--ae-dim)", letterSpacing: "0.08em" }}>
+            {aiConfig ? `AI: ${aiConfig.provider.toUpperCase()}` : "NO AI KEY"}
+          </span>
+          {!aiConfig && (
+            <Link href="/app/settings" style={{ ...mono, fontSize: 6, color: "var(--ae-cyan)", textDecoration: "none", marginLeft: "auto" }}>SET →</Link>
+          )}
+        </div>
+
+        {aiError && (
+          <div style={{ margin: "4px 10px 0", padding: "5px 8px", border: "1px solid var(--ae-red)", background: "rgba(255,77,109,0.06)", display: "flex", alignItems: "flex-start", gap: 5 }}>
+            <AlertCircle size={9} style={{ color: "var(--ae-red)", flexShrink: 0, marginTop: 1 }} />
+            <span style={{ ...mono, fontSize: 6, color: "var(--ae-red)", lineHeight: 1.5 }}>{aiError}</span>
+          </div>
+        )}
 
         {/* Broadcast button */}
         <button
@@ -203,7 +278,7 @@ export default function ShipComms() {
         {/* Agent list */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {(agents ?? []).map((ag: { id: number; name: string; role: string; status: string }) => {
-            const isOnline = ag.status !== "Offline";
+            const isOnline = ag.status !== "offline";
             const color = roleHex(ag.role);
             const isSelected = selectedAgent === ag.name;
             const isTypingThis = isTyping === ag.name;
@@ -219,8 +294,6 @@ export default function ShipComms() {
                   cursor: "pointer", display: "flex", alignItems: "center", gap: 9,
                   transition: "all 0.12s",
                 }}
-                onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
-                onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   <AgentAvatar role={ag.role} size={28} />
@@ -286,7 +359,7 @@ export default function ShipComms() {
             </span>
           )}
           <span style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginLeft: "auto" }}>
-            {messages.length} MESSAGES
+            {aiConfig ? `🤖 AI: ${aiConfig.provider}` : "💬 FALLBACK MODE"} · {messages.length} MSG
           </span>
         </div>
 
@@ -319,7 +392,6 @@ export default function ShipComms() {
                     alignItems: "flex-start",
                   }}
                 >
-                  {/* Avatar */}
                   {!isCmd && (
                     <div style={{ flexShrink: 0, marginTop: 2 }}>
                       <AgentAvatar role={msg.role} size={28} />
@@ -334,8 +406,6 @@ export default function ShipComms() {
                       <Zap size={12} style={{ color: "#ffd700" }} />
                     </div>
                   )}
-
-                  {/* Bubble */}
                   <div style={{ maxWidth: "65%", display: "flex", flexDirection: "column", gap: 3, alignItems: isCmd ? "flex-end" : "flex-start" }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "center", flexDirection: isCmd ? "row-reverse" : "row" }}>
                       <span style={{ ...mono, fontSize: 8, fontWeight: 700, color }}>{msg.from}</span>
@@ -345,7 +415,6 @@ export default function ShipComms() {
                       padding: "7px 11px",
                       background: isCmd ? "rgba(255,215,0,0.08)" : "rgba(0,0,0,0.35)",
                       border: `1px solid ${color}33`,
-                      borderRadius: 0,
                       position: "relative",
                     }}>
                       <div style={{
@@ -362,7 +431,6 @@ export default function ShipComms() {
             })}
           </AnimatePresence>
 
-          {/* Typing indicator */}
           <AnimatePresence>
             {isTyping && (
               <motion.div key="typing" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -371,11 +439,7 @@ export default function ShipComms() {
                 <div style={{ width: 28, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div style={{ display: "flex", gap: 3 }}>
                     {[0, 1, 2].map(i => (
-                      <div key={i} style={{
-                        width: 4, height: 4, borderRadius: "50%",
-                        background: "var(--ae-cyan)",
-                        animation: `pulse-dot 1.2s ease-in-out ${i * 0.2}s infinite`,
-                      }} />
+                      <div key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--ae-cyan)", animation: `pulse-dot 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                     ))}
                   </div>
                 </div>
@@ -417,7 +481,7 @@ export default function ShipComms() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKey}
-              placeholder="Enter command or message..."
+              placeholder={aiConfig ? "Enter command or message... (AI enabled)" : "Enter command or message... (fallback mode)"}
               style={{
                 flex: 1, background: "transparent", border: "none", outline: "none",
                 padding: "8px 12px", ...mono, fontSize: 9, color: "var(--ae-text)",
@@ -440,12 +504,10 @@ export default function ShipComms() {
         <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--ae-border)" }}>
           <span style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>TRANSMISSION LOG</span>
         </div>
-
         <div style={{ flex: 1, overflowY: "auto", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
-          {/* Stats */}
           {[
             { label: "TOTAL MSG", value: String(messages.length), color: "var(--ae-cyan)" },
-            { label: "AGENTS ONLINE", value: String(agents?.filter((a: { status: string }) => a.status !== "Offline").length ?? 0), color: "var(--ae-green)" },
+            { label: "AGENTS ONLINE", value: String(agents?.filter((a: { status: string }) => a.status !== "offline").length ?? 0), color: "var(--ae-green)" },
             { label: "CMD SENT", value: String(messages.filter(m => m.type === "commander").length), color: "#ffd700" },
             { label: "RESPONSES", value: String(messages.filter(m => m.type === "agent").length), color: "var(--ae-blue)" },
           ].map(s => (
@@ -455,41 +517,22 @@ export default function ShipComms() {
             </div>
           ))}
 
-          {/* Role distribution */}
-          <div style={{ marginTop: 4 }}>
-            <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>ROLE ACTIVITY</div>
-            {Object.entries(ROLE_HEX).slice(0, 6).map(([role, color]) => {
-              const count = messages.filter(m => m.role === role).length;
-              const max = Math.max(1, ...Object.entries(ROLE_HEX).slice(0, 6).map(([r]) => messages.filter(m => m.role === r).length));
-              return (
-                <div key={role} style={{ marginBottom: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                    <span style={{ ...mono, fontSize: 6, color, letterSpacing: "0.08em" }}>{role.toUpperCase()}</span>
-                    <span style={{ ...mono, fontSize: 6, color: "var(--ae-dim)" }}>{count}</span>
-                  </div>
-                  <div style={{ height: 3, background: "var(--ae-border)" }}>
-                    <div style={{ height: "100%", width: `${(count / max) * 100}%`, background: color, boxShadow: `0 0 4px ${color}`, transition: "width 0.5s" }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Frequency chart */}
-          <div style={{ marginTop: 4 }}>
-            <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>FREQ SPECTRUM</div>
-            <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 40, border: "1px solid var(--ae-border)", padding: "4px 4px 0", background: "rgba(0,0,0,0.3)" }}>
-              {Array.from({ length: 20 }, (_, i) => {
-                const h = 20 + Math.sin(i * 0.8 + Date.now() * 0.001) * 15 + Math.random() * 10;
-                return (
-                  <div key={i} style={{
-                    flex: 1, height: `${Math.max(4, h)}%`,
-                    background: i % 3 === 0 ? "var(--ae-cyan)" : i % 3 === 1 ? "var(--ae-blue)" : "var(--ae-violet)",
-                    opacity: 0.7,
-                  }} />
-                );
-              })}
-            </div>
+          {/* AI config status */}
+          <div style={{ marginTop: 4, padding: "8px 10px", border: `1px solid ${aiConfig ? "var(--ae-green)" : "var(--ae-border)"}`, background: aiConfig ? "rgba(77,255,155,0.06)" : "rgba(0,0,0,0.2)" }}>
+            <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 6, letterSpacing: "0.1em" }}>AI ENGINE</div>
+            {aiConfig ? (
+              <>
+                <div style={{ ...mono, fontSize: 8, color: "var(--ae-green)", fontWeight: 700 }}>{aiConfig.provider.toUpperCase()}</div>
+                <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", marginTop: 2 }}>ACTIVE</div>
+              </>
+            ) : (
+              <>
+                <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", marginBottom: 6 }}>No API key set. Using fallback responses.</div>
+                <Link href="/app/settings" style={{ ...mono, fontSize: 7, color: "var(--ae-cyan)", textDecoration: "none", display: "block", padding: "4px 0", letterSpacing: "0.08em" }}>
+                  → CONFIGURE AI
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

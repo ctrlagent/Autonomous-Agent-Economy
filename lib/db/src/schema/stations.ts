@@ -16,6 +16,7 @@ export const stationsTable = pgTable("stations", {
   roomCount: integer("room_count").notNull().default(0),
   tasksCompleted: integer("tasks_completed").notNull().default(0),
   tasksTotal: integer("tasks_total").notNull().default(0),
+  revenue: real("revenue").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

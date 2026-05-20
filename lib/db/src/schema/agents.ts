@@ -19,6 +19,7 @@ export const agentsTable = pgTable("agents", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const updateAgentSchema = createInsertSchema(agentsTable).omit({ id: true, createdAt: true }).partial();
 export const insertAgentSchema = createInsertSchema(agentsTable).omit({ id: true, createdAt: true });
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type Agent = typeof agentsTable.$inferSelect;

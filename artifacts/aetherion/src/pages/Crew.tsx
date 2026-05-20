@@ -163,7 +163,21 @@ function AgentDetailContent({
 
       {/* Action buttons */}
       <div style={{ display: "flex", gap: 5 }}>
-        <button className="pixel-btn primary" style={{ flex: 1, fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+        <button
+          className="pixel-btn primary"
+          style={{ flex: 1, fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}
+          onClick={async () => {
+            try {
+              await fetch(`/api/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ level: agent.level + 1, experience: 0 }),
+              });
+              // Trigger a re-render by dispatching a custom event
+              window.dispatchEvent(new CustomEvent("agent-upgraded", { detail: { id: agent.id } }));
+            } catch { /* ignore */ }
+          }}
+        >
           <Zap size={9} /> UPGRADE
         </button>
         <button className="pixel-btn warning" style={{ flex: 1, fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={onCreateTask}>
@@ -209,6 +223,13 @@ export default function Crew() {
   const isMobile = useIsMobile();
 
   const { mutateAsync: deleteAgent } = useDeleteAgent();
+
+  // Refresh agents list when an upgrade event fires
+  useEffect(() => {
+    const handler = () => queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+    window.addEventListener("agent-upgraded", handler);
+    return () => window.removeEventListener("agent-upgraded", handler);
+  }, [queryClient]);
 
   const filteredAgents = agents?.filter(
     a => filter === "ALL" || a.role.toUpperCase() === filter

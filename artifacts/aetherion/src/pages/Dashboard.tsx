@@ -62,9 +62,34 @@ export default function Dashboard() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: agentTasks } = useListAgentTasks(selectedAgentId ?? 0, { query: { enabled: !!selectedAgentId } as any });
 
-  // Revenue & Phaser scene state
-  const [revenue, setRevenue] = useState(3840);
+  // Revenue — persistent via DB
+  const [revenue, setRevenue] = useState<number | null>(null);
   const [revenueGlow, setRevenueGlow] = useState(false);
+  const revenueSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync revenue from station data
+  useEffect(() => {
+    const stationRevenue = (currentStation as { revenue?: number } | undefined)?.revenue;
+    if (stationRevenue !== undefined && revenue === null) {
+      setRevenue(stationRevenue > 0 ? stationRevenue : 3840);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStation]);
+
+  // Debounced save revenue to DB
+  const saveRevenue = useCallback((newRevenue: number, stationId: number) => {
+    if (revenueSaveTimer.current) clearTimeout(revenueSaveTimer.current);
+    revenueSaveTimer.current = setTimeout(async () => {
+      try {
+        await fetch(`/api/stations/${stationId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ revenue: newRevenue }),
+        });
+      } catch { /* ignore */ }
+    }, 2000);
+  }, []);
+
   const [dayPhase, setDayPhase] = useState<string>('PEAK HOURS');
   const [activeIncidents, setActiveIncidents] = useState<Array<{ roomId: string; label: string; countdown: number; countdownMax: number }>>([]);
 
@@ -102,7 +127,11 @@ export default function Dashboard() {
   }, []);
 
   const handleRevenueChange = (delta: number) => {
-    setRevenue(r => r + delta);
+    setRevenue(r => {
+      const next = (r ?? 3840) + delta;
+      if (currentStationId) saveRevenue(next, currentStationId);
+      return next;
+    });
     setRevenueGlow(true);
     setTimeout(() => setRevenueGlow(false), 1200);
   };
@@ -172,7 +201,7 @@ export default function Dashboard() {
             textShadow: revenueGlow ? "0 0 12px #4dff9b, 0 0 24px #4dff9b" : "0 0 6px #4dff9b55",
             transition: "text-shadow 0.3s",
           }}>
-            ${revenue.toLocaleString()}
+            ${(revenue ?? 3840).toLocaleString()}
           </span>
         </div>
 

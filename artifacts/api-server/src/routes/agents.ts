@@ -8,6 +8,9 @@ const router = Router();
 const updateAgentBody = z.object({
   status: z.enum(["idle", "working", "paused", "offline"]).optional(),
   roomId: z.number().optional(),
+  level: z.number().int().min(1).optional(),
+  experience: z.number().int().min(0).optional(),
+  currentTask: z.string().nullable().optional(),
 });
 
 const createTaskBody = z.object({
