@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Settings, Zap, Users, Target, Store, Clock } from "lucide-react";
+import { Settings, Zap, Users, Target, Store, Clock, Home } from "lucide-react";
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
 
 const NAV_ITEMS = [
@@ -10,36 +10,6 @@ const NAV_ITEMS = [
   { href: "/timeline",  label: "TIMELINE", Icon: Clock },
   { href: "/templates", label: "MARKET",   Icon: Store },
 ];
-
-// Absolute link that escapes the nested /app router and goes to marketing root
-function HomeLink() {
-  return (
-    <a
-      href="/marketing"
-      title="Back to home"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "0 10px",
-        height: "100%",
-        color: "var(--ae-muted)",
-        textDecoration: "none",
-        borderLeft: "1px solid var(--ae-border)",
-        fontFamily: "'Space Mono', monospace",
-        fontSize: 7,
-        letterSpacing: "0.08em",
-        transition: "color 0.15s",
-        whiteSpace: "nowrap",
-        gap: 4,
-      }}
-      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--ae-cyan)"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--ae-muted)"; }}
-    >
-      ← HOME
-    </a>
-  );
-}
 
 function useTick() {
   const [tick, setTick] = useState(0);
@@ -56,12 +26,23 @@ function useTick() {
   return `${hh}:${mm}:${ss}`;
 }
 
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return mobile;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: summary } = useGetDashboardSummary();
   const { data: stations } = useListStations();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const tick = useTick();
+  const isMobile = useIsMobile();
 
   const totalTasksCompleted = (stations ?? []).reduce((sum, s) => sum + (s.tasksCompleted ?? 0), 0);
   const totalTasksTotal = (stations ?? []).reduce((sum, s) => sum + (s.tasksTotal ?? 1), 0);
@@ -119,126 +100,246 @@ export function AppShell({ children }: { children: ReactNode }) {
           }}>CTRL</span>
         </div>
 
-        {/* Stats strip */}
-        <div style={{ display: "flex", height: "100%", borderRight: "1px solid var(--ae-border)" }}>
-          {stats.map((s, i) => (
-            <div key={s.label} style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "0 16px",
-              borderRight: i < stats.length - 1 ? "1px solid var(--ae-border)" : "none",
-              height: "100%",
-            }}>
-              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>
-                {s.label}:
-              </span>
-              <span style={{
-                fontFamily: "'Space Mono',monospace",
-                fontSize: 13,
-                fontWeight: 700,
-                color: s.color,
-                textShadow: `0 0 8px ${s.color}80`,
-              }}>{s.value}</span>
-            </div>
-          ))}
-        </div>
+        {/* Stats strip — hidden on mobile */}
+        {!isMobile && (
+          <div style={{ display: "flex", height: "100%", borderRight: "1px solid var(--ae-border)" }}>
+            {stats.map((s, i) => (
+              <div key={s.label} style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "0 16px",
+                borderRight: i < stats.length - 1 ? "1px solid var(--ae-border)" : "none",
+                height: "100%",
+              }}>
+                <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>
+                  {s.label}:
+                </span>
+                <span style={{
+                  fontFamily: "'Space Mono',monospace",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: s.color,
+                  textShadow: `0 0 8px ${s.color}80`,
+                }}>{s.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* Nav tabs */}
-        <div style={{ display: "flex", flex: 1, height: "100%", justifyContent: "flex-end" }}>
-          {NAV_ITEMS.map(({ href, label }) => {
+        {/* Mobile: compact stats in top bar */}
+        {isMobile && (
+          <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 12, padding: "0 12px", overflow: "hidden" }}>
+            {stats.map(s => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.06em" }}>{s.label}:</span>
+                <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, fontWeight: 700, color: s.color }}>{s.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Nav tabs — desktop only */}
+        {!isMobile && (
+          <div style={{ display: "flex", flex: 1, height: "100%", justifyContent: "flex-end" }}>
+            {NAV_ITEMS.map(({ href, label }) => {
+              const isActive = href === "/" ? location === "/" : location.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 14px",
+                    height: "100%",
+                    fontFamily: "'Space Mono',monospace",
+                    fontSize: 9,
+                    letterSpacing: "0.08em",
+                    color: isActive ? "#0a0b0f" : "var(--ae-muted)",
+                    background: isActive ? "var(--ae-cyan)" : "transparent",
+                    borderLeft: "1px solid var(--ae-border)",
+                    cursor: "pointer",
+                    textDecoration: "none",
+                    transition: "all 0.15s",
+                    whiteSpace: "nowrap",
+                    fontWeight: isActive ? 700 : 400,
+                    boxShadow: isActive ? "0 0 16px rgba(77,240,216,0.5)" : "none",
+                  }}
+                >{label}</Link>
+              );
+            })}
+            <a
+              href="/marketing"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "0 10px", height: "100%", color: "var(--ae-muted)",
+                textDecoration: "none", borderLeft: "1px solid var(--ae-border)",
+                fontFamily: "'Space Mono', monospace", fontSize: 7,
+                letterSpacing: "0.08em", transition: "color 0.15s", whiteSpace: "nowrap", gap: 4,
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--ae-cyan)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--ae-muted)"; }}
+            >← HOME</a>
+            <button
+              onClick={() => setSettingsOpen(v => !v)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 46, height: "100%", background: "none", border: "none",
+                borderLeft: "1px solid var(--ae-border)", cursor: "pointer",
+                color: settingsOpen ? "var(--ae-cyan)" : "var(--ae-muted)", transition: "color 0.15s",
+              }}
+            ><Settings size={14} /></button>
+          </div>
+        )}
+
+        {/* Mobile: settings button in top-right */}
+        {isMobile && (
+          <button
+            onClick={() => setSettingsOpen(v => !v)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 46, height: "100%", background: "none", border: "none",
+              borderLeft: "1px solid var(--ae-border)", cursor: "pointer", flexShrink: 0,
+              color: settingsOpen ? "var(--ae-cyan)" : "var(--ae-muted)", transition: "color 0.15s",
+            }}
+          ><Settings size={14} /></button>
+        )}
+      </header>
+
+      {/* MAIN */}
+      <main style={{
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        paddingBottom: isMobile ? 56 : 0,
+      }}>
+        {children}
+      </main>
+
+      {/* BOTTOM STATUS BAR — desktop only */}
+      {!isMobile && (
+        <div style={{
+          height: 26, flexShrink: 0,
+          background: "rgba(0,0,0,0.6)", borderTop: "1px solid var(--ae-border)",
+          display: "flex", alignItems: "center", padding: "0 14px", gap: 20, zIndex: 100,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4dff9b", boxShadow: "0 0 6px #4dff9b", animation: "pulse-dot 2s ease-in-out infinite" }} />
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>AUTONOMOUS · RUNNING</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>AGENTS</span>
+            <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
+              <div style={{
+                height: "100%",
+                width: `${Math.min(100, ((summary?.activeAgents ?? 0) / Math.max(1, summary?.totalAgents ?? 1)) * 100)}%`,
+                background: "#4dff9b", boxShadow: "0 0 4px #4dff9b", transition: "width 1s",
+              }} />
+            </div>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{summary?.activeAgents ?? 0}/{summary?.totalAgents ?? 0}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>XP</span>
+            <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
+              <div style={{ height: "100%", width: `${xpPct}%`, background: "linear-gradient(to right, #4d7fff, #9b6dff)", boxShadow: "0 0 4px #4d7fff", transition: "width 1s" }} />
+            </div>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{totalTasksCompleted}/{totalTasksTotal}</span>
+          </div>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginLeft: "auto" }}>
+            v1.0 · TICK {tick}
+          </span>
+        </div>
+      )}
+
+      {/* MOBILE BOTTOM NAV BAR */}
+      {isMobile && (
+        <nav style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 56,
+          background: "rgba(8,9,14,0.97)",
+          borderTop: "2px solid var(--ae-border)",
+          display: "flex",
+          alignItems: "stretch",
+          zIndex: 200,
+          backdropFilter: "blur(12px)",
+          boxShadow: "0 -4px 24px rgba(0,0,0,0.6)",
+        }}>
+          {NAV_ITEMS.map(({ href, label, Icon }) => {
             const isActive = href === "/" ? location === "/" : location.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
                 style={{
+                  flex: 1,
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: "0 14px",
-                  height: "100%",
-                  fontFamily: "'Space Mono',monospace",
-                  fontSize: 9,
-                  letterSpacing: "0.08em",
-                  color: isActive ? "#0a0b0f" : "var(--ae-muted)",
-                  background: isActive ? "var(--ae-cyan)" : "transparent",
-                  borderLeft: "1px solid var(--ae-border)",
-                  cursor: "pointer",
+                  gap: 3,
                   textDecoration: "none",
-                  transition: "all 0.15s",
-                  whiteSpace: "nowrap",
-                  fontWeight: isActive ? 700 : 400,
-                  boxShadow: isActive ? "0 0 16px rgba(77,240,216,0.5)" : "none",
+                  color: isActive ? "var(--ae-cyan)" : "var(--ae-muted)",
+                  background: isActive ? "rgba(77,240,216,0.07)" : "transparent",
+                  borderRight: "1px solid var(--ae-border)",
+                  position: "relative",
+                  transition: "color 0.15s, background 0.15s",
                 }}
-              >{label}</Link>
+              >
+                {isActive && (
+                  <div style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    background: "var(--ae-cyan)",
+                    boxShadow: "0 0 8px var(--ae-cyan)",
+                  }} />
+                )}
+                <Icon size={16} strokeWidth={isActive ? 2.5 : 1.5} />
+                <span style={{
+                  fontFamily: "'Space Mono',monospace",
+                  fontSize: 6,
+                  letterSpacing: "0.06em",
+                  fontWeight: isActive ? 700 : 400,
+                  lineHeight: 1,
+                }}>{label}</span>
+              </Link>
             );
           })}
-          <HomeLink />
-          <button
-            onClick={() => setSettingsOpen(v => !v)}
+          {/* HOME button */}
+          <a
+            href="/marketing"
             style={{
+              flex: 1,
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              width: 46,
-              height: "100%",
-              background: "none",
-              border: "none",
-              borderLeft: "1px solid var(--ae-border)",
-              cursor: "pointer",
-              color: settingsOpen ? "var(--ae-cyan)" : "var(--ae-muted)",
+              gap: 3,
+              textDecoration: "none",
+              color: "var(--ae-muted)",
+              background: "transparent",
               transition: "color 0.15s",
             }}
-          ><Settings size={14} /></button>
-        </div>
-      </header>
-
-      {/* MAIN */}
-      <main style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {children}
-      </main>
-
-      {/* BOTTOM STATUS BAR */}
-      <div style={{
-        height: 26,
-        flexShrink: 0,
-        background: "rgba(0,0,0,0.6)",
-        borderTop: "1px solid var(--ae-border)",
-        display: "flex",
-        alignItems: "center",
-        padding: "0 14px",
-        gap: 20,
-        zIndex: 100,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4dff9b", boxShadow: "0 0 6px #4dff9b", animation: "pulse-dot 2s ease-in-out infinite" }} />
-          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>AUTONOMOUS · RUNNING</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>AGENTS</span>
-          <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
-            <div style={{
-              height: "100%",
-              width: `${Math.min(100, ((summary?.activeAgents ?? 0) / Math.max(1, summary?.totalAgents ?? 1)) * 100)}%`,
-              background: "#4dff9b",
-              boxShadow: "0 0 4px #4dff9b",
-              transition: "width 1s",
-            }} />
-          </div>
-          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{summary?.activeAgents ?? 0}/{summary?.totalAgents ?? 0}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>XP</span>
-          <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
-            <div style={{ height: "100%", width: `${xpPct}%`, background: "linear-gradient(to right, #4d7fff, #9b6dff)", boxShadow: "0 0 4px #4d7fff", transition: "width 1s" }} />
-          </div>
-          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{totalTasksCompleted}/{totalTasksTotal}</span>
-        </div>
-        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginLeft: "auto" }}>
-          v1.0 · TICK {tick}
-        </span>
-      </div>
+          >
+            <Home size={16} strokeWidth={1.5} />
+            <span style={{
+              fontFamily: "'Space Mono',monospace",
+              fontSize: 6,
+              letterSpacing: "0.06em",
+              lineHeight: 1,
+            }}>HOME</span>
+          </a>
+        </nav>
+      )}
     </div>
   );
 }
