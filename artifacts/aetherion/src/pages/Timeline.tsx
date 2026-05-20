@@ -1,6 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetRecentActivity } from "@workspace/api-client-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, BarChart2 } from "lucide-react";
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth <= 768);
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return mobile;
+}
 
 const FILTERS = ["ALL", "REVENUE", "AGENTS", "ERRORS"];
 
@@ -20,6 +31,8 @@ function formatTime(ts: string): string {
 
 export default function Timeline() {
   const [filter, setFilter] = useState("ALL");
+  const [chartsOpen, setChartsOpen] = useState(false);
+  const isMobile = useIsMobile();
   const { data: activity } = useGetRecentActivity({ limit: 50 });
 
   const filtered = (activity ?? []).filter(item => {
@@ -49,30 +62,52 @@ export default function Timeline() {
   const rev24h = [100, 180, 120, 250, 310, 290, 340, 380, 360, 400, 420, 390, 450, 480, 510, 490, 530, 580, 540, 600, 620, 590, 640, 680];
 
   return (
-    <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100%", overflow: "hidden", flexDirection: isMobile ? "column" : "row" }}>
       {/* LEFT: TIMELINE */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         {/* Header */}
         <div style={{
-          flexShrink: 0, padding: "12px 20px 10px",
+          flexShrink: 0,
+          padding: isMobile ? "8px 12px" : "12px 20px 10px",
           borderBottom: "1px solid var(--ae-border)",
           background: "rgba(0,0,0,0.2)",
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 9, color: "var(--ae-text)", letterSpacing: "0.04em" }}>⏱ TIMELINE</span>
-            <span style={{ ...mono, fontSize: 8, color: "var(--ae-muted)" }}>
-              {new Date().toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })}
-            </span>
+          {/* Title row */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: isMobile ? 8 : 9, color: "var(--ae-text)", letterSpacing: "0.04em" }}>⏱ TIMELINE</span>
+              {!isMobile && (
+                <span style={{ ...mono, fontSize: 8, color: "var(--ae-muted)" }}>
+                  {new Date().toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })}
+                </span>
+              )}
+            </div>
+            {/* Charts toggle — mobile only */}
+            {isMobile && (
+              <button
+                onClick={() => setChartsOpen(v => !v)}
+                style={{
+                  background: chartsOpen ? "rgba(77,240,216,0.12)" : "transparent",
+                  border: `1px solid ${chartsOpen ? "var(--ae-cyan)" : "var(--ae-border)"}`,
+                  color: chartsOpen ? "var(--ae-cyan)" : "var(--ae-muted)",
+                  cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: 4,
+                }}
+              >
+                <BarChart2 size={11} />
+                <span style={{ ...mono, fontSize: 6, letterSpacing: "0.08em" }}>CHARTS</span>
+                <ChevronDown size={9} style={{ transform: chartsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+              </button>
+            )}
           </div>
-          <div style={{ display: "flex", gap: 5 }}>
+          {/* Filter buttons — horizontal scroll on mobile */}
+          <div style={{ display: "flex", gap: 4, overflowX: isMobile ? "auto" : "unset", flexWrap: isMobile ? "nowrap" : "wrap", scrollbarWidth: "none" }}>
             {FILTERS.map(f => (
               <button key={f} onClick={() => setFilter(f)} style={{
-                ...mono, fontSize: 8, padding: "3px 10px",
+                ...mono, fontSize: isMobile ? 7 : 8, padding: "3px 8px", flexShrink: 0,
                 border: `1px solid ${filter === f ? (f === "ERRORS" ? "var(--ae-red)" : f === "REVENUE" ? "var(--ae-green)" : f === "AGENTS" ? "var(--ae-blue)" : "var(--ae-cyan)") : "var(--ae-border)"}`,
                 background: filter === f ? "rgba(0,0,0,0.4)" : "transparent",
                 color: filter === f ? (f === "ERRORS" ? "var(--ae-red)" : f === "REVENUE" ? "var(--ae-green)" : f === "AGENTS" ? "var(--ae-blue)" : "var(--ae-cyan)") : "var(--ae-muted)",
-                cursor: "pointer", letterSpacing: "0.06em", transition: "all 0.15s",
+                cursor: "pointer", letterSpacing: "0.06em", transition: "all 0.15s", whiteSpace: "nowrap",
               }}>[{f}]</button>
             ))}
           </div>
@@ -128,8 +163,24 @@ export default function Timeline() {
         </div>
       </div>
 
-      {/* RIGHT: CHARTS */}
-      <div style={{ width: 220, flexShrink: 0, borderLeft: "1px solid var(--ae-border)", background: "rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* RIGHT: CHARTS — side panel on desktop, collapsible on mobile */}
+      <AnimatePresence>
+      {(!isMobile || chartsOpen) && (
+      <motion.div
+        initial={isMobile ? { height: 0, opacity: 0 } : false}
+        animate={isMobile ? { height: "auto", opacity: 1 } : {}}
+        exit={isMobile ? { height: 0, opacity: 0 } : {}}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+        style={{
+          width: isMobile ? "100%" : 220,
+          flexShrink: 0,
+          borderLeft: isMobile ? "none" : "1px solid var(--ae-border)",
+          borderTop: isMobile ? "1px solid var(--ae-border)" : "none",
+          background: "rgba(0,0,0,0.2)",
+          display: "flex",
+          flexDirection: isMobile ? "row" : "column",
+          overflow: isMobile ? "auto" : "hidden",
+        }}>
         {/* Revenue 24h */}
         <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--ae-border)" }}>
           <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>Revenue 24h</div>
@@ -181,7 +232,9 @@ export default function Timeline() {
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
+      )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,10 +1,23 @@
+import { useState, useEffect } from "react";
 import { useGetDashboardSummary, useGetAgentPerformance } from "@workspace/api-client-react";
-import { motion } from "framer-motion";
-import { Lock, Star, Trophy, Zap, CheckCircle, TrendingUp, Users, Code } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Lock, Star, Trophy, Zap, CheckCircle, TrendingUp, Users, Code, ChevronDown, BarChart2 } from "lucide-react";
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth <= 768);
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return mobile;
+}
 
 export default function Missions() {
   const { data: summary } = useGetDashboardSummary();
   const { data: performance } = useGetAgentPerformance();
+  const isMobile = useIsMobile();
+  const [statsOpen, setStatsOpen] = useState(false);
 
   const avgPerf = performance && performance.length > 0
     ? Math.round(performance.reduce((acc, p) => acc + p.avgProgress, 0) / performance.length)
@@ -56,31 +69,47 @@ export default function Missions() {
   const mono = { fontFamily: "'Space Mono', monospace" };
 
   return (
-    <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100%", overflow: "hidden", flexDirection: isMobile ? "column" : "row" }}>
       {/* MAIN MISSIONS */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 0 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px 14px" : "20px 24px", display: "flex", flexDirection: "column", gap: 0 }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: isMobile ? 12 : 20 }}>
           <div style={{
             flex: 1,
             background: "linear-gradient(90deg, rgba(255,184,77,0.1) 0%, rgba(255,215,0,0.06) 50%, rgba(0,0,0,0) 100%)",
             border: "1px solid #ffb84d",
-            padding: "11px 18px",
+            padding: isMobile ? "8px 12px" : "11px 18px",
             boxShadow: "0 0 24px rgba(255,184,77,0.25), inset 0 0 40px rgba(255,184,77,0.04)",
             position: "relative",
-            display: "flex", alignItems: "center", gap: 14,
+            display: "flex", alignItems: "center", gap: 10,
           }}>
             <div style={{ position: "absolute", top: 0, left: 0, width: 12, height: 12, borderTop: "2px solid #ffd700", borderLeft: "2px solid #ffd700" }} />
             <div style={{ position: "absolute", bottom: 0, right: 0, width: 12, height: 12, borderBottom: "2px solid #ffd700", borderRight: "2px solid #ffd700" }} />
-            <Trophy size={18} style={{ color: "#ffd700", filter: "drop-shadow(0 0 6px #ffd70099)", flexShrink: 0 }} />
-            <div>
-              <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 10, color: "#ffb84d", letterSpacing: "0.04em", textShadow: "0 0 14px rgba(255,184,77,0.7)" }}>
+            <Trophy size={isMobile ? 14 : 18} style={{ color: "#ffd700", filter: "drop-shadow(0 0 6px #ffd70099)", flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: isMobile ? 8 : 10, color: "#ffb84d", letterSpacing: "0.04em", textShadow: "0 0 14px rgba(255,184,77,0.7)" }}>
                 ACTIVE MISSIONS
               </span>
               <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginTop: 3, letterSpacing: "0.08em" }}>
                 {missions.filter(m => !m.locked && m.current < m.target).length} IN PROGRESS · {missions.filter(m => m.current >= m.target).length} COMPLETED
               </div>
             </div>
+            {/* Stats toggle — mobile only */}
+            {isMobile && (
+              <button
+                onClick={() => setStatsOpen(v => !v)}
+                style={{
+                  background: statsOpen ? "rgba(77,240,216,0.12)" : "transparent",
+                  border: `1px solid ${statsOpen ? "var(--ae-cyan)" : "var(--ae-border)"}`,
+                  color: statsOpen ? "var(--ae-cyan)" : "var(--ae-muted)",
+                  cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
+                }}
+              >
+                <BarChart2 size={11} />
+                <span style={{ ...mono, fontSize: 6, letterSpacing: "0.08em" }}>STATS</span>
+                <ChevronDown size={9} style={{ transform: statsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -249,8 +278,23 @@ export default function Missions() {
         </div>
       </div>
 
-      {/* RIGHT: STATION STATS */}
-      <div style={{ width: 224, flexShrink: 0, borderLeft: "1px solid var(--ae-border)", background: "rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* RIGHT: STATION STATS — side panel on desktop, collapsible on mobile */}
+      <AnimatePresence>
+      {(!isMobile || statsOpen) && (
+      <motion.div
+        initial={isMobile ? { height: 0, opacity: 0 } : false}
+        animate={isMobile ? { height: "auto", opacity: 1 } : {}}
+        exit={isMobile ? { height: 0, opacity: 0 } : {}}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+        style={{
+          width: isMobile ? "100%" : 224,
+          flexShrink: 0,
+          borderLeft: isMobile ? "none" : "1px solid var(--ae-border)",
+          borderTop: isMobile ? "1px solid var(--ae-border)" : "none",
+          background: "rgba(0,0,0,0.2)",
+          display: "flex", flexDirection: "column",
+          overflow: isMobile ? "visible" : "hidden",
+        }}>
         <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--ae-border)", display: "flex", alignItems: "center", gap: 7 }}>
           <div style={{ width: 6, height: 6, background: "var(--ae-cyan)", boxShadow: "0 0 6px var(--ae-cyan)" }} />
           <span style={{ ...mono, fontSize: 8, color: "var(--ae-cyan)", letterSpacing: "0.12em" }}>STATION STATS</span>
@@ -343,7 +387,9 @@ export default function Missions() {
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
+      )}
+      </AnimatePresence>
     </div>
   );
 }
