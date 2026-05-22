@@ -2,8 +2,8 @@ import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy, Check } from "lucide-react";
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
-import { useWallet, useConnection } from "@solana/wallet-adapter-react";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useAccount, useBalance, useDisconnect } from "wagmi";
+import { base } from "viem/chains";
 
 const NAV_ITEMS = [
   { href: "/app",           label: "STATION",  Icon: Zap },
@@ -40,29 +40,10 @@ function useIsMobile() {
 }
 
 function useWalletBalance() {
-  const { connection } = useConnection();
-  const { publicKey } = useWallet();
-  const [balance, setBalance] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!publicKey) { setBalance(null); return; }
-    let cancelled = false;
-
-    const fetch = async () => {
-      try {
-        const lamports = await connection.getBalance(publicKey);
-        if (!cancelled) setBalance(lamports / LAMPORTS_PER_SOL);
-      } catch {
-        if (!cancelled) setBalance(null);
-      }
-    };
-
-    fetch();
-    const id = setInterval(fetch, 30000);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [connection, publicKey]);
-
-  return balance;
+  const { address } = useAccount();
+  const { data } = useBalance({ address, chainId: base.id });
+  if (!address || !data) return null;
+  return parseFloat(data.formatted);
 }
 
 function abbrev(addr: string) {
@@ -71,13 +52,14 @@ function abbrev(addr: string) {
 
 /* ─── Wallet Chip ─────────────────────────────────────────────────────────── */
 function WalletChip({ compact = false }: { compact?: boolean }) {
-  const { publicKey, disconnect, wallet } = useWallet();
+  const { address: rawAddress, connector } = useAccount();
+  const { disconnect } = useDisconnect();
   const balance = useWalletBalance();
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const address = publicKey?.toBase58() ?? "";
+  const address = rawAddress ?? "";
 
   const handleCopy = useCallback(async () => {
     try {
@@ -102,9 +84,9 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  if (!publicKey) return null;
+  if (!rawAddress) return null;
 
-  const solDisplay = balance !== null ? `${balance.toFixed(3)} SOL` : "— SOL";
+  const ethDisplay = balance !== null ? `${balance.toFixed(4)} ETH` : "— ETH";
 
   return (
     <div ref={menuRef} style={{ position: "relative", display: "flex", alignItems: "center", height: "100%" }}>
@@ -138,7 +120,7 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
 
         {!compact && (
           <>
-            {/* SOL balance */}
+            {/* ETH balance */}
             <span style={{
               fontFamily: "'Space Mono', monospace",
               fontSize: 9,
@@ -148,7 +130,7 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
               letterSpacing: "0.06em",
               whiteSpace: "nowrap",
             }}>
-              {solDisplay}
+              {ethDisplay}
             </span>
 
             {/* Divider */}
@@ -191,13 +173,13 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
           }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4dff9b", boxShadow: "0 0 6px #4dff9b", flexShrink: 0 }} />
             <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, color: "#c0c8e0", letterSpacing: "0.08em" }}>
-              {wallet?.adapter.name?.toUpperCase() ?? "WALLET"}
+              {connector?.name?.toUpperCase() ?? "WALLET"}
             </span>
           </div>
 
-          {/* SOL balance */}
+          {/* ETH balance on Base */}
           <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--ae-border)" }}>
-            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 4 }}>BALANCE</div>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 4 }}>BASE BALANCE</div>
             <div style={{
               fontFamily: "'Press Start 2P', monospace",
               fontSize: 14,
@@ -205,7 +187,7 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
               textShadow: "0 0 16px rgba(77,240,216,0.6)",
               letterSpacing: "0.04em",
             }}>
-              {solDisplay}
+              {ethDisplay}
             </div>
           </div>
 
@@ -281,7 +263,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: summary } = useGetDashboardSummary();
   const { data: stations } = useListStations();
-  const { publicKey } = useWallet();
+  const { isConnected } = useAccount();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const tick = useTick();
   const isMobile = useIsMobile();
@@ -508,11 +490,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
 
           {/* Wallet address in status bar */}
-          {publicKey && (
+          {isConnected && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <Wallet size={9} color="var(--ae-muted)" />
               <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.08em" }}>
-                {abbrev(publicKey.toBase58())}
+                BASE
               </span>
             </div>
           )}

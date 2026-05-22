@@ -11,6 +11,7 @@ CTRL (Control Agent) is an Autonomous Agent Economy OS dashboard — an agentic 
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **Frontend**: React + Vite + Tailwind CSS v4 + Framer Motion + Phaser 3 (at `/`)
+- **Blockchain**: Base chain (EVM) — wagmi v2 + viem for wallet connections (MetaMask, Coinbase Wallet)
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
 - **Validation**: Zod, `drizzle-zod`

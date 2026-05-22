@@ -1,34 +1,17 @@
-import { useMemo, type ReactNode } from "react";
-import {
-  ConnectionProvider,
-  WalletProvider,
-} from "@solana/wallet-adapter-react";
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-  CoinbaseWalletAdapter,
-  NightlyWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
-import { clusterApiUrl } from "@solana/web3.js";
+import { createConfig, WagmiProvider, http } from "wagmi";
+import { base } from "viem/chains";
+import { injected, coinbaseWallet } from "wagmi/connectors";
+import type { ReactNode } from "react";
 
-const SOLANA_NETWORK = clusterApiUrl("mainnet-beta");
+export const wagmiConfig = createConfig({
+  chains: [base],
+  transports: { [base.id]: http() },
+  connectors: [
+    injected(),
+    coinbaseWallet({ appName: "CTRL" }),
+  ],
+});
 
-export function SolanaWalletProvider({ children }: { children: ReactNode }) {
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-      new CoinbaseWalletAdapter(),
-      new NightlyWalletAdapter(),
-    ],
-    []
-  );
-
-  return (
-    <ConnectionProvider endpoint={SOLANA_NETWORK}>
-      <WalletProvider wallets={wallets} autoConnect>
-        {children}
-      </WalletProvider>
-    </ConnectionProvider>
-  );
+export function EVMWalletProvider({ children }: { children: ReactNode }) {
+  return <WagmiProvider config={wagmiConfig}>{children}</WagmiProvider>;
 }

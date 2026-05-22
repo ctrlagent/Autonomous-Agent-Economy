@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useState, useEffect } from "react";
+import { useConnect, useAccount } from "wagmi";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wallet, Zap, Shield, ChevronRight, Lock, Coins, AlertTriangle } from "lucide-react";
 
@@ -21,12 +21,11 @@ const C = {
 
 const REQUIRED_TOKENS = 100_000;
 
-const WALLETS = [
-  { id: "phantom",  name: "Phantom",  icon: "👻", color: C.violet, desc: "Most popular Solana wallet" },
-  { id: "solflare", name: "Solflare", icon: "🔥", color: C.amber,  desc: "Native Solana wallet" },
-  { id: "coinbase", name: "Coinbase", icon: "🔵", color: "#4d7fff", desc: "Coinbase Wallet" },
-  { id: "nightly",  name: "Nightly",  icon: "🌙", color: C.cyan,   desc: "Multi-chain wallet" },
-];
+const WALLET_META: Record<string, { name: string; icon: string; color: string; desc: string }> = {
+  injected:      { name: "MetaMask",        icon: "🦊", color: "#e2761b", desc: "Browser extension & mobile wallet" },
+  coinbaseWallet:{ name: "Coinbase Wallet",  icon: "🔵", color: "#1652f0", desc: "Official Base network wallet" },
+  walletConnect: { name: "WalletConnect",   icon: "🔗", color: C.cyan,    desc: "Connect 300+ wallets" },
+};
 
 function CornerAccents({ color }: { color: string }) {
   return (
@@ -64,28 +63,27 @@ interface TokenGateProps {
 }
 
 export default function TokenGate({ onBetaAccess }: TokenGateProps) {
-  const { wallets, select, connecting, wallet } = useWallet();
+  const { connect, connectors, isPending } = useConnect();
+  const { isConnected } = useAccount();
   const [showWallets, setShowWallets] = useState(false);
   const [hoveredWallet, setHoveredWallet] = useState<string | null>(null);
-  const [connectingId, setConnectingId] = useState<string | null>(null);
   const [betaHovered, setBetaHovered] = useState(false);
-  const [tick, setTick] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  // Animate progress bar "scanning" pulse
-  useEffect(() => {
-    intervalRef.current = setInterval(() => setTick(t => t + 1), 80);
-    return () => clearInterval(intervalRef.current);
-  }, []);
-
-  const handleConnect = (walletId: string) => {
-    const adapterName = wallets.find(w => w.adapter.name.toLowerCase().includes(walletId))?.adapter.name;
-    if (adapterName) { setConnectingId(walletId); select(adapterName); }
-  };
-
-  // Token holding: 0 since not listed yet
   const holding = 0;
   const pct = (holding / REQUIRED_TOKENS) * 100;
+
+  const handleConnect = (connectorId: string) => {
+    const connector = connectors.find(c => c.id === connectorId);
+    if (connector) connect({ connector });
+  };
+
+  const displayWallets = connectors.map(c => ({
+    id: c.id,
+    name: WALLET_META[c.id]?.name ?? c.name,
+    icon: WALLET_META[c.id]?.icon ?? "💼",
+    color: WALLET_META[c.id]?.color ?? C.cyan,
+    desc: WALLET_META[c.id]?.desc ?? "EVM compatible wallet",
+  }));
 
   return (
     <div style={{
@@ -140,7 +138,7 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
             transition={{ repeat: Infinity, duration: 2.5 }}
             style={{ ...mono, fontSize: 8, color: C.cyan, letterSpacing: "0.28em", marginBottom: 14 }}
           >
-            ◈ ◈ ◈ SOLANA NETWORK ◈ ◈ ◈
+            ◈ ◈ ◈ BASE NETWORK ◈ ◈ ◈
           </motion.div>
           <div style={{
             ...px, fontSize: "clamp(18px, 4vw, 26px)", color: C.cyan,
@@ -166,7 +164,6 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
             <span style={{ ...px, fontSize: 7, color: "#c0c8e0", letterSpacing: "0.1em" }}>
               TOKEN GATE
             </span>
-            {/* PRE-LISTING badge */}
             <div style={{
               marginLeft: "auto",
               padding: "3px 8px",
@@ -213,17 +210,13 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
                   <span style={{ color: C.violet }}>$CTRL</span>
                 </span>
               </div>
-              {/* Bar track */}
               <div style={{ width: "100%", height: 8, background: "#0d0f18", border: `1px solid ${C.border}`, position: "relative", overflow: "hidden" }}>
-                {/* Filled portion */}
                 <div style={{
-                  height: "100%",
-                  width: `${pct}%`,
+                  height: "100%", width: `${pct}%`,
                   background: `linear-gradient(to right, ${C.violet}, ${C.cyan})`,
                   boxShadow: pct > 0 ? `0 0 8px ${C.violet}` : "none",
                   transition: "width 1s",
                 }} />
-                {/* Scan line */}
                 <motion.div
                   animate={{ x: ["0%", "100%"] }}
                   transition={{ repeat: Infinity, duration: 2.4, ease: "linear" }}
@@ -234,7 +227,6 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
                   }}
                 />
               </div>
-              {/* Tick marks */}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                 {[0, 25, 50, 75, 100].map(v => (
                   <span key={v} style={{ ...mono, fontSize: 6, color: "#2a3050", letterSpacing: 0 }}>{v}%</span>
@@ -255,7 +247,7 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
                   TOKEN NOT YET LISTED
                 </div>
                 <div style={{ ...mono, fontSize: 7, color: C.muted, letterSpacing: "0.05em", lineHeight: 1.7 }}>
-                  $CTRL token is currently in pre-listing phase. Token-gated access will be enforced upon TGE. Beta access is available in the meantime.
+                  $CTRL token launches on Base. Token-gated access will be enforced upon TGE. Beta access is available in the meantime.
                 </div>
               </div>
             </div>
@@ -269,25 +261,18 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
           onMouseLeave={() => setBetaHovered(false)}
           whileTap={{ scale: 0.98 }}
           style={{
-            width: "100%",
-            padding: "16px 20px",
+            width: "100%", padding: "16px 20px",
             border: `2px solid ${betaHovered ? C.cyan : C.cyan + "66"}`,
             background: betaHovered ? `${C.cyan}14` : `${C.cyan}08`,
-            cursor: "pointer",
-            transition: "all 0.15s",
+            cursor: "pointer", transition: "all 0.15s",
             boxShadow: betaHovered ? `0 0 28px ${C.cyan}28, inset 0 0 16px ${C.cyan}08` : "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-            position: "relative",
-            overflow: "hidden",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
+            position: "relative", overflow: "hidden",
           }}
         >
           {betaHovered && (
             <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: "200%" }}
+              initial={{ x: "-100%" }} animate={{ x: "200%" }}
               transition={{ duration: 0.7, ease: "easeInOut" }}
               style={{
                 position: "absolute", top: 0, left: 0, width: "40%", height: "100%",
@@ -347,9 +332,9 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
                 style={{ overflow: "hidden" }}
               >
                 <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-                  {WALLETS.map(w => {
+                  {displayWallets.map(w => {
                     const isHovered = hoveredWallet === w.id;
-                    const isConnecting = (connecting || connectingId === w.id) && wallet?.adapter.name.toLowerCase().includes(w.id);
+                    const isConnecting = isPending;
                     return (
                       <motion.button
                         key={w.id}
@@ -357,15 +342,15 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
                         onMouseEnter={() => setHoveredWallet(w.id)}
                         onMouseLeave={() => setHoveredWallet(null)}
                         whileTap={{ scale: 0.98 }}
-                        disabled={connecting}
+                        disabled={isPending}
                         style={{
                           display: "flex", alignItems: "center", gap: 14, padding: "10px 14px",
                           border: `1px solid ${isHovered ? w.color : C.border}`,
                           background: isHovered ? `${w.color}0e` : "transparent",
-                          cursor: connecting ? "not-allowed" : "pointer",
+                          cursor: isPending ? "not-allowed" : "pointer",
                           transition: "all 0.15s",
                           boxShadow: isHovered ? `0 0 14px ${w.color}22` : "none",
-                          opacity: connecting && !isConnecting ? 0.5 : 1,
+                          opacity: isPending && !isConnecting ? 0.5 : 1,
                           position: "relative", overflow: "hidden",
                         }}
                       >
@@ -385,7 +370,7 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
                           <div style={{ ...px, fontSize: 8, color: isHovered ? w.color : "#c0c8e0", letterSpacing: "0.06em", marginBottom: 3, transition: "color 0.15s" }}>{w.name}</div>
                           <div style={{ ...mono, fontSize: 7, color: C.muted }}>{w.desc}</div>
                         </div>
-                        {isConnecting ? (
+                        {isPending ? (
                           <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
@@ -418,9 +403,9 @@ export default function TokenGate({ onBetaAccess }: TokenGateProps) {
           borderTop: `1px solid ${C.border}`,
         }}>
           {[
-            { v: "100K", l: "$CTRL REQ", color: C.violet },
+            { v: "100K", l: "$CTRL REQ",  color: C.violet },
             { v: "TGE",  l: "COMING SOON", color: C.amber },
-            { v: "SOL",  l: "NETWORK", color: C.cyan },
+            { v: "BASE", l: "NETWORK",     color: C.cyan },
           ].map(({ v, l, color }) => (
             <div key={l} style={{ textAlign: "center" }}>
               <div style={{ ...px, fontSize: 10, color, textShadow: `0 0 16px ${color}88`, marginBottom: 4 }}>{v}</div>

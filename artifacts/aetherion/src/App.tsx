@@ -13,7 +13,7 @@ import ShipComms from "@/pages/ShipComms";
 import RoomDetail from "@/pages/RoomDetail";
 import Marketing from "@/pages/Marketing";
 import Settings from "@/pages/Settings";
-import { SolanaWalletProvider } from "@/lib/WalletProvider";
+import { EVMWalletProvider } from "@/lib/WalletProvider";
 import { WalletGate } from "@/components/WalletGate";
 
 const queryClient = new QueryClient();
@@ -54,11 +54,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SolanaWalletProvider>
+        <EVMWalletProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <Router />
           </WouterRouter>
-        </SolanaWalletProvider>
+        </EVMWalletProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
