@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Save, Trash2, CheckCircle, AlertCircle, Key, Cpu, MessageSquare } from "lucide-react";
+import { Eye, EyeOff, Save, Trash2, CheckCircle, AlertCircle, Key, Cpu, MessageSquare, Link2, Copy, Check, Globe } from "lucide-react";
+import { useAccount, useBalance, useChainId } from "wagmi";
+import { base } from "viem/chains";
+import { formatUnits } from "viem";
 
 const mono = { fontFamily: "'Space Mono', monospace" };
 const pixel = { fontFamily: "'Press Start 2P', monospace" };
@@ -36,6 +39,7 @@ type ProviderId = "openai" | "anthropic" | "gemini";
 
 const LS_PROVIDER = "ctrl_ai_provider";
 const LS_KEY = "ctrl_ai_key";
+const LS_CONTRACT = "ctrl_contract_address";
 
 export default function Settings() {
   const [provider, setProvider] = useState<ProviderId>(() => {
@@ -47,8 +51,18 @@ export default function Settings() {
   const [testStatus, setTestStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [testMessage, setTestMessage] = useState("");
 
+  const [contractAddress, setContractAddress] = useState(() => localStorage.getItem(LS_CONTRACT) ?? "");
+  const [contractSaved, setContractSaved] = useState(false);
+  const [copiedAddr, setCopiedAddr] = useState(false);
+
+  const { address: walletAddress, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { data: balance } = useBalance({ address: walletAddress, chainId: base.id });
+
   const selectedProvider = PROVIDERS.find(p => p.id === provider)!;
   const hasKey = apiKey.trim().length > 0;
+  const isBaseNetwork = chainId === base.id;
+  const contractIsValid = /^0x[0-9a-fA-F]{40}$/.test(contractAddress.trim());
 
   useEffect(() => {
     const stored = localStorage.getItem(LS_KEY) ?? "";
@@ -56,6 +70,19 @@ export default function Settings() {
     setApiKey(stored);
     setProvider(storedProvider);
   }, []);
+
+  function handleContractSave() {
+    localStorage.setItem(LS_CONTRACT, contractAddress.trim());
+    setContractSaved(true);
+    setTimeout(() => setContractSaved(false), 2000);
+  }
+
+  function handleCopyAddress(addr: string) {
+    navigator.clipboard.writeText(addr).then(() => {
+      setCopiedAddr(true);
+      setTimeout(() => setCopiedAddr(false), 1800);
+    }).catch(() => {});
+  }
 
   function handleSave() {
     localStorage.setItem(LS_PROVIDER, provider);
@@ -271,6 +298,163 @@ export default function Settings() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* ─── BASE NETWORK SECTION ─────────────────────────────────── */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <Globe size={14} style={{ color: "#1652f0" }} />
+            <span style={{ ...pixel, fontSize: 8, color: "var(--ae-text)", letterSpacing: "0.06em" }}>BASE NETWORK</span>
+          </div>
+
+          {/* Chain status card */}
+          <div style={{
+            marginBottom: 16, padding: "14px 16px",
+            border: "1px solid var(--ae-border)",
+            background: "rgba(22,82,240,0.04)",
+            position: "relative",
+          }}>
+            <div style={{ position: "absolute", top: 0, left: 0, width: 8, height: 8, borderTop: "2px solid #1652f0", borderLeft: "2px solid #1652f0" }} />
+            <div style={{ position: "absolute", bottom: 0, right: 0, width: 8, height: 8, borderBottom: "2px solid #1652f0", borderRight: "2px solid #1652f0" }} />
+
+            {/* Chain stats row */}
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 14 }}>
+              {[
+                { label: "NETWORK",  value: "Base Mainnet",  color: "#1652f0" },
+                { label: "CHAIN ID", value: "8453",          color: "var(--ae-cyan)" },
+                { label: "TOKEN",    value: "$CTRL",          color: "var(--ae-violet)" },
+                { label: "STATUS",   value: isConnected ? (isBaseNetwork ? "CONNECTED" : "WRONG NET") : "NOT CONNECTED",
+                  color: isConnected ? (isBaseNetwork ? "var(--ae-green)" : "var(--ae-amber)") : "var(--ae-muted)" },
+              ].map(({ label, value, color }) => (
+                <div key={label}>
+                  <div style={{ ...mono, fontSize: 6, color: "var(--ae-muted)", letterSpacing: "0.14em", marginBottom: 4 }}>{label}</div>
+                  <div style={{ ...mono, fontSize: 9, color, fontWeight: 700 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Wallet status row */}
+            {isConnected && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{
+                  padding: "8px 12px",
+                  background: "rgba(22,82,240,0.07)",
+                  border: "1px solid rgba(22,82,240,0.25)",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ae-green)", boxShadow: "0 0 6px var(--ae-green)" }} />
+                  <span style={{ ...mono, fontSize: 8, color: "#8090b0" }}>
+                    {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "—"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <span style={{ ...mono, fontSize: 8, color: "var(--ae-cyan)", fontWeight: 700 }}>
+                    {balance ? `${parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(4)} ETH` : "— ETH"}
+                  </span>
+                  <button
+                    onClick={() => handleCopyAddress(walletAddress ?? "")}
+                    style={{ background: "none", border: "1px solid var(--ae-border)", cursor: "pointer", padding: "3px 7px", color: copiedAddr ? "var(--ae-green)" : "var(--ae-muted)", display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
+                  >
+                    {copiedAddr ? <Check size={11} /> : <Copy size={11} />}
+                    <span style={{ ...mono, fontSize: 6 }}>{copiedAddr ? "COPIED" : "COPY"}</span>
+                  </button>
+                  <a
+                    href={`https://basescan.org/address/${walletAddress}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ ...mono, fontSize: 7, color: "#1652f0", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}
+                    onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+                    onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
+                  >
+                    <Link2 size={10} /> BASESCAN
+                  </a>
+                </div>
+              </motion.div>
+            )}
+
+            {!isConnected && (
+              <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", fontStyle: "italic" }}>
+                Connect a wallet from the login portal to see your Base balance here.
+              </div>
+            )}
+          </div>
+
+          {/* $CTRL Contract Address */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>$CTRL CONTRACT ADDRESS</div>
+              {contractAddress && contractIsValid && (
+                <a
+                  href={`https://basescan.org/token/${contractAddress.trim()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ ...mono, fontSize: 7, color: "#1652f0", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}
+                  onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+                  onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
+                >
+                  <Link2 size={9} /> VIEW ON BASESCAN →
+                </a>
+              )}
+            </div>
+            <div style={{
+              display: "flex", gap: 0,
+              border: `1px solid ${contractIsValid && contractAddress ? "#1652f066" : "var(--ae-border)"}`,
+              transition: "border-color 0.2s",
+            }}>
+              <input
+                type="text"
+                value={contractAddress}
+                onChange={e => { setContractAddress(e.target.value); setContractSaved(false); }}
+                placeholder="0x0000...0000  (paste after TGE deployment)"
+                style={{
+                  flex: 1, background: "rgba(0,0,0,0.4)", border: "none", outline: "none",
+                  padding: "10px 14px", ...mono, fontSize: 9, color: "var(--ae-text)",
+                  letterSpacing: "0.04em",
+                }}
+              />
+              {contractAddress && (
+                <button
+                  onClick={() => handleCopyAddress(contractAddress.trim())}
+                  style={{
+                    padding: "0 12px", background: "rgba(0,0,0,0.3)", border: "none",
+                    borderLeft: "1px solid var(--ae-border)", cursor: "pointer",
+                    color: copiedAddr ? "var(--ae-green)" : "var(--ae-muted)", display: "flex", alignItems: "center",
+                    transition: "color 0.15s",
+                  }}
+                >
+                  {copiedAddr ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+              )}
+            </div>
+            {contractAddress && !contractIsValid && (
+              <div style={{ ...mono, fontSize: 7, color: "var(--ae-amber)", marginTop: 5 }}>
+                ⚠ Must be a valid 0x EVM address (42 characters)
+              </div>
+            )}
+            {contractIsValid && contractAddress && (
+              <div style={{ ...mono, fontSize: 7, color: "var(--ae-green)", marginTop: 5 }}>
+                ✓ Valid Base contract address
+              </div>
+            )}
+            <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", marginTop: 6 }}>
+              Stored in your browser. Paste after $CTRL is deployed on Base. Links will open BaseScan.
+            </div>
+          </div>
+
+          {/* Save contract button */}
+          <button
+            onClick={handleContractSave}
+            disabled={!contractIsValid || !contractAddress}
+            className="pixel-btn primary"
+            style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 8, padding: "9px 16px", opacity: contractIsValid && contractAddress ? 1 : 0.4 }}
+          >
+            {contractSaved ? <CheckCircle size={12} /> : <Save size={12} />}
+            {contractSaved ? "SAVED!" : "SAVE ADDRESS"}
+          </button>
         </div>
 
         {/* Info box */}

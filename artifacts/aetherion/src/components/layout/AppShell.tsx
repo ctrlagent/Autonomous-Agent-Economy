@@ -4,6 +4,7 @@ import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy,
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
 import { base } from "viem/chains";
+import { formatUnits } from "viem";
 
 const NAV_ITEMS = [
   { href: "/app",           label: "STATION",  Icon: Zap },
@@ -43,7 +44,7 @@ function useWalletBalance() {
   const { address } = useAccount();
   const { data } = useBalance({ address, chainId: base.id });
   if (!address || !data) return null;
-  return parseFloat(data.formatted);
+  return parseFloat(formatUnits(data.value, data.decimals));
 }
 
 function abbrev(addr: string) {
@@ -268,8 +269,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const tick = useTick();
   const isMobile = useIsMobile();
 
-  const totalTasksCompleted = (stations ?? []).reduce((sum, s) => sum + (s.tasksCompleted ?? 0), 0);
-  const totalTasksTotal = (stations ?? []).reduce((sum, s) => sum + (s.tasksTotal ?? 1), 0);
+  const totalTasksCompleted = (stations ?? []).reduce((sum: number, s: { tasksCompleted?: number | null }) => sum + (s.tasksCompleted ?? 0), 0);
+  const totalTasksTotal = (stations ?? []).reduce((sum: number, s: { tasksTotal?: number | null }) => sum + (s.tasksTotal ?? 1), 0);
   const xpPct = Math.round((totalTasksCompleted / Math.max(1, totalTasksTotal)) * 100);
   const revenueEstimate = `$${(totalTasksCompleted * 27).toLocaleString()}`;
 
