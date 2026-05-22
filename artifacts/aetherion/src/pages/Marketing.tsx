@@ -531,6 +531,14 @@ function StickyNav() {
       {/* CTA */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Link
+          href="/docs"
+          style={{ ...mono, fontSize: 8, color: C.muted, textDecoration: "none", padding: "6px 12px", letterSpacing: "0.1em", transition: "color 0.15s", whiteSpace: "nowrap" }}
+          onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = C.cyan)}
+          onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = C.muted)}
+        >
+          DOCS
+        </Link>
+        <Link
           href="/app"
           style={{ ...px, fontSize: 8, color: C.bg, textDecoration: "none", padding: "9px 18px", border: `2px solid ${C.cyan}`, background: C.cyan, letterSpacing: "0.06em", boxShadow: `0 0 20px ${C.cyan}44`, transition: "all 0.18s", whiteSpace: "nowrap" }}
         >
@@ -562,6 +570,9 @@ function StickyNav() {
                 style={{ display: "block", width: "100%", textAlign: "left", ...mono, fontSize: 9, color: C.muted, background: "none", border: "none", cursor: "pointer", padding: "12px 24px", letterSpacing: "0.1em" }}
               >{label}</button>
             ))}
+            <Link href="/docs" onClick={() => setMenuOpen(false)}
+              style={{ display: "block", width: "100%", textAlign: "left", ...mono, fontSize: 9, color: C.cyan, padding: "12px 24px", letterSpacing: "0.1em", textDecoration: "none" }}
+            >DOCS ↗</Link>
           </motion.div>
         )}
       </AnimatePresence>

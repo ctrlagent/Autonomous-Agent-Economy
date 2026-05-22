@@ -13,6 +13,7 @@ import ShipComms from "@/pages/ShipComms";
 import RoomDetail from "@/pages/RoomDetail";
 import Marketing from "@/pages/Marketing";
 import Settings from "@/pages/Settings";
+import Docs from "@/pages/Docs";
 import { EVMWalletProvider } from "@/lib/WalletProvider";
 import { WalletGate } from "@/components/WalletGate";
 
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/" component={Marketing} />
       <Route path="/welcome" component={Marketing} />
       <Route path="/marketing" component={Marketing} />
+      <Route path="/docs" component={Docs} />
       <Route component={AppRoutes} />
     </Switch>
   );
