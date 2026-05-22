@@ -88,43 +88,75 @@ export default function Docs() {
   const [activeSection, setActiveSection] = useState("intro");
 
   return (
-    <div style={{ minHeight: "100dvh", background: C.bg, color: C.text, position: "relative", overflowX: "hidden" }}>
+    <div style={{ minHeight: "100dvh", background: C.bg, color: C.text, position: "relative" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap');
         html { scroll-behavior: smooth; }
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: ${C.bg}; } ::-webkit-scrollbar-thumb { background: ${C.bright}; }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: ${C.bg}; } ::-webkit-scrollbar-thumb { background: ${C.bright}; }
         @keyframes flicker { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:.85} 96%{opacity:1} }
+        .docs-sidebar-link:hover { color: ${C.cyan} !important; background: ${C.cyan}08 !important; }
       `}</style>
 
       {/* CRT scanlines */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, background: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px)", animation: "flicker 8s ease-in-out infinite" }} />
 
-      {/* Top bar */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: `${C.bg}ee`, borderBottom: `1px solid ${C.border}`, backdropFilter: "blur(8px)", display: "flex", alignItems: "center", gap: 0 }}>
-        <div style={{ padding: "0 24px", borderRight: `1px solid ${C.border}`, height: 44, display: "flex", alignItems: "center", gap: 10 }}>
-          <Zap size={12} color={C.cyan} />
+      {/* Top bar — slim, just brand + home */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, height: 44, background: `${C.bg}f0`, borderBottom: `1px solid ${C.border}`, backdropFilter: "blur(8px)", display: "flex", alignItems: "center" }}>
+        <div style={{ width: 220, flexShrink: 0, padding: "0 20px", borderRight: `1px solid ${C.border}`, height: "100%", display: "flex", alignItems: "center", gap: 10 }}>
+          <Zap size={11} color={C.cyan} />
           <span style={{ ...px, fontSize: 8, color: C.cyan, letterSpacing: "0.1em" }}>CTRL</span>
-          <span style={{ ...mono, fontSize: 7, color: C.muted, marginLeft: 4 }}>/ DOCS</span>
+          <span style={{ ...mono, fontSize: 7, color: C.muted }}>/ DOCS</span>
         </div>
-        <div style={{ flex: 1, overflowX: "auto", display: "flex", alignItems: "center", gap: 0, padding: "0 12px" }}>
-          {NAV_SECTIONS.map(s => (
-            <a key={s.id} href={`#${s.id}`} onClick={() => setActiveSection(s.id)}
-              style={{
-                ...mono, fontSize: 7, color: activeSection === s.id ? C.cyan : C.muted,
-                textDecoration: "none", padding: "0 12px", height: 44, display: "flex", alignItems: "center",
-                borderBottom: activeSection === s.id ? `2px solid ${C.cyan}` : "2px solid transparent",
-                transition: "color 0.15s", whiteSpace: "nowrap",
-              }}
-            >{s.label}</a>
-          ))}
-        </div>
-        <Link href="/" style={{ padding: "0 20px", height: 44, display: "flex", alignItems: "center", borderLeft: `1px solid ${C.border}`, textDecoration: "none" }}>
+        <div style={{ flex: 1 }} />
+        <Link href="/" style={{ padding: "0 20px", height: "100%", display: "flex", alignItems: "center", borderLeft: `1px solid ${C.border}`, textDecoration: "none" }}>
           <span style={{ ...mono, fontSize: 7, color: C.muted }}>← HOME</span>
         </Link>
       </div>
 
-      {/* Body */}
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "48px 24px 80px" }}>
+      {/* Sidebar + Content layout */}
+      <div style={{ display: "flex", paddingTop: 44 }}>
+
+        {/* Fixed left sidebar */}
+        <div style={{ width: 220, flexShrink: 0, position: "fixed", top: 44, left: 0, bottom: 0, background: C.surface, borderRight: `1px solid ${C.border}`, overflowY: "auto", zIndex: 40 }}>
+          <div style={{ padding: "24px 0 40px" }}>
+            {/* Sidebar label */}
+            <div style={{ ...px, fontSize: 5, color: C.muted, letterSpacing: "0.15em", padding: "0 20px", marginBottom: 16 }}>ON THIS PAGE</div>
+
+            {/* Nav links */}
+            <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {NAV_SECTIONS.map(s => (
+                <a
+                  key={s.id}
+                  href={`#${s.id}`}
+                  className="docs-sidebar-link"
+                  onClick={() => setActiveSection(s.id)}
+                  style={{
+                    ...mono, fontSize: 8, textDecoration: "none",
+                    padding: "9px 20px",
+                    color: activeSection === s.id ? C.cyan : C.muted,
+                    background: activeSection === s.id ? `${C.cyan}10` : "transparent",
+                    borderLeft: activeSection === s.id ? `2px solid ${C.cyan}` : "2px solid transparent",
+                    transition: "all 0.15s",
+                    display: "block",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  {s.label}
+                </a>
+              ))}
+            </nav>
+
+            {/* Sidebar footer */}
+            <div style={{ margin: "32px 20px 0", borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
+              <Tag color={C.cyan}>v1.0</Tag>
+              <div style={{ ...mono, fontSize: 6, color: C.muted, marginTop: 10, lineHeight: 1.8 }}>Base Chain<br />React + Vite</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main scrollable content — offset by sidebar width */}
+        <div style={{ marginLeft: 220, flex: 1, minWidth: 0 }}>
+          <div style={{ maxWidth: 820, padding: "48px 40px 80px" }}>
 
         {/* Hero */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ textAlign: "center", marginBottom: 64 }}>
@@ -648,6 +680,9 @@ export default function Docs() {
             <a href="https://basescan.org" target="_blank" rel="noopener noreferrer" style={{ ...mono, fontSize: 7, color: "#1652f0", textDecoration: "none" }}>BaseScan ↗</a>
           </div>
         </div>
+
+      </div>
+      </div>
       </div>
     </div>
   );
