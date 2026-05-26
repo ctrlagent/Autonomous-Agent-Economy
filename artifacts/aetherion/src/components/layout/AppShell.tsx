@@ -319,8 +319,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           gap: 8,
           flexShrink: 0,
         }}>
-          <div style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center" }}>
-            <PixelSprite role="builder" size={2} glow glowColor="#4d7fff" />
+          <div className="logo-idle" style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center" }}>
+            <PixelSprite role="builder" size={2} />
           </div>
           <span style={{
             fontFamily: "'Press Start 2P', monospace",

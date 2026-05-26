@@ -482,3 +482,17 @@ body::after {
   50%      { opacity: 0.35; }
 }
 .danger-blink { animation: danger-blink 1s ease-in-out infinite; }
+
+/* ── LOGO IDLE ── */
+@keyframes logo-bob {
+  0%,100% { transform: translateY(0px); }
+  30%     { transform: translateY(-3px); }
+  60%     { transform: translateY(-1px); }
+}
+@keyframes logo-glow-pulse {
+  0%,100% { filter: drop-shadow(0 0 4px #4d7fff) drop-shadow(0 0 8px rgba(77,127,255,0.4)); }
+  50%     { filter: drop-shadow(0 0 8px #4d7fff) drop-shadow(0 0 18px rgba(77,127,255,0.75)) drop-shadow(0 0 30px rgba(77,127,255,0.25)); }
+}
+.logo-idle svg {
+  animation: logo-bob 3.2s ease-in-out infinite, logo-glow-pulse 3.2s ease-in-out infinite;
+}
