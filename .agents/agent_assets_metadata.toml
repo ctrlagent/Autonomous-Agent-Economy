@@ -30,3 +30,9 @@ id = "4MoU56tstVb9egaUoYCqb"
 uri = "file://CTRL_Whitepaper.pdf"
 type = "pdf"
 title = "CTRL — Autonomous Agent Economy OS · Technical Whitepaper v1.0"
+
+[[outputs]]
+id = "oNSWyoPdlFaAfjD7LkdcO"
+uri = "file://CTRL_Project_Documentation.md"
+type = "text"
+title = "CTRL — Project Documentation & Technical Overview v1.0"
