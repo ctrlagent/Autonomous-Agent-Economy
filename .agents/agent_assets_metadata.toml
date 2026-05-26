@@ -24,3 +24,9 @@ id = "1cSIGGiK9Hfuj7e9_6Ksx"
 uri = "file://CTRL.md"
 type = "text"
 title = "CTRL — Control Agent: Project Overview"
+
+[[outputs]]
+id = "4MoU56tstVb9egaUoYCqb"
+uri = "file://CTRL_Whitepaper.pdf"
+type = "pdf"
+title = "CTRL — Autonomous Agent Economy OS · Technical Whitepaper v1.0"
