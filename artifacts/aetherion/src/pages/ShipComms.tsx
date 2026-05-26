@@ -8,7 +8,7 @@ import { Link } from "wouter";
 const mono = { fontFamily: "'Space Mono', monospace" };
 
 const ROLE_HEX: Record<string, string> = {
-  research: "#4df0d8", strategy: "#9b6dff", builder: "#4d7fff",
+  research: "#5b8fff", strategy: "#9b6dff", builder: "#4d7fff",
   content: "#ffb84d", growth: "#4dff9b", analytics: "#ff4d6d", design: "#ff4d9b",
 };
 function roleHex(r: string) { return ROLE_HEX[r?.toLowerCase()] ?? "#4d7fff"; }
@@ -455,7 +455,7 @@ export default function ShipComms() {
             <button key={cmd.label} onClick={() => sendMessage(cmd.msg, selectedAgent ?? undefined)}
               style={{
                 ...mono, fontSize: 7, padding: "3px 9px",
-                background: "rgba(77,240,216,0.06)", border: "1px solid var(--ae-border)",
+                background: "rgba(91,143,255,0.06)", border: "1px solid var(--ae-border)",
                 color: "var(--ae-muted)", cursor: "pointer", letterSpacing: "0.06em",
                 transition: "all 0.12s",
               }}
@@ -473,7 +473,7 @@ export default function ShipComms() {
             onFocusCapture={e => (e.currentTarget.style.borderColor = "var(--ae-cyan)")}
             onBlurCapture={e => (e.currentTarget.style.borderColor = "var(--ae-border)")}
           >
-            <div style={{ ...mono, fontSize: 8, color: "var(--ae-cyan)", padding: "0 10px", display: "flex", alignItems: "center", background: "rgba(77,240,216,0.07)", borderRight: "1px solid var(--ae-border)", flexShrink: 0 }}>
+            <div style={{ ...mono, fontSize: 8, color: "var(--ae-cyan)", padding: "0 10px", display: "flex", alignItems: "center", background: "rgba(91,143,255,0.07)", borderRight: "1px solid var(--ae-border)", flexShrink: 0 }}>
               {selectedAgent ? `→ ${selectedAgent}` : "BROADCAST"}
             </div>
             <input

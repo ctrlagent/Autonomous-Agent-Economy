@@ -12,7 +12,7 @@ const mono = { fontFamily: "'Space Mono', monospace" };
 const C = {
   bg: "#0a0b0f", surface: "#0f1118", surface2: "#131620",
   border: "#1e2130", bright: "#2a3050",
-  cyan: "#4df0d8", violet: "#9b6dff", blue: "#4d7fff",
+  cyan: "#5b8fff", violet: "#9b6dff", blue: "#4d7fff",
   amber: "#ffb84d", green: "#4dff9b", red: "#ff4d6d",
   muted: "#4a5580", dim: "#2a3050", text: "#c0c8e0",
 };

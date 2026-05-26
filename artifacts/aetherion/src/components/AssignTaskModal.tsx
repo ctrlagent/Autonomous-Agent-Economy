@@ -5,7 +5,7 @@ import { X, Check, ChevronRight } from "lucide-react";
 const mono = { fontFamily: "'Space Mono', monospace" };
 
 const ROLE_HEX: Record<string, string> = {
-  research: "#4df0d8", strategy: "#9b6dff", builder: "#4d7fff",
+  research: "#5b8fff", strategy: "#9b6dff", builder: "#4d7fff",
   content: "#ffb84d", growth: "#4dff9b", analytics: "#ff4d6d", design: "#ff4d9b",
 };
 
@@ -63,7 +63,7 @@ const TASKS_BY_ROLE: Record<string, string[]> = {
 const PRIORITIES = [
   { label: "CRITICAL", color: "#ff4d6d" },
   { label: "HIGH",     color: "#ffb84d" },
-  { label: "NORMAL",   color: "#4df0d8" },
+  { label: "NORMAL",   color: "#5b8fff" },
   { label: "LOW",      color: "#9b6dff" },
 ];
 

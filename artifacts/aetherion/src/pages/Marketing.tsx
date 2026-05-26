@@ -35,7 +35,7 @@ const C = {
   surface: "#0f1118",
   border: "#1e2130",
   muted: "#4a5580",
-  cyan: "#4df0d8",
+  cyan: "#5b8fff",
   violet: "#9b6dff",
   blue: "#4d7fff",
   amber: "#ffb84d",
@@ -1214,7 +1214,7 @@ export default function Marketing() {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #0a0b0f; }
         ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4df0d844; }
+        ::-webkit-scrollbar-thumb:hover { background: #5b8fff44; }
         * { box-sizing: border-box; }
 
         /* ── Responsive ── */

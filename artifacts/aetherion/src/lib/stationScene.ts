@@ -1162,12 +1162,12 @@ export class StationScene {
         const orbX = ag.waypoints[0].tx;
         const orbY = ag.waypoints[0].ty;
         const orba = ag.transitOrb.alpha;
-        g.fillStyle(0x4df0d8, orba * 0.9);
+        g.fillStyle(0x5b8fff, orba * 0.9);
         g.fillCircle(orbX, orbY, 4);
-        g.lineStyle(2, 0x4df0d8, orba * 0.5);
+        g.lineStyle(2, 0x5b8fff, orba * 0.5);
         g.strokeCircle(orbX, orbY, 6);
         // Trail from agent to orb
-        g.lineStyle(1, 0x4df0d8, orba * 0.25);
+        g.lineStyle(1, 0x5b8fff, orba * 0.25);
         g.beginPath(); g.moveTo(ag.wx, ag.wy); g.lineTo(orbX, orbY); g.strokePath();
       }
     }
@@ -1480,11 +1480,11 @@ export class StationScene {
 
     // CRT scanline
     this.scanY = (this.scanY + 0.45 * dt) % H;
-    g.fillStyle(0x4df0d8, 0.008 * bright);
+    g.fillStyle(0x5b8fff, 0.008 * bright);
     g.fillRect(0, this.scanY, W, 2);
 
     // Day/Night phase label in bottom-left of canvas
-    const phaseColor = this.dayPhase === 'NIGHT OPS' ? 0x4d7fff : this.dayPhase === 'PEAK HOURS' ? 0xffd700 : 0x4df0d8;
+    const phaseColor = this.dayPhase === 'NIGHT OPS' ? 0x4d7fff : this.dayPhase === 'PEAK HOURS' ? 0xffd700 : 0x5b8fff;
     const phasePulse = 0.6 + Math.sin(Date.now() * 0.003) * 0.4;
     g.fillStyle(phaseColor, 0.15 * phasePulse);
     g.fillRect(4, H - 20, 80, 14);

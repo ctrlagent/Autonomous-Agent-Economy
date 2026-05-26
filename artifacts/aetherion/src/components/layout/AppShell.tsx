@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
+import builderSprite from "@assets/image_1779827273832.png";
 import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy, Check } from "lucide-react";
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
@@ -99,13 +100,13 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
           gap: compact ? 6 : 8,
           height: "100%",
           padding: compact ? "0 10px" : "0 14px",
-          background: menuOpen ? "rgba(77,240,216,0.08)" : "transparent",
+          background: menuOpen ? "rgba(91,143,255,0.08)" : "transparent",
           border: "none",
           borderLeft: "1px solid var(--ae-border)",
           cursor: "pointer",
           transition: "background 0.15s",
         }}
-        onMouseEnter={e => { if (!menuOpen) (e.currentTarget as HTMLButtonElement).style.background = "rgba(77,240,216,0.05)"; }}
+        onMouseEnter={e => { if (!menuOpen) (e.currentTarget as HTMLButtonElement).style.background = "rgba(91,143,255,0.05)"; }}
         onMouseLeave={e => { if (!menuOpen) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
       >
         {/* Status dot */}
@@ -126,8 +127,8 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
               fontFamily: "'Space Mono', monospace",
               fontSize: 9,
               fontWeight: 700,
-              color: "#4df0d8",
-              textShadow: "0 0 8px rgba(77,240,216,0.5)",
+              color: "#5b8fff",
+              textShadow: "0 0 8px rgba(91,143,255,0.5)",
               letterSpacing: "0.06em",
               whiteSpace: "nowrap",
             }}>
@@ -184,8 +185,8 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
             <div style={{
               fontFamily: "'Press Start 2P', monospace",
               fontSize: 14,
-              color: "#4df0d8",
-              textShadow: "0 0 16px rgba(77,240,216,0.6)",
+              color: "#5b8fff",
+              textShadow: "0 0 16px rgba(91,143,255,0.6)",
               letterSpacing: "0.04em",
             }}>
               {ethDisplay}
@@ -221,7 +222,7 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
                   display: "flex",
                   alignItems: "center",
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#4df0d8"; (e.currentTarget as HTMLButtonElement).style.color = "#4df0d8"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#5b8fff"; (e.currentTarget as HTMLButtonElement).style.color = "#5b8fff"; }}
                 onMouseLeave={e => { if (!copied) { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ae-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ae-muted)"; } }}
               >
                 {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -285,7 +286,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const stats = [
     { label: "REVENUE",  value: revenueEstimate,                                                color: "#4dff9b" },
     { label: "TASKS",    value: String(summary?.tasksCompletedToday ?? 0),                      color: "#4d7fff" },
-    { label: "AGENTS",   value: `${summary?.activeAgents ?? 0}/${summary?.totalAgents ?? 0}`,   color: "#4df0d8" },
+    { label: "AGENTS",   value: `${summary?.activeAgents ?? 0}/${summary?.totalAgents ?? 0}`,   color: "#5b8fff" },
   ];
 
   return (
@@ -311,25 +312,33 @@ export function AppShell({ children }: { children: ReactNode }) {
       }}>
         {/* Logo */}
         <div style={{
-          padding: "0 18px",
+          padding: "0 14px 0 10px",
           borderRight: "1px solid var(--ae-border)",
           display: "flex",
           alignItems: "center",
-          gap: 10,
+          gap: 8,
           flexShrink: 0,
         }}>
-          <svg width="22" height="22" viewBox="0 0 22 22" style={{ imageRendering: "pixelated", flexShrink: 0 }}>
-            <polygon points="11,1 21,6 21,16 11,21 1,16 1,6" fill="none" stroke="#4df0d8" strokeWidth="1.5" />
-            <polygon points="11,5 17,8.5 17,13.5 11,17 5,13.5 5,8.5" fill="none" stroke="#4df0d8" strokeWidth="0.5" opacity="0.35" />
-            <text x="11" y="15.5" textAnchor="middle" fill="#ffb84d" fontSize="9" fontFamily="'Press Start 2P',monospace">C</text>
-          </svg>
+          <div style={{ position: "relative", height: 36, flexShrink: 0, display: "flex", alignItems: "center" }}>
+            <img
+              src={builderSprite}
+              alt="CTRL Agent"
+              style={{
+                height: 36,
+                width: "auto",
+                imageRendering: "pixelated",
+                objectFit: "contain",
+                filter: "drop-shadow(0 0 6px #5b8fff) drop-shadow(0 0 12px rgba(91,143,255,0.4))",
+              }}
+            />
+          </div>
           <span style={{
             fontFamily: "'Press Start 2P', monospace",
             fontSize: 10,
             color: "#fff",
             letterSpacing: "0.06em",
             lineHeight: 1,
-            textShadow: "0 0 12px rgba(77,240,216,0.5)",
+            textShadow: "0 0 12px rgba(91,143,255,0.6)",
           }}>CTRL</span>
         </div>
 
@@ -398,7 +407,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     transition: "all 0.15s",
                     whiteSpace: "nowrap",
                     fontWeight: isActive ? 700 : 400,
-                    boxShadow: isActive ? "0 0 16px rgba(77,240,216,0.5)" : "none",
+                    boxShadow: isActive ? "0 0 16px rgba(91,143,255,0.5)" : "none",
                   }}
                 >{label}</Link>
               );
@@ -539,7 +548,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   gap: 3,
                   textDecoration: "none",
                   color: isActive ? "var(--ae-cyan)" : "var(--ae-muted)",
-                  background: isActive ? "rgba(77,240,216,0.07)" : "transparent",
+                  background: isActive ? "rgba(91,143,255,0.07)" : "transparent",
                   borderRight: "1px solid var(--ae-border)",
                   position: "relative",
                   transition: "color 0.15s, background 0.15s",

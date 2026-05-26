@@ -12,7 +12,7 @@ const C = {
   surface2: "#131620",
   border: "#1e2130",
   muted: "#4a5580",
-  cyan: "#4df0d8",
+  cyan: "#5b8fff",
   violet: "#9b6dff",
   amber: "#ffb84d",
   green: "#4dff9b",

@@ -138,7 +138,7 @@ export default function Missions() {
               <button
                 onClick={() => setStatsOpen(v => !v)}
                 style={{
-                  background: statsOpen ? "rgba(77,240,216,0.12)" : "transparent",
+                  background: statsOpen ? "rgba(91,143,255,0.12)" : "transparent",
                   border: `1px solid ${statsOpen ? "var(--ae-cyan)" : "var(--ae-border)"}`,
                   color: statsOpen ? "var(--ae-cyan)" : "var(--ae-muted)",
                   cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
@@ -305,7 +305,7 @@ export default function Missions() {
               height: "100%",
               width: `${missions.length ? (missions.filter(m => m.status === "completed" || m.current >= m.target).length / missions.length) * 100 : 0}%`,
               background: "linear-gradient(to right, var(--ae-cyan), var(--ae-violet))",
-              boxShadow: "0 0 10px rgba(77,240,216,0.4)",
+              boxShadow: "0 0 10px rgba(91,143,255,0.4)",
               position: "relative", transition: "width 1s",
             }}>
               <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 2, background: "rgba(255,255,255,0.5)" }} />
@@ -340,7 +340,7 @@ export default function Missions() {
           <div>
             <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>REVENUE 7-DAY</div>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 72, border: "1px solid var(--ae-border)", padding: 6, background: "rgba(0,0,0,0.2)", position: "relative" }}>
-              <div style={{ position: "absolute", bottom: 6, left: 6, right: 6, top: 6, background: "repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(77,240,216,0.04) 19px, rgba(77,240,216,0.04) 20px)" }} />
+              <div style={{ position: "absolute", bottom: 6, left: 6, right: 6, top: 6, background: "repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(91,143,255,0.04) 19px, rgba(91,143,255,0.04) 20px)" }} />
               {revenueHistory.map((v, i) => {
                 const pct = (v / maxRev) * 100;
                 const isLast = i === revenueHistory.length - 1;
@@ -378,7 +378,7 @@ export default function Missions() {
                 <polygon points="50,40 62.5,46.25 62.5,53.75 50,60 37.5,53.75 37.5,46.25" fill="none" stroke="var(--ae-border)" strokeWidth="0.5" />
                 <polygon
                   points={`50,${15 + (100 - avgPerf) * 0.25} ${85 - avgPerf * 0.1},${37 - avgPerf * 0.05} ${80 + avgPerf * 0.05},${68 + avgPerf * 0.05} 50,${85 - avgPerf * 0.1} ${20 + avgPerf * 0.05},${68 + avgPerf * 0.05} ${25 - avgPerf * 0.1},${37 - avgPerf * 0.05}`}
-                  fill="rgba(77,240,216,0.12)"
+                  fill="rgba(91,143,255,0.12)"
                   stroke="var(--ae-cyan)"
                   strokeWidth="1.5"
                 />

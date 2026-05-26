@@ -138,7 +138,7 @@ export default function Settings() {
         <div style={{
           display: "flex", alignItems: "center", gap: 12, marginBottom: 28,
           padding: "14px 18px",
-          background: "linear-gradient(90deg, rgba(77,240,216,0.08) 0%, rgba(0,0,0,0) 100%)",
+          background: "linear-gradient(90deg, rgba(91,143,255,0.08) 0%, rgba(0,0,0,0) 100%)",
           border: "1px solid var(--ae-border)",
           position: "relative",
         }}>
@@ -245,7 +245,7 @@ export default function Settings() {
               animate={{ opacity: 1, y: 0 }}
               style={{
                 padding: "10px 14px", marginBottom: 14,
-                background: testStatus === "ok" ? "rgba(77,255,155,0.08)" : testStatus === "error" ? "rgba(255,77,109,0.08)" : "rgba(77,240,216,0.06)",
+                background: testStatus === "ok" ? "rgba(77,255,155,0.08)" : testStatus === "error" ? "rgba(255,77,109,0.08)" : "rgba(91,143,255,0.06)",
                 border: `1px solid ${testStatus === "ok" ? "var(--ae-green)" : testStatus === "error" ? "var(--ae-red)" : "var(--ae-border)"}`,
                 display: "flex", alignItems: "center", gap: 10,
               }}

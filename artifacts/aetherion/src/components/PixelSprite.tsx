@@ -11,23 +11,23 @@ type Grid = string[][];
 
 const SPRITES: Record<string, Grid> = {
   research: [
-    [T,T,T,'#4df0d8','#4df0d8','#4df0d8',T,T,T,T,T,T,T,T,T,T],
-    [T,T,'#4df0d8','#a0fff4','#a0fff4','#4df0d8','#4df0d8',T,T,T,T,T,T,T,T,T],
-    [T,T,'#2bb8a4','#4df0d8','#4df0d8','#4df0d8','#2bb8a4',T,T,T,T,T,T,T,T,T],
-    [T,T,T,'#4df0d8','#4df0d8','#4df0d8',T,T,T,T,T,T,T,T,T,T],
+    [T,T,T,'#5b8fff','#5b8fff','#5b8fff',T,T,T,T,T,T,T,T,T,T],
+    [T,T,'#5b8fff','#7ab4ff','#7ab4ff','#5b8fff','#5b8fff',T,T,T,T,T,T,T,T,T],
+    [T,T,'#3d6bff','#5b8fff','#5b8fff','#5b8fff','#3d6bff',T,T,T,T,T,T,T,T,T],
+    [T,T,T,'#5b8fff','#5b8fff','#5b8fff',T,T,T,T,T,T,T,T,T,T],
     [T,T,T,T,'#ffcba4','#ffcba4',T,T,T,T,T,T,T,T,T,T],
     [T,T,T,'#ffcba4','#dda07a','#dda07a','#ffcba4',T,T,T,T,T,T,T,T,T],
     [T,T,T,'#ffcba4','#ffcba4','#ffcba4','#ffcba4',T,T,T,T,T,T,T,T,T],
     [T,T,T,T,'#ffcba4','#ffcba4',T,T,T,T,T,T,T,T,T,T],
-    [T,'#0d2e2b','#2bb8a4','#2bb8a4','#2bb8a4','#2bb8a4','#0d2e2b',T,T,T,T,T,T,T,T,T],
-    [T,'#2bb8a4','#4df0d8','#4df0d8','#4df0d8','#4df0d8','#2bb8a4',T,T,T,T,T,T,T,T,T],
-    [T,'#4df0d8','#a0fff4','#4df0d8','#4df0d8','#a0fff4','#4df0d8',T,T,T,T,T,T,T,T,T],
-    [T,'#2bb8a4','#4df0d8','#4df0d8','#4df0d8','#4df0d8','#2bb8a4',T,T,T,T,T,T,T,T,T],
-    [T,T,'#2bb8a4','#4df0d8','#4df0d8','#2bb8a4',T,T,T,T,T,T,T,T,T,T],
-    [T,T,T,'#1a7a6e','#1a7a6e',T,T,T,T,T,T,T,T,T,T,T],
-    [T,T,'#1a7a6e','#4df0d8','#4df0d8','#1a7a6e',T,T,T,T,T,T,T,T,T,T],
-    [T,T,'#4df0d8','#2bb8a4','#2bb8a4','#4df0d8',T,T,T,T,T,T,T,T,T,T],
-    [T,T,'#4df0d8','#2bb8a4','#2bb8a4','#4df0d8',T,T,T,T,T,T,T,T,T,T],
+    [T,'#0d2e2b','#3d6bff','#3d6bff','#3d6bff','#3d6bff','#0d2e2b',T,T,T,T,T,T,T,T,T],
+    [T,'#3d6bff','#5b8fff','#5b8fff','#5b8fff','#5b8fff','#3d6bff',T,T,T,T,T,T,T,T,T],
+    [T,'#5b8fff','#7ab4ff','#5b8fff','#5b8fff','#7ab4ff','#5b8fff',T,T,T,T,T,T,T,T,T],
+    [T,'#3d6bff','#5b8fff','#5b8fff','#5b8fff','#5b8fff','#3d6bff',T,T,T,T,T,T,T,T,T],
+    [T,T,'#3d6bff','#5b8fff','#5b8fff','#3d6bff',T,T,T,T,T,T,T,T,T,T],
+    [T,T,T,'#2a4eb5','#2a4eb5',T,T,T,T,T,T,T,T,T,T,T],
+    [T,T,'#2a4eb5','#5b8fff','#5b8fff','#2a4eb5',T,T,T,T,T,T,T,T,T,T],
+    [T,T,'#5b8fff','#3d6bff','#3d6bff','#5b8fff',T,T,T,T,T,T,T,T,T,T],
+    [T,T,'#5b8fff','#3d6bff','#3d6bff','#5b8fff',T,T,T,T,T,T,T,T,T,T],
   ],
   strategy: [
     [T,T,T,'#9b6dff','#9b6dff','#9b6dff',T,T,T,T,T,T,T,T,T,T],
@@ -196,7 +196,7 @@ export function PixelSprite({ role, size = 3, glow = false, glowColor }: PixelSp
 
 export function AgentAvatar({ role, size = 48 }: { role: string; size?: number }) {
   const roleColors: Record<string, string> = {
-    research: '#4df0d8', strategy: '#9b6dff', builder: '#4d7fff',
+    research: '#5b8fff', strategy: '#9b6dff', builder: '#4d7fff',
     design: '#ff4d9b', growth: '#4dff9b', analytics: '#ff4d6d', content: '#ffb84d',
   };
   const color = roleColors[role?.toLowerCase()] ?? '#4d7fff';
@@ -233,7 +233,7 @@ export function AgentAvatar({ role, size = 48 }: { role: string; size?: number }
 
 export function RoleBadge({ role, size = 'sm' }: { role: string; size?: 'xs' | 'sm' | 'md' }) {
   const roleColors: Record<string, string> = {
-    research: '#4df0d8', strategy: '#9b6dff', builder: '#4d7fff',
+    research: '#5b8fff', strategy: '#9b6dff', builder: '#4d7fff',
     design: '#ff4d9b', growth: '#4dff9b', analytics: '#ff4d6d', content: '#ffb84d',
   };
   const color = roleColors[role?.toLowerCase()] ?? '#4d7fff';

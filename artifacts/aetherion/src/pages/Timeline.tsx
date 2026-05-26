@@ -16,7 +16,7 @@ function useIsMobile() {
 const FILTERS = ["ALL", "REVENUE", "AGENTS", "ERRORS"];
 
 const ROLE_HEX: Record<string, string> = {
-  research: "#4df0d8", strategy: "#9b6dff", builder: "#4d7fff",
+  research: "#5b8fff", strategy: "#9b6dff", builder: "#4d7fff",
   design: "#ff4d9b", growth: "#4dff9b", analytics: "#ff4d6d", content: "#ffb84d",
 };
 function getRoleHex(role: string) { return ROLE_HEX[role?.toLowerCase()] ?? "#636b8a"; }
@@ -108,7 +108,7 @@ export default function Timeline() {
     }
     return grid;
   }, [activity]);
-  const heatColors = ["var(--ae-border)", "var(--ae-cyan-dim)", "var(--ae-cyan)", "#a0fff4"];
+  const heatColors = ["var(--ae-border)", "var(--ae-cyan-dim)", "var(--ae-cyan)", "#7ab4ff"];
 
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden", flexDirection: isMobile ? "column" : "row" }}>
@@ -134,7 +134,7 @@ export default function Timeline() {
               <button
                 onClick={() => setChartsOpen(v => !v)}
                 style={{
-                  background: chartsOpen ? "rgba(77,240,216,0.12)" : "transparent",
+                  background: chartsOpen ? "rgba(91,143,255,0.12)" : "transparent",
                   border: `1px solid ${chartsOpen ? "var(--ae-cyan)" : "var(--ae-border)"}`,
                   color: chartsOpen ? "var(--ae-cyan)" : "var(--ae-muted)",
                   cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: 4,
@@ -236,7 +236,7 @@ export default function Timeline() {
                 fill="none" stroke="var(--ae-cyan)" strokeWidth="1.5" />
               <polyline
                 points={`0,52 ${rev24h.map((v, i) => `${(i / (rev24h.length - 1)) * 192},${52 - (v / maxRev) * 52}`).join(" ")} 192,52`}
-                fill="rgba(77,240,216,0.08)" stroke="none" />
+                fill="rgba(91,143,255,0.08)" stroke="none" />
               {rev24h.map((v, i) => (
                 <circle key={i} cx={(i / (rev24h.length - 1)) * 192} cy={52 - (v / maxRev) * 52} r={i === rev24h.length - 1 ? 2.5 : 1.5}
                   fill={i === rev24h.length - 1 ? "var(--ae-cyan)" : "var(--ae-blue)"} />

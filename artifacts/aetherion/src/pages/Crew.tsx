@@ -21,7 +21,7 @@ function useIsMobile() {
 const FILTERS = ["ALL", "RESEARCH", "STRATEGY", "BUILDER", "CONTENT", "GROWTH", "ANALYTICS"];
 
 const ROLE_HEX: Record<string, string> = {
-  research:  "#4df0d8", strategy:  "#9b6dff", builder:   "#4d7fff",
+  research:  "#5b8fff", strategy:  "#9b6dff", builder:   "#4d7fff",
   design:    "#ff4d9b", growth:    "#4dff9b", analytics: "#ff4d6d", content:   "#ffb84d",
 };
 function getRoleHex(role: string) { return ROLE_HEX[role?.toLowerCase()] ?? "#4d7fff"; }
@@ -264,13 +264,13 @@ export default function Crew() {
         }}>
           {/* Title row */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <h1 style={{ fontFamily: "'Press Start 2P',monospace", fontSize: isMobile ? 10 : 12, color: "var(--ae-cyan)", letterSpacing: "0.04em", lineHeight: 1.5, textShadow: "0 0 18px rgba(77,240,216,0.7), 0 0 40px rgba(77,240,216,0.25)" }}>
+            <h1 style={{ fontFamily: "'Press Start 2P',monospace", fontSize: isMobile ? 10 : 12, color: "var(--ae-cyan)", letterSpacing: "0.04em", lineHeight: 1.5, textShadow: "0 0 18px rgba(91,143,255,0.7), 0 0 40px rgba(91,143,255,0.25)" }}>
               CREW
             </h1>
             <div style={{
               ...mono, fontSize: 7, padding: "3px 8px",
               border: "1px solid var(--ae-cyan)",
-              background: "rgba(77,240,216,0.07)",
+              background: "rgba(91,143,255,0.07)",
               color: "var(--ae-cyan)", letterSpacing: "0.1em",
               display: "flex", alignItems: "center", gap: 5,
             }}>
@@ -300,10 +300,10 @@ export default function Crew() {
                 <button key={f} onClick={() => setFilter(f)} style={{
                   ...mono, fontSize: 7, padding: "4px 10px", flexShrink: 0,
                   border: `1px solid ${active ? (f === "ALL" ? "var(--ae-cyan)" : roleColor) : "var(--ae-border)"}`,
-                  background: active ? `${f === "ALL" ? "rgba(77,240,216,0.1)" : roleColor + "18"}` : "transparent",
+                  background: active ? `${f === "ALL" ? "rgba(91,143,255,0.1)" : roleColor + "18"}` : "transparent",
                   color: active ? (f === "ALL" ? "var(--ae-cyan)" : roleColor) : "var(--ae-muted)",
                   cursor: "pointer", letterSpacing: "0.08em", transition: "all 0.15s",
-                  boxShadow: active ? `0 0 8px ${f === "ALL" ? "rgba(77,240,216,0.3)" : roleColor + "44"}` : "none",
+                  boxShadow: active ? `0 0 8px ${f === "ALL" ? "rgba(91,143,255,0.3)" : roleColor + "44"}` : "none",
                   whiteSpace: "nowrap",
                 }}>{f}</button>
               );

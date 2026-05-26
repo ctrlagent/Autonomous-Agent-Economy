@@ -8,7 +8,7 @@ const px = { fontFamily: "'Press Start 2P', monospace" };
 const mono = { fontFamily: "'Space Mono', monospace" };
 
 const ROOM_TYPES = [
-  { value: "research",    label: "RESEARCH",    icon: Beaker,    color: "#4df0d8", desc: "Data gathering & analysis" },
+  { value: "research",    label: "RESEARCH",    icon: Beaker,    color: "#5b8fff", desc: "Data gathering & analysis" },
   { value: "development", label: "DEVELOPMENT", icon: Code2,     color: "#4d7fff", desc: "Build & deploy systems" },
   { value: "design",      label: "DESIGN",      icon: Palette,   color: "#9b6dff", desc: "Visual & UX creation" },
   { value: "marketing",   label: "MARKETING",   icon: Megaphone, color: "#ffb84d", desc: "Growth & outreach" },
@@ -145,7 +145,7 @@ export function AddRoomModal({ stationId, onClose }: Props) {
               {isPending ? (
                 <>
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                    style={{ width: 10, height: 10, border: "2px solid #4df0d844", borderTop: "2px solid #4df0d8", borderRadius: "50%" }} />
+                    style={{ width: 10, height: 10, border: "2px solid #5b8fff44", borderTop: "2px solid #5b8fff", borderRadius: "50%" }} />
                   CREATING...
                 </>
               ) : (

@@ -33,12 +33,12 @@ function drawMinimapCanvas(ctx: CanvasRenderingContext2D, data: MinimapData, cw:
   ctx.fillRect(0, 0, cw, ch);
 
   // Border — cyan glow
-  ctx.strokeStyle = 'rgba(77,240,216,0.7)';
+  ctx.strokeStyle = 'rgba(91,143,255,0.7)';
   ctx.lineWidth = 1.5;
   ctx.strokeRect(0.75, 0.75, cw - 1.5, ch - 1.5);
 
   // "NAV" label
-  ctx.fillStyle = 'rgba(77,240,216,0.5)';
+  ctx.fillStyle = 'rgba(91,143,255,0.5)';
   ctx.font = '5px "Press Start 2P", monospace';
   ctx.fillText('NAV', pad + 2, pad + 7);
 

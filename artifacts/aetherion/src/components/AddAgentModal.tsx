@@ -8,7 +8,7 @@ const px = { fontFamily: "'Press Start 2P', monospace" };
 const mono = { fontFamily: "'Space Mono', monospace" };
 
 const ROLES = [
-  { value: "research",  label: "RESEARCH",  color: "#4df0d8", symbol: "⬡", desc: "Analysis & data ops" },
+  { value: "research",  label: "RESEARCH",  color: "#5b8fff", symbol: "⬡", desc: "Analysis & data ops" },
   { value: "strategy",  label: "STRATEGY",  color: "#9b6dff", symbol: "◈", desc: "Planning & decisions" },
   { value: "builder",   label: "BUILDER",   color: "#4d7fff", symbol: "⬢", desc: "Build & engineering" },
   { value: "content",   label: "CONTENT",   color: "#ffb84d", symbol: "◉", desc: "Write & create" },
@@ -176,9 +176,9 @@ export function AddAgentModal({ stationId, rooms, onClose }: Props) {
                 {rooms.map(room => {
                   const isSelected = roomId === room.id;
                   const roleColor = {
-                    research: "#4df0d8", development: "#4d7fff", design: "#9b6dff",
+                    research: "#5b8fff", development: "#4d7fff", design: "#9b6dff",
                     marketing: "#ffb84d", operations: "#4dff9b", analytics: "#ff4d6d",
-                  }[room.type] ?? "#4df0d8";
+                  }[room.type] ?? "#5b8fff";
                   return (
                     <button
                       key={room.id}
@@ -214,7 +214,7 @@ export function AddAgentModal({ stationId, rooms, onClose }: Props) {
               {isPending ? (
                 <>
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                    style={{ width: 10, height: 10, border: "2px solid #4df0d844", borderTop: "2px solid #4df0d8", borderRadius: "50%" }} />
+                    style={{ width: 10, height: 10, border: "2px solid #5b8fff44", borderTop: "2px solid #5b8fff", borderRadius: "50%" }} />
                   DEPLOYING...
                 </>
               ) : (

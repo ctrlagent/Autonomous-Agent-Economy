@@ -20,7 +20,7 @@ export const DUNGEON_COLS = 30;
 export const DUNGEON_ROWS = 22;
 
 export const DUNGEON_ROOMS: RoomDef[] = [
-  { id: 'r1', name: 'Research Lab',   role: 'research',  color: 0x4df0d8, tileX: 1,  tileY: 1,  tileW: 8, tileH: 6 },
+  { id: 'r1', name: 'Research Lab',   role: 'research',  color: 0x5b8fff, tileX: 1,  tileY: 1,  tileW: 8, tileH: 6 },
   { id: 'r2', name: 'Dev Lab',        role: 'builder',   color: 0x4d7fff, tileX: 11, tileY: 1,  tileW: 8, tileH: 6 },
   { id: 'r3', name: 'Design Studio',  role: 'design',    color: 0x9b6dff, tileX: 21, tileY: 1,  tileW: 8, tileH: 6 },
   { id: 'r4', name: 'Marketing Hub',  role: 'growth',    color: 0x4dff9b, tileX: 1,  tileY: 15, tileW: 8, tileH: 6 },
@@ -39,7 +39,7 @@ export const DUNGEON_CORRIDORS: CorridorDef[] = [
 ];
 
 export const ROLE_COLORS: Record<string, number> = {
-  research:  0x4df0d8,
+  research:  0x5b8fff,
   builder:   0x4d7fff,
   design:    0x9b6dff,
   growth:    0x4dff9b,

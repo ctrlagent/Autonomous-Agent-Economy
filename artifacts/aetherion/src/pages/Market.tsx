@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 const CATEGORIES = ["All", "Crypto", "E-Commerce", "Content", "SaaS"];
 
 const CAT_COLORS: Record<string, string> = {
-  CRYPTO: "#ffb84d", ECOMMERCE: "#4dff9b", CONTENT: "#4df0d8", SAAS: "#9b6dff", DEFAULT: "#4d7fff",
+  CRYPTO: "#ffb84d", ECOMMERCE: "#4dff9b", CONTENT: "#5b8fff", SAAS: "#9b6dff", DEFAULT: "#4d7fff",
 };
 function getCatColor(cat: string) { return CAT_COLORS[cat?.toUpperCase()] ?? CAT_COLORS.DEFAULT; }
 
@@ -93,8 +93,8 @@ export default function Market() {
           <rect x="50" y="35" width="30" height="40" fill="#1e2130" />
           {/* Stall 2 - cyan */}
           <rect x="105" y="25" width="90" height="55" fill="#0d2e2b" />
-          <rect x="100" y="15" width="100" height="15" fill="#4df0d8" />
-          <rect x="105" y="20" width="90" height="5" fill="#2bb8a4" />
+          <rect x="100" y="15" width="100" height="15" fill="#5b8fff" />
+          <rect x="105" y="20" width="90" height="5" fill="#3d6bff" />
           <rect x="115" y="30" width="25" height="25" fill="#141720" />
           <rect x="155" y="30" width="30" height="45" fill="#141720" />
           {/* Stall 3 - violet */}
@@ -104,7 +104,7 @@ export default function Market() {
           <rect x="220" y="38" width="30" height="40" fill="#141720" />
           <rect x="260" y="38" width="30" height="30" fill="#141720" />
           {/* People pixels */}
-          <rect x="82" y="50" width="6" height="10" fill="#4df0d8" /><rect x="83" y="44" width="4" height="6" fill="#ffcba4" />
+          <rect x="82" y="50" width="6" height="10" fill="#5b8fff" /><rect x="83" y="44" width="4" height="6" fill="#ffcba4" />
           <rect x="195" y="45" width="6" height="10" fill="#9b6dff" /><rect x="196" y="39" width="4" height="6" fill="#ffcba4" />
           <rect x="300" y="48" width="6" height="10" fill="#ffb84d" /><rect x="301" y="42" width="4" height="6" fill="#ffcba4" />
         </svg>
@@ -112,10 +112,10 @@ export default function Market() {
         {/* Logo + title */}
         <div style={{ position: "relative", zIndex: 1 }}>
           <svg width="22" height="22" viewBox="0 0 22 22" style={{ imageRendering: "pixelated", verticalAlign: "middle", marginRight: 10 }}>
-            <polygon points="11,1 21,6 21,16 11,21 1,16 1,6" fill="none" stroke="#4df0d8" strokeWidth="1.5" />
+            <polygon points="11,1 21,6 21,16 11,21 1,16 1,6" fill="none" stroke="#5b8fff" strokeWidth="1.5" />
             <text x="11" y="15.5" textAnchor="middle" fill="#ffb84d" fontSize="9" fontFamily="'Press Start 2P',monospace">A</text>
           </svg>
-          <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 13, color: "var(--ae-text)", letterSpacing: "0.05em", textShadow: "0 0 16px rgba(77,240,216,0.5)" }}>
+          <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 13, color: "var(--ae-text)", letterSpacing: "0.05em", textShadow: "0 0 16px rgba(91,143,255,0.5)" }}>
             TEMPLATE MARKETPLACE
           </span>
         </div>
@@ -155,7 +155,7 @@ export default function Market() {
               background: filter === c ? "var(--ae-cyan)" : "transparent",
               color: filter === c ? "#0a0b0f" : "var(--ae-muted)",
               cursor: "pointer", letterSpacing: "0.06em", transition: "all 0.15s", fontWeight: filter === c ? 700 : 400,
-              boxShadow: filter === c ? "0 0 10px rgba(77,240,216,0.3)" : "none",
+              boxShadow: filter === c ? "0 0 10px rgba(91,143,255,0.3)" : "none",
             }}>{c}</button>
           ))}
         </div>

@@ -16,7 +16,7 @@ import type { StationScene } from "@/lib/stationScene";
 import { DUNGEON_ROOMS } from "@/lib/dungeonLayout";
 
 const ROLE_HEX: Record<string, string> = {
-  research: "#4df0d8", strategy: "#c0a020", builder: "#4d7fff",
+  research: "#5b8fff", strategy: "#c0a020", builder: "#4d7fff",
   design: "#9b6dff", growth: "#4dff9b", analytics: "#ff4d6d", content: "#ffb84d",
 };
 function getRoleHex(role: string) { return ROLE_HEX[role?.toLowerCase()] ?? "#4d7fff"; }
@@ -342,7 +342,7 @@ export default function Dashboard() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: `0 0 10px rgba(77,240,216,0.2)`,
+              boxShadow: `0 0 10px rgba(91,143,255,0.2)`,
               transition: "right 0.3s cubic-bezier(0.4,0,0.2,1)",
             }}
           >
@@ -545,7 +545,7 @@ export default function Dashboard() {
                       <span style={{ color: "var(--ae-cyan)" }}>{currentStation.progress}%</span>
                     </div>
                     <div style={{ height: 8, background: "var(--ae-border)" }}>
-                      <div style={{ height: "100%", width: `${currentStation.progress}%`, background: "var(--ae-cyan)", boxShadow: "0 0 6px rgba(77,240,216,0.5)", transition: "width 1s" }} />
+                      <div style={{ height: "100%", width: `${currentStation.progress}%`, background: "var(--ae-cyan)", boxShadow: "0 0 6px rgba(91,143,255,0.5)", transition: "width 1s" }} />
                     </div>
                   </div>
                 )}

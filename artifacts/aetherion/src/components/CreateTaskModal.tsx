@@ -44,10 +44,10 @@ export function CreateTaskModal({ agentId, agentName, agentRole, onClose }: Prop
   const suggestions = TASK_SUGGESTIONS[agentRole.toLowerCase()] ?? TASK_SUGGESTIONS.research;
 
   const roleColor: Record<string, string> = {
-    research: "#4df0d8", strategy: "#9b6dff", builder: "#4d7fff",
+    research: "#5b8fff", strategy: "#9b6dff", builder: "#4d7fff",
     content: "#ffb84d", growth: "#4dff9b", analytics: "#ff4d6d",
   };
-  const color = roleColor[agentRole.toLowerCase()] ?? "#4df0d8";
+  const color = roleColor[agentRole.toLowerCase()] ?? "#5b8fff";
 
   const handleSubmit = async () => {
     if (!title.trim()) { setError("Task title is required"); return; }
@@ -204,7 +204,7 @@ export function CreateTaskModal({ agentId, agentName, agentRole, onClose }: Prop
               {isPending ? (
                 <>
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                    style={{ width: 10, height: 10, border: "2px solid #4df0d844", borderTop: "2px solid #4df0d8", borderRadius: "50%" }} />
+                    style={{ width: 10, height: 10, border: "2px solid #5b8fff44", borderTop: "2px solid #5b8fff", borderRadius: "50%" }} />
                   SAVING...
                 </>
               ) : (
