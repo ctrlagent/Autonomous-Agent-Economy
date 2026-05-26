@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import builderSprite from "@assets/image_1779827273832.png";
+import { PixelSprite } from "@/components/PixelSprite";
 import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy, Check } from "lucide-react";
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
@@ -319,18 +319,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           gap: 8,
           flexShrink: 0,
         }}>
-          <div style={{ position: "relative", height: 36, flexShrink: 0, display: "flex", alignItems: "center" }}>
-            <img
-              src={builderSprite}
-              alt="CTRL Agent"
-              style={{
-                height: 36,
-                width: "auto",
-                imageRendering: "pixelated",
-                objectFit: "contain",
-                filter: "drop-shadow(0 0 6px #5b8fff) drop-shadow(0 0 12px rgba(91,143,255,0.4))",
-              }}
-            />
+          <div style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center" }}>
+            <PixelSprite role="builder" size={2} glow glowColor="#4d7fff" />
           </div>
           <span style={{
             fontFamily: "'Press Start 2P', monospace",
