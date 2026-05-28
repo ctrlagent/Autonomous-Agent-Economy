@@ -3,7 +3,9 @@ import {
   useListStations, useListRooms, useListStationAgents,
   useGetDashboardSummary, useListAgentTasks,
 } from "@workspace/api-client-react";
-import { Pause, ChevronDown, AlertTriangle, Star, X, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Pause, ChevronDown, AlertTriangle, Star, X, ChevronLeft, ChevronRight, Plus, Activity, Package } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { AgentOutputCard, type AgentOutputData } from "@/components/AgentOutputCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
@@ -38,6 +40,11 @@ function formatTime(ts: string): string {
 }
 
 const mono = { fontFamily: "'Space Mono', monospace" };
+const ROOM_ACTION_COLORS: Record<string, string> = {
+  "TASK COMPLETE": "#4dff9b", "TASK_COMPLETE": "#4dff9b",
+  "LEVEL UP": "#ffb84d",     "LEVEL_UP": "#ffb84d",
+  "TASK START": "#4df0d8",   "TASK_START": "#4df0d8",
+};
 
 export default function Dashboard() {
   const { data: stations } = useListStations();
@@ -58,6 +65,7 @@ export default function Dashboard() {
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [showAddAgent, setShowAddAgent] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
+  const [roomTab, setRoomTab] = useState<"activity" | "outputs">("activity");
   const [assignedTasks, setAssignedTasks] = useState<Record<number, { task: string; priority: string }>>({});
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: agentTasks } = useListAgentTasks(selectedAgentId ?? 0, { query: { enabled: !!selectedAgentId } as any });
@@ -144,6 +152,30 @@ export default function Dashboard() {
   const roomAgents = dungeonRoom
     ? agents?.filter((a: { role: string }) => a.role?.toLowerCase() === dungeonRoom.role)
     : null;
+  const dbRoomId: number | null = (roomAgents?.[0] as { roomId?: number } | undefined)?.roomId ?? null;
+  const dbRoom = rooms?.find((r: { id: number }) => r.id === dbRoomId) ?? null;
+  const roomColorHex = dungeonRoom ? `#${dungeonRoom.color.toString(16).padStart(6, "0")}` : "#4d7fff";
+
+  const { data: roomActivity = [] } = useQuery({
+    queryKey: ["/api/rooms", dbRoomId, "activity"],
+    queryFn: () => fetch(`/api/rooms/${dbRoomId}/activity`).then(r => r.json()),
+    enabled: !!dbRoomId,
+    refetchInterval: 8000,
+  });
+  const { data: roomOutputs = [] } = useQuery<AgentOutputData[]>({
+    queryKey: ["/api/rooms", dbRoomId, "outputs"],
+    queryFn: () => fetch(`/api/rooms/${dbRoomId}/outputs`).then(r => r.json()),
+    enabled: !!dbRoomId,
+    refetchInterval: 8000,
+  });
+  const { data: roomTasks = [] } = useQuery({
+    queryKey: ["/api/rooms", dbRoomId, "tasks"],
+    queryFn: () => fetch(`/api/rooms/${dbRoomId}/tasks`).then(r => r.json()),
+    enabled: !!dbRoomId,
+    refetchInterval: 8000,
+  });
+
+  useEffect(() => { setRoomTab("activity"); }, [selectedDungeonRoomId]);
 
   const handlePhaserAgentSelect = (agent: PhaserAgent | null) => {
     if (agent) {
@@ -435,77 +467,146 @@ export default function Dashboard() {
 
             ) : dungeonRoom ? (
               <motion.div key="room" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
-                style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" }}
+                style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}
               >
-                <button onClick={() => setSelectedDungeonRoomId(null)} style={{ ...mono, background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)", fontSize: 8, textAlign: "left" }}>← CLOSE</button>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <div style={{ width: 10, height: 10, background: `#${dungeonRoom.color.toString(16).padStart(6, '0')}`, boxShadow: `0 0 8px #${dungeonRoom.color.toString(16).padStart(6, '0')}` }} />
-                    <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 8, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.6 }}>
-                      {dungeonRoom.name.toUpperCase()}
+                {/* ── Room Header ── */}
+                <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--ae-border)", flexShrink: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 8, height: 8, background: roomColorHex, boxShadow: `0 0 6px ${roomColorHex}` }} />
+                      <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 7, color: "var(--ae-text)", letterSpacing: "0.04em", lineHeight: 1.4 }}>
+                        {dungeonRoom.name.toUpperCase()}
+                      </span>
                     </div>
+                    <button onClick={() => setSelectedDungeonRoomId(null)}
+                      style={{ ...mono, background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)", fontSize: 10, padding: 2 }}>✕</button>
                   </div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ ...mono, fontSize: 8, padding: "2px 7px", border: "1px solid var(--ae-border)", color: "var(--ae-muted)", letterSpacing: "0.08em" }}>{dungeonRoom.role.toUpperCase()}</span>
-                    <span style={{ ...mono, fontSize: 8, padding: "2px 7px", border: `1px solid #${dungeonRoom.color.toString(16).padStart(6, '0')}55`, color: `#${dungeonRoom.color.toString(16).padStart(6, '0')}`, letterSpacing: "0.08em" }}>ACTIVE</span>
-                  </div>
-                </div>
-
-                {/* Incident in this room */}
-                {activeIncidents.filter(i => i.roomId === dungeonRoom.id).map(inc => (
-                  <div key={inc.roomId} style={{ border: "1px solid #ff224455", background: "rgba(255,34,68,0.08)", padding: "8px 10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                      <AlertTriangle size={11} style={{ color: "#ff2244" }} />
-                      <span style={{ ...mono, fontSize: 8, color: "#ff4455", fontWeight: 700 }}>INCIDENT</span>
-                    </div>
-                    <div style={{ ...mono, fontSize: 9, color: "#ff6677", marginBottom: 6 }}>{inc.label}</div>
-                    <div style={{ height: 3, background: "var(--ae-border)", marginBottom: 6 }}>
-                      <div style={{ height: "100%", width: `${(inc.countdown / inc.countdownMax) * 100}%`, background: "#ff2244" }} />
-                    </div>
-                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)" }}>Click room on map to dismiss • +20XP reward</div>
-                  </div>
-                ))}
-
-                {roomAgents && roomAgents.length > 0 && (
-                  <div>
-                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 8, letterSpacing: "0.1em" }}>CREW ({roomAgents.length})</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      {roomAgents.map((a: { id: number; name: string; role: string }) => (
-                        <button key={a.id} onClick={() => { setSelectedAgentId(a.id); setSelectedDungeonRoomId(null); }}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-                            background: "rgba(0,0,0,0.3)", border: "1px solid var(--ae-border)",
-                            cursor: "pointer", textAlign: "left",
-                          }}
-                          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--ae-border-bright)")}
-                          onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--ae-border)")}
-                        >
-                          <AgentAvatar role={a.role} size={32} />
-                          <div>
-                            <div style={{ ...mono, fontWeight: 700, fontSize: 10, color: "var(--ae-text)" }}>{a.name}</div>
-                            <div style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", letterSpacing: "0.06em" }}>{a.role?.toUpperCase()}</div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {rooms && (
-                  <div>
-                    <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 6, letterSpacing: "0.1em" }}>DB ROOMS ({rooms.length})</div>
-                    {rooms.slice(0, 3).map((r: { id: number; name: string }) => (
-                      <div key={r.id} style={{ ...mono, fontSize: 9, color: "var(--ae-muted)", padding: "3px 0", borderBottom: "1px solid var(--ae-border)" }}>
-                        {r.name}
+                  <div style={{ display: "flex", gap: 14 }}>
+                    {[
+                      { label: "CREW",    value: roomAgents?.length ?? 0 },
+                      { label: "TASKS",   value: (dbRoom as { tasksCompleted?: number } | null)?.tasksCompleted ?? 0 },
+                      { label: "OUTPUTS", value: roomOutputs.length, color: roomColorHex },
+                    ].map(s => (
+                      <div key={s.label}>
+                        <div style={{ ...mono, fontSize: 6, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>{s.label}</div>
+                        <div style={{ ...mono, fontSize: 11, color: s.color ?? "var(--ae-text)", fontWeight: 700 }}>{s.value}</div>
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* ── Incidents ── */}
+                {activeIncidents.filter(i => i.roomId === dungeonRoom.id).map(inc => (
+                  <div key={inc.roomId} style={{ margin: "6px 14px 0", border: "1px solid #ff224455", background: "rgba(255,34,68,0.08)", padding: "6px 8px", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                      <AlertTriangle size={9} style={{ color: "#ff2244" }} />
+                      <span style={{ ...mono, fontSize: 7, color: "#ff4455" }}>INCIDENT</span>
+                    </div>
+                    <div style={{ ...mono, fontSize: 8, color: "#ff6677", marginBottom: 4 }}>{inc.label}</div>
+                    <div style={{ height: 2, background: "var(--ae-border)" }}>
+                      <div style={{ height: "100%", width: `${(inc.countdown / inc.countdownMax) * 100}%`, background: "#ff2244" }} />
+                    </div>
+                  </div>
+                ))}
+
+                {/* ── Compact crew cards ── */}
+                {roomAgents && roomAgents.length > 0 && (
+                  <div style={{ padding: "8px 14px", flexShrink: 0, borderBottom: "1px solid var(--ae-border)" }}>
+                    <div style={{ ...mono, fontSize: 6, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 6 }}>ACTIVE_CREW://</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                      {roomAgents.map((a: { id: number; name: string; role: string; status: string; level: number }) => {
+                        const task = (roomTasks as { agentId: number; title: string; progress: number }[]).find(t => t.agentId === a.id);
+                        const agRc = getRoleHex(a.role);
+                        const isWorking = a.status === "working";
+                        return (
+                          <div key={a.id} style={{ padding: "6px 8px", background: "rgba(0,0,0,0.25)", border: `1px solid ${isWorking ? agRc + "40" : "var(--ae-border)"}` }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: task ? 4 : 0 }}>
+                              <button onClick={() => { setSelectedAgentId(a.id); setSelectedDungeonRoomId(null); }}
+                                style={{ ...mono, background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5 }}>
+                                <span style={{ fontSize: 8, color: agRc, fontWeight: 700 }}>{a.name}</span>
+                                <span style={{ fontSize: 7, color: "var(--ae-muted)" }}>LVL {a.level}</span>
+                              </button>
+                              <span style={{ ...mono, fontSize: 6, color: isWorking ? "var(--ae-green)" : "var(--ae-muted)" }}>
+                                {isWorking ? "● WORK" : a.status.toUpperCase()}
+                              </span>
+                            </div>
+                            {task && (
+                              <>
+                                <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }}>
+                                  ▶ {task.title}
+                                </div>
+                                <div style={{ height: 3, background: "var(--ae-bg)", border: "1px solid var(--ae-border)" }}>
+                                  <motion.div style={{ height: "100%", background: agRc, boxShadow: `0 0 4px ${agRc}80` }}
+                                    animate={{ width: `${task.progress}%` }} transition={{ duration: 0.8 }} />
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 1 }}>
+                                  <span style={{ ...mono, fontSize: 6, color: agRc }}>{task.progress}%</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
-                <div style={{ marginTop: "auto" }}>
-                  <button className="pixel-btn warning" style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", gap: 6 }}>
-                    <Pause size={10} /> PAUSE ROOM
-                  </button>
+                {/* ── Tab switcher ── */}
+                <div style={{ display: "flex", borderBottom: "1px solid var(--ae-border)", flexShrink: 0 }}>
+                  {([
+                    { id: "activity" as const, label: "LOG",     icon: <Activity size={8} /> },
+                    { id: "outputs"  as const, label: `OUTPUTS${roomOutputs.length ? ` (${roomOutputs.length})` : ""}`, icon: <Package size={8} /> },
+                  ]).map(t => (
+                    <button key={t.id} onClick={() => setRoomTab(t.id)} style={{
+                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                      padding: "5px 4px", cursor: "pointer", border: "none",
+                      background: roomTab === t.id ? "rgba(255,255,255,0.03)" : "transparent",
+                      borderBottom: roomTab === t.id ? `2px solid ${roomColorHex}` : "2px solid transparent",
+                      color: roomTab === t.id ? roomColorHex : "var(--ae-muted)",
+                      ...mono, fontSize: 7, letterSpacing: "0.08em", transition: "all 0.15s",
+                    }}>
+                      {t.icon} {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* ── Tab content ── */}
+                <div style={{ flex: 1, overflowY: "auto" }}>
+                  {roomTab === "activity" ? (
+                    <div style={{ padding: "6px 10px" }}>
+                      {(roomActivity as { id: number; agentName: string; agentRole: string; action: string; details: string; timestamp: string }[]).length === 0 ? (
+                        <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", padding: "8px 0", letterSpacing: "0.06em" }}>
+                          &gt; AWAITING ACTIVITY...
+                        </div>
+                      ) : (
+                        [...(roomActivity as { id: number; agentName: string; agentRole: string; action: string; details: string; timestamp: string }[])].reverse().map(entry => {
+                          const ac = ROOM_ACTION_COLORS[entry.action] ?? "var(--ae-text)";
+                          const agentColor = getRoleHex(entry.agentRole);
+                          const shortAction = entry.action.replace("TASK COMPLETE","✓").replace("LEVEL UP","⬆").replace("TASK START","▶");
+                          const shortDetails = entry.details.length > 48 ? entry.details.slice(0,48) + "…" : entry.details;
+                          return (
+                            <div key={entry.id} style={{ ...mono, fontSize: 7, lineHeight: 1.65, marginBottom: 3 }}>
+                              <span style={{ color: "var(--ae-dim)" }}>{formatTime(entry.timestamp)} </span>
+                              <span style={{ color: ac }}>[{shortAction}] </span>
+                              <span style={{ color: agentColor }}>{entry.agentName}: </span>
+                              <span style={{ color: "var(--ae-muted)" }}>{shortDetails}</span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      {roomOutputs.length === 0 ? (
+                        <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", padding: "12px 10px", letterSpacing: "0.06em" }}>
+                          &gt; NO OUTPUTS YET...<br />
+                          <span style={{ fontSize: 6, display: "block", marginTop: 4 }}>Generated when tasks complete.</span>
+                        </div>
+                      ) : (
+                        roomOutputs.map(o => <AgentOutputCard key={o.id} output={o} />)
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
 
