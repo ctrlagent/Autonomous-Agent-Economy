@@ -12,10 +12,12 @@ import {
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Bridge", icon: LayoutDashboard },
-  { href: "/stations", label: "Mission Control", icon: Satellite },
-  { href: "/templates", label: "Marketplace", icon: Box },
-  { href: "/agents", label: "Agent Roster", icon: Users },
+  { href: "/app", label: "Station", icon: LayoutDashboard },
+  { href: "/app/crew", label: "Crew", icon: Users },
+  { href: "/app/missions", label: "Missions", icon: Satellite },
+  { href: "/app/templates", label: "Marketplace", icon: Box },
+  { href: "/app/agents", label: "Agent Roster", icon: Users },
+  { href: "/app/stations", label: "All Stations", icon: Satellite },
 ];
 
 export function Sidebar() {

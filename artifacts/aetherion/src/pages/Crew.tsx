@@ -149,8 +149,8 @@ function AgentDetailContent({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
         {[
           { label: "Tasks",   value: String(agent.tasksCompleted), Icon: CheckCircle, color: "var(--ae-green)" },
-          { label: "Success", value: "94%",                         Icon: TrendingUp,  color: "var(--ae-cyan)" },
-          { label: "Uptime",  value: "99.2%",                      Icon: Zap,         color: "var(--ae-blue)" },
+          { label: "Success", value: `${Math.min(99, 75 + agent.level * 4)}%`,  Icon: TrendingUp,  color: "var(--ae-cyan)" },
+          { label: "Uptime",  value: agent.status === "offline" ? "0%" : agent.status === "idle" ? `${88 + agent.level}%` : `${95 + Math.min(4, agent.level)}%`, Icon: Zap, color: "var(--ae-blue)" },
         ].map(s => (
           <div key={s.label} style={{ border: `1px solid ${s.color}33`, padding: "7px 5px", textAlign: "center", background: `${s.color}08`, position: "relative" }}>
             <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: 4, borderTop: `1px solid ${s.color}`, borderLeft: `1px solid ${s.color}` }} />

@@ -14,6 +14,8 @@ import RoomDetail from "@/pages/RoomDetail";
 import Marketing from "@/pages/Marketing";
 import Settings from "@/pages/Settings";
 import Docs from "@/pages/Docs";
+import Agents from "@/pages/Agents";
+import Stations from "@/pages/Stations";
 import { EVMWalletProvider } from "@/lib/WalletProvider";
 import { WalletGate } from "@/components/WalletGate";
 
@@ -31,6 +33,8 @@ function AppRoutes() {
           <Route path="/app/templates" component={Market} />
           <Route path="/app/ship-comms" component={ShipComms} />
           <Route path="/app/settings" component={Settings} />
+          <Route path="/app/agents" component={Agents} />
+          <Route path="/app/stations" component={Stations} />
           <Route path="/app/stations/:id" component={Dashboard} />
           <Route path="/app/rooms/:id" component={RoomDetail} />
           <Route component={NotFound} />

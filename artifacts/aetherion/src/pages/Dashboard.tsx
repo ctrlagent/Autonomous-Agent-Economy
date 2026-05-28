@@ -66,28 +66,31 @@ export default function Dashboard() {
   const [revenue, setRevenue] = useState<number | null>(null);
   const [revenueGlow, setRevenueGlow] = useState(false);
   const revenueSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPersistedRevenue = useRef<number | null>(null);
 
   // Sync revenue from station data
   useEffect(() => {
     const stationRevenue = (currentStation as { revenue?: number } | undefined)?.revenue;
     if (stationRevenue !== undefined && revenue === null) {
-      setRevenue(stationRevenue > 0 ? stationRevenue : 3840);
+      setRevenue(stationRevenue ?? 0);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStation]);
 
-  // Debounced save revenue to DB
+  // Debounced save revenue to DB — only writes when value has actually changed
   const saveRevenue = useCallback((newRevenue: number, stationId: number) => {
     if (revenueSaveTimer.current) clearTimeout(revenueSaveTimer.current);
     revenueSaveTimer.current = setTimeout(async () => {
+      if (lastPersistedRevenue.current === newRevenue) return;
       try {
         await fetch(`/api/stations/${stationId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ revenue: newRevenue }),
         });
+        lastPersistedRevenue.current = newRevenue;
       } catch { /* ignore */ }
-    }, 2000);
+    }, 5000);
   }, []);
 
   const [dayPhase, setDayPhase] = useState<string>('PEAK HOURS');
@@ -128,7 +131,7 @@ export default function Dashboard() {
 
   const handleRevenueChange = (delta: number) => {
     setRevenue(r => {
-      const next = (r ?? 3840) + delta;
+      const next = (r ?? 0) + delta;
       if (currentStationId) saveRevenue(next, currentStationId);
       return next;
     });
