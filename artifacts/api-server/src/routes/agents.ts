@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, agentsTable, tasksTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, agentsTable, tasksTable, agentOutputsTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 
 const router = Router();
@@ -71,6 +71,16 @@ router.post("/:id/tasks", async (req, res) => {
     progress: 0,
   }).returning();
   return res.status(201).json(task);
+});
+
+router.get("/:id/outputs", async (req, res) => {
+  const id = parseInt(req.params.id);
+  const limit = Math.min(parseInt(String(req.query.limit ?? "20")), 50);
+  const outputs = await db.select().from(agentOutputsTable)
+    .where(eq(agentOutputsTable.agentId, id))
+    .orderBy(desc(agentOutputsTable.createdAt))
+    .limit(limit);
+  return res.json(outputs);
 });
 
 export default router;

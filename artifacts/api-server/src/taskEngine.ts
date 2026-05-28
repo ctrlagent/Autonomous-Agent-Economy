@@ -1,7 +1,8 @@
-import { db, agentsTable, tasksTable, activityTable, stationsTable } from "@workspace/db";
+import { db, agentsTable, tasksTable, activityTable, stationsTable, agentOutputsTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { broadcastEvent } from "./routes/events";
 import { logger } from "./lib/logger";
+import { generateOutput } from "./lib/outputGenerators";
 
 const TICK_INTERVAL_MS = 8000;
 const XP_PER_TASK = 30;
@@ -109,6 +110,22 @@ async function tick() {
               ? `${agent.name} reached level ${newLevel} — "${activeTask.title}" complete`
               : `${agent.name} ${verb} "${activeTask.title}"`,
           });
+
+          // Generate agent output artifact
+          try {
+            const output = generateOutput(agent.role, activeTask.title, activeTask.id, agent.id, agent.name);
+            await db.insert(agentOutputsTable).values({
+              agentId: agent.id,
+              taskId: activeTask.id,
+              stationId: agent.stationId,
+              type: output.type,
+              title: output.title,
+              content: output.content,
+              thumbnailUrl: output.thumbnailUrl,
+            });
+          } catch (e) {
+            logger.warn({ err: e }, "failed to generate agent output");
+          }
 
           const nextTitle = taskTitle(agent.role);
           await db.insert(tasksTable).values({

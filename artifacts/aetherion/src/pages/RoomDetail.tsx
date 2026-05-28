@@ -1,9 +1,10 @@
 import { useParams, useLocation } from "wouter";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Activity, ChevronRight } from "lucide-react";
+import { ArrowLeft, Activity, ChevronRight, Package } from "lucide-react";
 import { PixelSprite } from "@/components/PixelSprite";
 import { motion } from "framer-motion";
+import { AgentOutputCard, type AgentOutputData } from "@/components/AgentOutputCard";
 
 const ROLE_HEX: Record<string, string> = {
   research: "#4df0d8",
@@ -36,20 +37,14 @@ type Activity = { id: number; agentName: string; agentRole: string; action: stri
 const mono: React.CSSProperties = { fontFamily: "'Space Mono', monospace" };
 const pixel: React.CSSProperties = { fontFamily: "'Press Start 2P', monospace" };
 
-function StatChip({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <span style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>{label}</span>
-      <span style={{ ...mono, fontSize: 12, color: "var(--ae-text)", fontWeight: 700 }}>{value}</span>
-    </div>
-  );
-}
+type TabId = "activity" | "outputs";
 
 export default function RoomDetail() {
   const { id: idStr } = useParams<{ id: string }>();
   const roomId = Number(idStr);
   const [, setLocation] = useLocation();
   const logRef = useRef<HTMLDivElement>(null);
+  const [tab, setTab] = useState<TabId>("activity");
 
   const refetchOpts = { enabled: !!roomId, refetchInterval: 8000 };
 
@@ -77,11 +72,17 @@ export default function RoomDetail() {
     ...refetchOpts,
   });
 
+  const { data: outputs = [] } = useQuery<AgentOutputData[]>({
+    queryKey: ["/api/rooms", roomId, "outputs"],
+    queryFn: () => fetch(`/api/rooms/${roomId}/outputs`).then(r => r.json()),
+    ...refetchOpts,
+  });
+
   useEffect(() => {
-    if (logRef.current) {
+    if (tab === "activity" && logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
-  }, [activities.length]);
+  }, [activities.length, tab]);
 
   if (!room) {
     return (
@@ -118,10 +119,18 @@ export default function RoomDetail() {
         </div>
 
         <div style={{ display: "flex", gap: 20, borderTop: "1px solid var(--ae-border)", marginTop: 10, paddingTop: 10 }}>
-          <StatChip label="CREW" value={agents.length} />
-          <StatChip label="WORKING" value={workingCount} />
-          <StatChip label="TASKS_DONE" value={room.tasksCompleted} />
-          <StatChip label="TYPE" value={room.type.toUpperCase()} />
+          {[
+            { label: "CREW",       value: agents.length },
+            { label: "WORKING",    value: workingCount },
+            { label: "TASKS_DONE", value: room.tasksCompleted },
+            { label: "OUTPUTS",    value: outputs.length },
+            { label: "TYPE",       value: room.type.toUpperCase() },
+          ].map(s => (
+            <div key={s.label} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <span style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>{s.label}</span>
+              <span style={{ ...mono, fontSize: 12, color: "var(--ae-text)", fontWeight: 700 }}>{s.value}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -139,20 +148,14 @@ export default function RoomDetail() {
             const isWorking = agent.status === "working";
 
             return (
-              <div
-                key={agent.id}
-                style={{
-                  background: "var(--ae-surface)",
-                  border: `1px solid ${isWorking ? rc + "50" : "var(--ae-border)"}`,
-                  padding: "10px 12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                  boxShadow: isWorking ? `0 0 16px ${rc}14` : "none",
-                  transition: "box-shadow 0.5s ease",
-                }}
-              >
-                {/* Agent header row */}
+              <div key={agent.id} style={{
+                background: "var(--ae-surface)",
+                border: `1px solid ${isWorking ? rc + "50" : "var(--ae-border)"}`,
+                padding: "10px 12px",
+                display: "flex", flexDirection: "column", gap: 8,
+                boxShadow: isWorking ? `0 0 16px ${rc}14` : "none",
+                transition: "box-shadow 0.5s ease",
+              }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <PixelSprite role={agent.role as "research" | "strategy" | "builder" | "content" | "growth" | "analytics"} size={1} />
@@ -173,14 +176,11 @@ export default function RoomDetail() {
                   </div>
                 </div>
 
-                {/* Active task + progress */}
                 {activeTask ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                       <ChevronRight size={8} color={rc} style={{ flexShrink: 0 }} />
-                      <span style={{ ...mono, fontSize: 8, color: "var(--ae-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {activeTask.title}
-                      </span>
+                      <span style={{ ...mono, fontSize: 8, color: "var(--ae-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{activeTask.title}</span>
                     </div>
                     <div style={{ height: 5, background: "var(--ae-bg)", border: "1px solid var(--ae-border)", overflow: "hidden" }}>
                       <motion.div
@@ -199,7 +199,6 @@ export default function RoomDetail() {
                   <div style={{ ...mono, fontSize: 8, color: "var(--ae-dim)" }}>— AWAITING ASSIGNMENT —</div>
                 )}
 
-                {/* XP bar */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                     <span style={{ ...mono, fontSize: 6, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>XP</span>
@@ -221,39 +220,78 @@ export default function RoomDetail() {
         </div>
       </div>
 
-      {/* ── ACTIVITY TERMINAL ── */}
-      <div style={{ display: "flex", flexDirection: "column", border: "1px solid var(--ae-border)", flex: 1, minHeight: 180 }}>
-        {/* Terminal header bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 12px", background: "var(--ae-surface)", borderBottom: "1px solid var(--ae-border)" }}>
-          <Activity size={9} color="var(--ae-cyan)" />
-          <span style={{ ...mono, fontSize: 7, color: "var(--ae-cyan)", letterSpacing: "0.12em" }}>ROOM_LOG://ACTIVITY_FEED</span>
-          <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: "var(--ae-green)", boxShadow: "0 0 6px var(--ae-green)" }} />
+      {/* ── LOG / OUTPUTS TAB SWITCHER ── */}
+      <div style={{ display: "flex", flexDirection: "column", border: "1px solid var(--ae-border)", flex: 1, minHeight: 200 }}>
+        {/* Tab bar */}
+        <div style={{ display: "flex", borderBottom: "1px solid var(--ae-border)" }}>
+          {([
+            { id: "activity" as TabId, label: "ACTIVITY_LOG", icon: <Activity size={9} />, color: "var(--ae-cyan)" },
+            { id: "outputs"  as TabId, label: `OUTPUTS (${outputs.length})`, icon: <Package size={9} />, color: "#ffb84d" },
+          ] as const).map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                padding: "7px 10px", cursor: "pointer", border: "none",
+                background: tab === t.id ? "rgba(255,255,255,0.03)" : "transparent",
+                borderBottom: tab === t.id ? `2px solid ${t.color}` : "2px solid transparent",
+                color: tab === t.id ? t.color : "var(--ae-muted)",
+                ...mono, fontSize: 7, letterSpacing: "0.1em",
+                transition: "all 0.15s",
+              }}
+            >
+              {t.icon} {t.label}
+            </button>
+          ))}
         </div>
 
-        {/* Log entries */}
-        <div
-          ref={logRef}
-          style={{ flex: 1, overflowY: "auto", padding: "8px 12px", background: "rgba(0,0,0,0.45)", maxHeight: 260 }}
-        >
-          {activities.length === 0 ? (
-            <div style={{ ...mono, fontSize: 8, color: "var(--ae-dim)", padding: "6px 0", letterSpacing: "0.06em" }}>
-              &gt; AWAITING ACTIVITY...
-            </div>
-          ) : (
-            [...activities].reverse().map(entry => {
-              const ac = ACTION_COLOR[entry.action] ?? "var(--ae-text)";
-              const agentColor = ROLE_HEX[entry.agentRole] ?? "#fff";
-              return (
-                <div key={entry.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", ...mono, fontSize: 8, lineHeight: 1.65, marginBottom: 2 }}>
-                  <span style={{ color: "var(--ae-dim)", flexShrink: 0 }}>{formatTime(entry.timestamp)}</span>
-                  <span style={{ color: ac, flexShrink: 0 }}>[{entry.action}]</span>
-                  <span style={{ color: agentColor, flexShrink: 0 }}>{entry.agentName}:</span>
-                  <span style={{ color: "var(--ae-muted)", wordBreak: "break-word" }}>{entry.details}</span>
-                </div>
-              );
-            })
-          )}
-        </div>
+        {/* ACTIVITY tab */}
+        {tab === "activity" && (
+          <div
+            ref={logRef}
+            style={{ flex: 1, overflowY: "auto", padding: "8px 12px", background: "rgba(0,0,0,0.45)", maxHeight: 300 }}
+          >
+            {activities.length === 0 ? (
+              <div style={{ ...mono, fontSize: 8, color: "var(--ae-dim)", padding: "6px 0", letterSpacing: "0.06em" }}>
+                &gt; AWAITING ACTIVITY...
+              </div>
+            ) : (
+              [...activities].reverse().map(entry => {
+                const ac = ACTION_COLOR[entry.action] ?? "var(--ae-text)";
+                const agentColor = ROLE_HEX[entry.agentRole] ?? "#fff";
+                return (
+                  <div key={entry.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", ...mono, fontSize: 8, lineHeight: 1.65, marginBottom: 2 }}>
+                    <span style={{ color: "var(--ae-dim)", flexShrink: 0 }}>{formatTime(entry.timestamp)}</span>
+                    <span style={{ color: ac, flexShrink: 0 }}>[{entry.action}]</span>
+                    <span style={{ color: agentColor, flexShrink: 0 }}>{entry.agentName}:</span>
+                    <span style={{ color: "var(--ae-muted)", wordBreak: "break-word" }}>{entry.details}</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* OUTPUTS tab */}
+        {tab === "outputs" && (
+          <div style={{ flex: 1, overflowY: "auto", maxHeight: 300 }}>
+            {outputs.length === 0 ? (
+              <div style={{ ...mono, fontSize: 8, color: "var(--ae-dim)", padding: "20px", textAlign: "center", letterSpacing: "0.08em" }}>
+                &gt; NO OUTPUTS YET — AGENTS ARE WORKING...<br />
+                <span style={{ fontSize: 7, marginTop: 8, display: "block", color: "var(--ae-dim)" }}>
+                  Outputs are generated when tasks complete.
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {outputs.map(o => (
+                  <AgentOutputCard key={o.id} output={o} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
     </div>
