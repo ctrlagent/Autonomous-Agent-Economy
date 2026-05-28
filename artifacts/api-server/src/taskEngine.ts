@@ -1,5 +1,5 @@
 import { db, agentsTable, tasksTable, activityTable, stationsTable } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { broadcastEvent } from "./routes/events";
 import { logger } from "./lib/logger";
 
@@ -9,12 +9,12 @@ const XP_PER_LEVEL = 100;
 const IDLE_START_CHANCE = 0.35;
 
 const TASK_TEMPLATES: Record<string, string[]> = {
-  research:  ["Analyzing market patterns", "Scanning competitor data", "Building research corpus", "Pattern recognition scan", "Data mining operation", "Literature synthesis run"],
-  strategy:  ["Planning expansion phase", "Optimizing agent routing", "Strategic review cycle", "Revenue modeling", "Market positioning update", "Risk assessment sweep"],
-  builder:   ["Compiling core modules", "Deploying service layer", "Architecture refactor", "API integration sprint", "System optimization pass", "Infrastructure hardening"],
-  content:   ["Drafting campaign copy", "Generating content batch", "Social media pipeline", "Content strategy review", "Brand narrative update", "Asset production run"],
-  growth:    ["Acquisition funnel tuning", "User engagement analysis", "Viral loop optimization", "Growth experiment run", "Channel performance audit", "Retention cohort study"],
-  analytics: ["Processing telemetry data", "Running performance audit", "Anomaly detection sweep", "KPI dashboard update", "Forecasting model run", "Attribution analysis"],
+  research:  ["Analyzing market patterns", "Scanning competitor data", "Building research corpus", "Pattern recognition scan", "Data mining operation", "Literature synthesis run", "Trend forecasting model"],
+  strategy:  ["Planning expansion phase", "Optimizing agent routing", "Strategic review cycle", "Revenue modeling", "Market positioning update", "Risk assessment sweep", "Competitive landscape scan"],
+  builder:   ["Compiling core modules", "Deploying service layer", "Architecture refactor", "API integration sprint", "System optimization pass", "Infrastructure hardening", "Load testing pipeline"],
+  content:   ["Drafting campaign copy", "Generating content batch", "Social media pipeline", "Content strategy review", "Brand narrative update", "Asset production run", "Editorial calendar sync"],
+  growth:    ["Acquisition funnel tuning", "User engagement analysis", "Viral loop optimization", "Growth experiment run", "Channel performance audit", "Retention cohort study", "A/B test evaluation"],
+  analytics: ["Processing telemetry data", "Running performance audit", "Anomaly detection sweep", "KPI dashboard update", "Forecasting model run", "Attribution analysis", "Conversion rate modeling"],
 };
 
 const COMPLETE_VERBS: Record<string, string> = {
@@ -26,18 +26,19 @@ const COMPLETE_VERBS: Record<string, string> = {
   analytics: "delivered report on",
 };
 
+const REVENUE_PER_TASK_MIN = 45;
+const REVENUE_PER_TASK_MAX = 135;
+
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function taskTitle(role: string): string {
-  const list = TASK_TEMPLATES[role] ?? TASK_TEMPLATES["research"];
-  return pickRandom(list);
+  return pickRandom(TASK_TEMPLATES[role] ?? TASK_TEMPLATES["research"]);
 }
 
-async function getStationName(stationId: number): Promise<string> {
-  const [s] = await db.select({ name: stationsTable.name }).from(stationsTable).where(eq(stationsTable.id, stationId));
-  return s?.name ?? "Unknown Station";
+function revenueIncrement(): number {
+  return Math.floor(Math.random() * (REVENUE_PER_TASK_MAX - REVENUE_PER_TASK_MIN + 1)) + REVENUE_PER_TASK_MIN;
 }
 
 async function tick() {
@@ -80,30 +81,32 @@ async function tick() {
           const newXp = agent.experience + XP_PER_TASK;
           const levelsGained = Math.floor(newXp / XP_PER_LEVEL) - Math.floor(agent.experience / XP_PER_LEVEL);
           const newLevel = agent.level + levelsGained;
+          const remainingXp = newXp % XP_PER_LEVEL;
 
           await db.update(agentsTable).set({
-            experience: newXp % XP_PER_LEVEL === 0 && levelsGained > 0 ? 0 : newXp % XP_PER_LEVEL,
+            experience: remainingXp,
             level: newLevel,
             tasksCompleted: agent.tasksCompleted + 1,
             status: "working",
           }).where(eq(agentsTable.id, agent.id));
 
-          const [curStation] = await db.select({ tc: stationsTable.tasksCompleted }).from(stationsTable).where(eq(stationsTable.id, agent.stationId));
-          if (curStation) {
-            await db.update(stationsTable)
-              .set({ tasksCompleted: curStation.tc + 1 })
-              .where(eq(stationsTable.id, agent.stationId));
-          }
+          const rev = revenueIncrement();
+          await db.update(stationsTable).set({
+            tasksCompleted: sql`${stationsTable.tasksCompleted} + 1`,
+            revenue: sql`${stationsTable.revenue} + ${rev}`,
+          }).where(eq(stationsTable.id, agent.stationId));
 
-          const stationName = await getStationName(agent.stationId);
+          const [station] = await db.select({ name: stationsTable.name }).from(stationsTable).where(eq(stationsTable.id, agent.stationId));
+          const stationName = station?.name ?? "Unknown Station";
           const verb = COMPLETE_VERBS[agent.role] ?? "completed";
+
           await db.insert(activityTable).values({
             agentName: agent.name,
             agentRole: agent.role,
             stationName,
             action: levelsGained > 0 ? "LEVEL UP" : "TASK COMPLETE",
             details: levelsGained > 0
-              ? `${agent.name} reached level ${newLevel} after completing "${activeTask.title}"`
+              ? `${agent.name} reached level ${newLevel} — "${activeTask.title}" complete`
               : `${agent.name} ${verb} "${activeTask.title}"`,
           });
 
@@ -123,6 +126,7 @@ async function tick() {
             level: newLevel,
             taskTitle: activeTask.title,
             stationId: agent.stationId,
+            revenue: rev,
           });
         } else {
           await db.update(tasksTable)
@@ -131,11 +135,17 @@ async function tick() {
 
           broadcastEvent("task_update", { agentId: agent.id, progress: newProgress });
         }
+
       } else if (isIdle && Math.random() < IDLE_START_CHANCE) {
         const title = taskTitle(agent.role);
+
         await db.update(agentsTable)
           .set({ status: "working", currentTask: title })
           .where(eq(agentsTable.id, agent.id));
+
+        await db.update(stationsTable)
+          .set({ activeAgents: sql`${stationsTable.activeAgents} + 1` })
+          .where(eq(stationsTable.id, agent.stationId));
 
         await db.insert(tasksTable).values({
           agentId: agent.id,
@@ -146,11 +156,11 @@ async function tick() {
           priority: "medium",
         });
 
-        const stationName = await getStationName(agent.stationId);
+        const [station] = await db.select({ name: stationsTable.name }).from(stationsTable).where(eq(stationsTable.id, agent.stationId));
         await db.insert(activityTable).values({
           agentName: agent.name,
           agentRole: agent.role,
-          stationName,
+          stationName: station?.name ?? "Unknown",
           action: "TASK START",
           details: `${agent.name} started "${title}"`,
         });

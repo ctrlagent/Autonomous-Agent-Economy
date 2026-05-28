@@ -8,6 +8,7 @@ import dashboardRouter from "./dashboard";
 import missionsRouter from "./missions";
 import aiRouter from "./ai";
 import eventsRouter from "./events";
+import roomsRouter from "./rooms";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use("/dashboard", dashboardRouter);
 router.use("/missions", missionsRouter);
 router.use("/ai", aiRouter);
 router.use("/events", eventsRouter);
+router.use("/rooms", roomsRouter);
 
 export default router;
