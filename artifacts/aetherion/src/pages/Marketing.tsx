@@ -8,7 +8,7 @@ import {
   AnimatePresence,
 } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
-import { AgentAvatar } from "@/components/PixelSprite";
+import { AgentAvatar, PixelSprite } from "@/components/PixelSprite";
 import {
   useGetDashboardSummary,
   useGetRecentActivity,
@@ -502,17 +502,11 @@ function StickyNav() {
       }}
     >
       {/* Logo */}
-      <button onClick={() => scrollTo("hero")} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer" }}>
-        <svg width="22" height="22" viewBox="0 0 28 28">
-          <polygon points="14,2 26,8 26,20 14,26 2,20 2,8" fill="none" stroke={C.cyan} strokeWidth="1.8" />
-          <polygon points="14,7 21,11 21,17 14,21 7,17 7,11" fill="none" stroke={C.cyan} strokeWidth="0.6" opacity="0.4" />
-          <text x="14" y="19" textAnchor="middle" fill={C.amber} fontSize="10" fontFamily="'Press Start 2P',monospace">C</text>
-        </svg>
-        <span style={{ ...px, fontSize: 10, color: "#fff", letterSpacing: "0.08em", textShadow: `0 0 16px ${C.cyan}66` }}>CTRL</span>
-        <span style={{ ...mono, fontSize: 7, color: C.cyan, padding: "2px 7px", border: `1px solid ${C.cyan}55`, background: `${C.cyan}10`, display: "flex", alignItems: "center", gap: 4 }}>
-          <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.4 }} style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: C.green, boxShadow: `0 0 6px ${C.green}` }} />
-          ONLINE
-        </span>
+      <button onClick={() => scrollTo("hero")} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer" }}>
+        <div className="logo-idle" style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center" }}>
+          <PixelSprite role="builder" size={2} />
+        </div>
+        <span style={{ ...px, fontSize: 10, color: "#fff", letterSpacing: "0.06em", lineHeight: 1, textShadow: "0 0 12px rgba(91,143,255,0.6)" }}>CTRL</span>
       </button>
 
       {/* Desktop nav links */}
