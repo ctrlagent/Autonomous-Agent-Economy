@@ -18,6 +18,7 @@ import Agents from "@/pages/Agents";
 import Stations from "@/pages/Stations";
 import { EVMWalletProvider } from "@/lib/WalletProvider";
 import { WalletGate } from "@/components/WalletGate";
+import { WalletHeaderSync } from "@/components/WalletHeaderSync";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <EVMWalletProvider>
+          <WalletHeaderSync />
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <Router />
           </WouterRouter>

@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { runAutoSeedIfEmpty } from "./lib/autoSeed";
+import { startTaskEngine } from "./taskEngine";
 
 const rawPort = process.env["PORT"];
 
@@ -24,5 +25,6 @@ runAutoSeedIfEmpty().then(() => {
     }
 
     logger.info({ port }, "Server listening");
+    startTaskEngine();
   });
 });

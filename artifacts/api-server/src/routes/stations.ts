@@ -23,12 +23,22 @@ const createAgentBody = z.object({
 });
 
 router.get("/", async (req, res) => {
-  const stations = await db.select().from(stationsTable);
+  const walletAddress = req.headers["x-wallet-address"] as string | undefined;
+  let stations;
+  if (walletAddress) {
+    const { or, isNull, eq: deq } = await import("drizzle-orm");
+    stations = await db.select().from(stationsTable).where(
+      or(deq(stationsTable.ownerAddress, walletAddress.toLowerCase()), isNull(stationsTable.ownerAddress))
+    );
+  } else {
+    stations = await db.select().from(stationsTable);
+  }
   return res.json(stations);
 });
 
 router.post("/", async (req, res) => {
   const body = req.body;
+  const walletAddress = req.headers["x-wallet-address"] as string | undefined;
   const [template] = await db.select().from(templatesTable).where(eq(templatesTable.id, body.templateId));
   const templateName = template?.name ?? "Unknown Template";
   const [station] = await db.insert(stationsTable).values({
@@ -42,6 +52,7 @@ router.post("/", async (req, res) => {
     roomCount: template?.roomCount ?? 6,
     tasksCompleted: 0,
     tasksTotal: 20,
+    ownerAddress: walletAddress ? walletAddress.toLowerCase() : null,
   }).returning();
 
   const roomTypes: Array<{ name: string; type: "research" | "development" | "design" | "marketing" | "operations" | "analytics" }> = [
