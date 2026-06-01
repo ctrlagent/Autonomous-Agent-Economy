@@ -473,6 +473,167 @@ export default function Settings() {
             ))}
           </ul>
         </div>
+
+        {/* ── AGENT TOOL APIs ── */}
+        <AgentToolKeys />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Agent Tool API Key Manager ─────────────────────────────── */
+
+const AGENT_TOOLS = [
+  {
+    category: "RESEARCH AGENTS",
+    color: "#4df0d8",
+    desc: "Enable real-time web research, trend analysis, and data retrieval",
+    tools: [
+      { id: "xcom",    label: "X.COM (TWITTER) API",  placeholder: "Bearer ey...",         docsUrl: "https://developer.x.com/en/docs/authentication/oauth-2-0",   desc: "Read tweets, trending topics, social signals" },
+      { id: "grok",    label: "XAI GROK API",          placeholder: "xai-...",              docsUrl: "https://x.ai/api",                                           desc: "Real-time research via Grok model from xAI" },
+      { id: "perplexity", label: "PERPLEXITY API",     placeholder: "pplx-...",             docsUrl: "https://docs.perplexity.ai/docs/getting-started",            desc: "Live web search with citations" },
+    ],
+  },
+  {
+    category: "DESIGN / BUILDER AGENTS",
+    color: "#9b6dff",
+    desc: "Enable AI image generation for design and visual output",
+    tools: [
+      { id: "stability", label: "STABILITY AI",        placeholder: "sk-...",               docsUrl: "https://platform.stability.ai/docs/api-reference",           desc: "Generate product visuals, UI mockups, graphics" },
+      { id: "replicate", label: "REPLICATE",           placeholder: "r8_...",               docsUrl: "https://replicate.com/docs/reference/http",                  desc: "Run open-source models for image/video gen" },
+      { id: "fal",       label: "FAL.AI",              placeholder: "xxxxxxxx-...",         docsUrl: "https://fal.ai/docs",                                        desc: "Fast inference for FLUX, SDXL, and more" },
+    ],
+  },
+  {
+    category: "CONTENT AGENTS",
+    color: "#ffb84d",
+    desc: "Post and schedule content across platforms automatically",
+    tools: [
+      { id: "buffer",    label: "BUFFER API",          placeholder: "1/...",                docsUrl: "https://buffer.com/developers/api",                          desc: "Schedule and publish to social accounts" },
+      { id: "notion",    label: "NOTION API",          placeholder: "secret_...",           docsUrl: "https://developers.notion.com/docs/authorization",           desc: "Write research reports and docs to Notion" },
+    ],
+  },
+  {
+    category: "GROWTH AGENTS",
+    color: "#4dff9b",
+    desc: "Connect analytics and SEO tools for data-driven growth",
+    tools: [
+      { id: "ga4",       label: "GOOGLE ANALYTICS 4",  placeholder: "AIza...",              docsUrl: "https://developers.google.com/analytics/devguides/reporting/data/v1", desc: "Pull traffic, conversion, and funnel data" },
+      { id: "ahrefs",    label: "AHREFS API",          placeholder: "...",                  docsUrl: "https://docs.ahrefs.com/docs/introduction",                  desc: "Keyword research, backlinks, SEO analysis" },
+    ],
+  },
+] as const;
+
+type ToolId = typeof AGENT_TOOLS[number]["tools"][number]["id"];
+
+function AgentToolKeys() {
+  const [keys, setKeys] = useState<Partial<Record<ToolId, string>>>(() => {
+    const stored: Partial<Record<ToolId, string>> = {};
+    AGENT_TOOLS.forEach(cat => cat.tools.forEach(t => {
+      const v = localStorage.getItem(`ctrl_tool_${t.id}`);
+      if (v) stored[t.id as ToolId] = v;
+    }));
+    return stored;
+  });
+  const [visible, setVisible] = useState<Partial<Record<ToolId, boolean>>>({});
+  const [saved, setSaved] = useState<Partial<Record<ToolId, boolean>>>({});
+
+  function handleSave(id: ToolId) {
+    const val = keys[id]?.trim() ?? "";
+    if (val) localStorage.setItem(`ctrl_tool_${id}`, val);
+    else localStorage.removeItem(`ctrl_tool_${id}`);
+    setSaved(prev => ({ ...prev, [id]: true }));
+    setTimeout(() => setSaved(prev => ({ ...prev, [id]: false })), 2000);
+  }
+
+  function handleChange(id: ToolId, val: string) {
+    setKeys(prev => ({ ...prev, [id]: val }));
+    setSaved(prev => ({ ...prev, [id]: false }));
+  }
+
+  return (
+    <div style={{ marginTop: 32 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
+        <Cpu size={14} style={{ color: "var(--ae-cyan)" }} />
+        <span style={{ ...pixel, fontSize: 8, color: "var(--ae-text)", letterSpacing: "0.06em" }}>AGENT TOOL APIs</span>
+      </div>
+      <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 20, lineHeight: 1.8 }}>
+        Configure per-role API integrations. These keys power real research, image generation, and content publishing by your agent crew. Each key is stored locally in your browser.
+      </div>
+
+      {AGENT_TOOLS.map(cat => (
+        <div key={cat.category} style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${cat.color}33` }}>
+            <div style={{ width: 6, height: 6, background: cat.color, boxShadow: `0 0 6px ${cat.color}` }} />
+            <span style={{ ...pixel, fontSize: 7, color: cat.color, letterSpacing: "0.06em" }}>{cat.category}</span>
+          </div>
+          <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", marginBottom: 12 }}>{cat.desc}</div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {cat.tools.map(tool => {
+              const id = tool.id as ToolId;
+              const val = keys[id] ?? "";
+              const hasVal = val.trim().length > 0;
+              const isVis = visible[id] ?? false;
+              const isSaved = saved[id] ?? false;
+              return (
+                <div key={id} style={{ padding: "12px 14px", border: `1px solid ${hasVal ? cat.color + "40" : "var(--ae-border)"}`, background: hasVal ? `${cat.color}06` : "transparent", transition: "all 0.2s" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <div>
+                      <span style={{ ...pixel, fontSize: 6, color: hasVal ? cat.color : "var(--ae-text)", letterSpacing: "0.04em" }}>{tool.label}</span>
+                      {hasVal && <span style={{ ...mono, fontSize: 6, color: cat.color, marginLeft: 8 }}>● CONFIGURED</span>}
+                    </div>
+                    <a href={tool.docsUrl} target="_blank" rel="noopener noreferrer"
+                      style={{ ...mono, fontSize: 6, color: "var(--ae-cyan)", textDecoration: "none", letterSpacing: "0.06em" }}
+                      onMouseEnter={e => ((e.target as HTMLElement).style.textDecoration = "underline")}
+                      onMouseLeave={e => ((e.target as HTMLElement).style.textDecoration = "none")}
+                    >GET KEY →</a>
+                  </div>
+                  <div style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", marginBottom: 8 }}>{tool.desc}</div>
+                  <div style={{ display: "flex", gap: 0, border: `1px solid ${hasVal ? cat.color + "55" : "var(--ae-border)"}`, marginBottom: 8 }}>
+                    <input
+                      type={isVis ? "text" : "password"}
+                      value={val}
+                      onChange={e => handleChange(id, e.target.value)}
+                      placeholder={tool.placeholder}
+                      style={{
+                        flex: 1, background: "rgba(0,0,0,0.4)", border: "none", outline: "none",
+                        padding: "8px 12px", ...mono, fontSize: 9, color: "var(--ae-text)",
+                        letterSpacing: hasVal && !isVis ? "0.18em" : "0.04em",
+                      }}
+                    />
+                    <button onClick={() => setVisible(prev => ({ ...prev, [id]: !isVis }))}
+                      style={{ padding: "0 10px", background: "rgba(0,0,0,0.3)", border: "none", borderLeft: "1px solid var(--ae-border)", cursor: "pointer", color: "var(--ae-muted)", display: "flex", alignItems: "center" }}>
+                      {isVis ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </button>
+                    <button onClick={() => handleSave(id)}
+                      style={{
+                        padding: "0 12px", background: isSaved ? `${cat.color}18` : "rgba(0,0,0,0.3)", border: "none",
+                        borderLeft: "1px solid var(--ae-border)", cursor: "pointer",
+                        color: isSaved ? cat.color : "var(--ae-muted)", display: "flex", alignItems: "center", gap: 4,
+                        ...mono, fontSize: 7, letterSpacing: "0.06em", transition: "all 0.15s",
+                      }}>
+                      {isSaved ? <><CheckCircle size={11} /> SAVED</> : <><Save size={11} /> SAVE</>}
+                    </button>
+                    {hasVal && (
+                      <button onClick={() => { handleChange(id, ""); localStorage.removeItem(`ctrl_tool_${id}`); }}
+                        style={{ padding: "0 10px", background: "rgba(255,34,68,0.05)", border: "none", borderLeft: "1px solid var(--ae-border)", cursor: "pointer", color: "var(--ae-red)", display: "flex", alignItems: "center" }}>
+                        <Trash2 size={11} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      <div style={{ padding: "12px 14px", border: "1px solid var(--ae-border)", background: "rgba(0,0,0,0.2)", marginTop: 8 }}>
+        <div style={{ ...mono, fontSize: 7, color: "var(--ae-amber)", letterSpacing: "0.1em", marginBottom: 6 }}>⚠ SECURITY NOTE</div>
+        <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", lineHeight: 1.8 }}>
+          All tool keys are stored in your browser's localStorage only. They are never sent to the CTRL server. Keys are transmitted directly to the respective third-party APIs only when an agent action requires them. Treat API keys as passwords — never share them.
+        </div>
       </div>
     </div>
   );

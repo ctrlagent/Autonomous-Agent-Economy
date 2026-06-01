@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { PixelSprite } from "@/components/PixelSprite";
-import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy, Check, Radio } from "lucide-react";
+import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy, Check, Radio, User } from "lucide-react";
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
 import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { href: "/app/missions",    label: "MISSIONS", Icon: Target },
   { href: "/app/timeline",    label: "TIMELINE", Icon: Clock },
   { href: "/app/templates",   label: "MARKET",   Icon: Store },
-  { href: "/app/ship-comms",  label: "COMMS",    Icon: Radio },
+  { href: "/app/profile",     label: "PROFILE",  Icon: User },
   { href: "/app/settings",    label: "SETTINGS", Icon: Settings },
 ];
 
