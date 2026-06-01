@@ -54,7 +54,11 @@ router.delete("/:id", async (req, res) => {
 
 router.get("/:id/tasks", async (req, res) => {
   const id = parseInt(req.params.id);
-  const tasks = await db.select().from(tasksTable).where(eq(tasksTable.agentId, id));
+  const limit = Math.min(parseInt(String(req.query.limit ?? "30")), 100);
+  const tasks = await db.select().from(tasksTable)
+    .where(eq(tasksTable.agentId, id))
+    .orderBy(desc(tasksTable.createdAt))
+    .limit(limit);
   return res.json(tasks);
 });
 

@@ -160,19 +160,22 @@ export default function Dashboard() {
     queryKey: ["/api/rooms", dbRoomId, "activity"],
     queryFn: () => fetch(`/api/rooms/${dbRoomId}/activity`).then(r => r.json()),
     enabled: !!dbRoomId,
-    refetchInterval: 8000,
+    staleTime: 15000,
+    refetchInterval: 20000,
   });
   const { data: roomOutputs = [] } = useQuery<AgentOutputData[]>({
     queryKey: ["/api/rooms", dbRoomId, "outputs"],
     queryFn: () => fetch(`/api/rooms/${dbRoomId}/outputs`).then(r => r.json()),
     enabled: !!dbRoomId,
-    refetchInterval: 8000,
+    staleTime: 15000,
+    refetchInterval: 20000,
   });
   const { data: roomTasks = [] } = useQuery({
     queryKey: ["/api/rooms", dbRoomId, "tasks"],
     queryFn: () => fetch(`/api/rooms/${dbRoomId}/tasks`).then(r => r.json()),
     enabled: !!dbRoomId,
-    refetchInterval: 8000,
+    staleTime: 8000,
+    refetchInterval: 10000,
   });
 
   useEffect(() => { setRoomTab("activity"); }, [selectedDungeonRoomId]);
