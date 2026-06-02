@@ -606,7 +606,7 @@ export default function Dashboard() {
               style={{
                 position: "fixed",
                 top: "50%",
-                left: "50%",
+                left: "calc(50% - 132px)",
                 transform: "translate(-50%, -50%)",
                 zIndex: 201,
                 width: 340,
