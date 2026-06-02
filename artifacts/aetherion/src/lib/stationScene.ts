@@ -490,12 +490,25 @@ export class StationScene {
     const W = this.scene.scale.width;
     const H = this.scene.scale.height;
 
-    g.fillStyle(0x04050d, 1);
+    // Base background
+    g.fillStyle(0x03040b, 1);
     g.fillRect(0, 0, W, H);
 
-    // Full-canvas tile-aligned grid (minor lines)
     const GRID = this.tilePx;
-    g.lineStyle(1, 0x152038, 0.65);
+    const MAJOR = GRID * 4;
+
+    // Fill every tile cell with a slightly lighter color — visible everywhere
+    for (let x = 0; x < W; x += GRID) {
+      for (let y = 0; y < H; y += GRID) {
+        // Alternate slightly for subtle checkerboard depth
+        const even = ((x / GRID) + (y / GRID)) % 2 === 0;
+        g.fillStyle(even ? 0x080c1a : 0x070b17, 1);
+        g.fillRect(x + 1, y + 1, GRID - 1, GRID - 1);
+      }
+    }
+
+    // Grid border lines — solid, full opacity
+    g.lineStyle(1, 0x0f1c35, 1);
     for (let x = 0; x <= W; x += GRID) {
       g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.strokePath();
     }
@@ -503,9 +516,8 @@ export class StationScene {
       g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.strokePath();
     }
 
-    // Major grid lines every 4 tiles — slightly brighter
-    const MAJOR = GRID * 4;
-    g.lineStyle(1, 0x1e3260, 0.45);
+    // Major accent lines every 4 tiles — brighter
+    g.lineStyle(1, 0x1a2e54, 1);
     for (let x = 0; x <= W; x += MAJOR) {
       g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.strokePath();
     }
@@ -513,16 +525,8 @@ export class StationScene {
       g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.strokePath();
     }
 
-    // Intersection dots at every grid crossing
-    g.fillStyle(0x1e3468, 0.55);
-    for (let x = 0; x <= W; x += GRID) {
-      for (let y = 0; y <= H; y += GRID) {
-        g.fillRect(x - 1, y - 1, 2, 2);
-      }
-    }
-
-    // Larger dots at major intersections
-    g.fillStyle(0x2a4a90, 0.5);
+    // Corner markers at major intersections
+    g.fillStyle(0x223870, 1);
     for (let x = 0; x <= W; x += MAJOR) {
       for (let y = 0; y <= H; y += MAJOR) {
         g.fillRect(x - 2, y - 2, 4, 4);
