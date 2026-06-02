@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { setAiConfig, getAiConfig, clearAiConfig } from "../lib/aiConfig";
 
 const router = Router();
 
@@ -8,6 +9,11 @@ const chatBody = z.object({
   agentName: z.string(),
   agentRole: z.string(),
   apiKey: z.string(),
+  provider: z.enum(["openai", "anthropic", "gemini"]).default("openai"),
+});
+
+const configBody = z.object({
+  apiKey: z.string().min(1),
   provider: z.enum(["openai", "anthropic", "gemini"]).default("openai"),
 });
 
@@ -91,6 +97,7 @@ async function callGemini(apiKey: string, agentName: string, agentRole: string, 
   return data.candidates[0]?.content?.parts[0]?.text?.trim() ?? "Acknowledged, Commander.";
 }
 
+/* ── Chat endpoint (Ship Comms) ─────────────────────────────────────────── */
 router.post("/chat", async (req, res) => {
   const parsed = chatBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid body", details: parsed.error.issues });
@@ -111,6 +118,24 @@ router.post("/chat", async (req, res) => {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(502).json({ error: msg });
   }
+});
+
+/* ── AI Config endpoints (for taskEngine use) ───────────────────────────── */
+router.post("/config", (req, res) => {
+  const parsed = configBody.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid body", details: parsed.error.issues });
+  setAiConfig({ apiKey: parsed.data.apiKey, provider: parsed.data.provider });
+  return res.json({ ok: true, provider: parsed.data.provider });
+});
+
+router.get("/config", (_req, res) => {
+  const config = getAiConfig();
+  return res.json({ configured: !!config, provider: config?.provider ?? null });
+});
+
+router.delete("/config", (_req, res) => {
+  clearAiConfig();
+  return res.json({ ok: true });
 });
 
 export default router;

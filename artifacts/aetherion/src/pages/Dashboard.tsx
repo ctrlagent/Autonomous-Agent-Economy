@@ -769,8 +769,18 @@ export default function Dashboard() {
           agentName={selectedAgent.name}
           agentRole={selectedAgent.role}
           currentTask={assignedTasks[selectedAgent.id]?.task ?? selectedAgent.currentTask}
-          onAssign={(task, priority) => {
+          onAssign={(task, priority, context) => {
             setAssignedTasks(prev => ({ ...prev, [selectedAgent.id]: { task, priority } }));
+            // POST task to API so taskEngine picks it up and AI executes it
+            fetch(`/api/agents/${selectedAgent.id}/tasks`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: task,
+                description: context ?? `Assigned by Commander to ${selectedAgent.name}`,
+                priority: priority.toLowerCase() as "low" | "medium" | "high" | "critical",
+              }),
+            }).catch(() => {});
           }}
           onClose={() => setShowAssignModal(false)}
         />

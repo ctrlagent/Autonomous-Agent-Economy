@@ -71,7 +71,7 @@ interface Props {
   agentName: string;
   agentRole: string;
   currentTask?: string | null;
-  onAssign: (task: string, priority: string) => void;
+  onAssign: (task: string, priority: string, context?: string) => void;
   onClose: () => void;
 }
 
@@ -82,6 +82,7 @@ export function AssignTaskModal({ agentName, agentRole, currentTask, onAssign, o
 
   const [selected, setSelected] = useState<string | null>(null);
   const [custom, setCustom] = useState("");
+  const [context, setContext] = useState("");
   const [priority, setPriority] = useState("NORMAL");
   const [confirmed, setConfirmed] = useState(false);
 
@@ -91,7 +92,7 @@ export function AssignTaskModal({ agentName, agentRole, currentTask, onAssign, o
     if (!taskToAssign) return;
     setConfirmed(true);
     setTimeout(() => {
-      onAssign(taskToAssign, priority);
+      onAssign(taskToAssign, priority, context.trim() || undefined);
       onClose();
     }, 900);
   }
@@ -187,7 +188,7 @@ export function AssignTaskModal({ agentName, agentRole, currentTask, onAssign, o
             </div>
 
             {/* Custom task input */}
-            <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 10 }}>
               <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 5 }}>OR ENTER CUSTOM TASK</div>
               <input
                 value={custom}
@@ -203,6 +204,32 @@ export function AssignTaskModal({ agentName, agentRole, currentTask, onAssign, o
                 onFocus={e => (e.target.style.borderColor = color)}
                 onBlur={e => (e.target.style.borderColor = custom.trim() ? color : "var(--ae-border)")}
               />
+            </div>
+
+            {/* AI Context field */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>GOAL / CONTEXT</div>
+                <span style={{ ...mono, fontSize: 6, color: color, background: `${color}18`, border: `1px solid ${color}44`, padding: "1px 5px", letterSpacing: "0.08em" }}>AI POWERED</span>
+              </div>
+              <textarea
+                value={context}
+                onChange={e => setContext(e.target.value)}
+                placeholder="Describe what you want the agent to produce... (optional — if provided, AI will generate a real output based on this)"
+                rows={3}
+                style={{
+                  width: "100%", padding: "8px 10px", resize: "vertical",
+                  background: "rgba(0,0,0,0.4)",
+                  border: `1px solid ${context.trim() ? color : "var(--ae-border)"}`,
+                  ...mono, fontSize: 8, color: "var(--ae-text)", outline: "none",
+                  boxSizing: "border-box", lineHeight: 1.6,
+                }}
+                onFocus={e => (e.target.style.borderColor = color)}
+                onBlur={e => (e.target.style.borderColor = context.trim() ? color : "var(--ae-border)")}
+              />
+              <div style={{ ...mono, fontSize: 6, color: "var(--ae-dim)", marginTop: 4 }}>
+                ⚡ Context makes the AI output specific and useful. Requires API key in Settings.
+              </div>
             </div>
 
             {/* Priority */}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ExternalLink, Twitter, Linkedin, Instagram, BarChart2, Zap, FlaskConical, TrendingUp, Settings } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Check, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ROLE_HEX: Record<string, string> = {
@@ -18,6 +18,7 @@ const TYPE_LABELS: Record<string, string> = {
   deployment: "DEPLOY_LOG",
   growth:     "EXPERIMENT",
   analytics:  "ANALYTICS_RPT",
+  ai_report:  "AI_OUTPUT",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -27,6 +28,7 @@ const TYPE_COLORS: Record<string, string> = {
   deployment: "#4d7fff",
   growth:     "#4dff9b",
   analytics:  "#ff4d6d",
+  ai_report:  "#c084fc",
 };
 
 const mono: React.CSSProperties = { fontFamily: "'Space Mono', monospace" };
@@ -354,6 +356,157 @@ function AnalyticsOutputView({ data }: { data: {
   );
 }
 
+// ─── AI Report renderer (real AI output) ──────────────────────────────────────
+
+function AiReportView({ data }: { data: { markdown: string; provider: string; model: string } }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(data.markdown).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }).catch(() => {});
+  }
+
+  // Simple markdown renderer: ##, ###, **, -, numbered lists, ``` blocks
+  function renderMarkdown(text: string): React.ReactNode[] {
+    const lines = text.split("\n");
+    const nodes: React.ReactNode[] = [];
+    let inCode = false;
+    let codeLines: string[] = [];
+    let keyIdx = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const k = keyIdx++;
+
+      if (line.startsWith("```")) {
+        if (inCode) {
+          nodes.push(
+            <pre key={k} style={{
+              background: "rgba(0,0,0,0.5)", border: "1px solid var(--ae-border)",
+              padding: "10px 12px", overflowX: "auto", margin: "8px 0",
+            }}>
+              <code style={{ ...mono, fontSize: 7, color: "#c084fc", lineHeight: 1.7 }}>
+                {codeLines.join("\n")}
+              </code>
+            </pre>
+          );
+          codeLines = [];
+          inCode = false;
+        } else {
+          inCode = true;
+        }
+        continue;
+      }
+
+      if (inCode) { codeLines.push(line); continue; }
+
+      if (!line.trim()) {
+        nodes.push(<div key={k} style={{ height: 6 }} />);
+        continue;
+      }
+
+      if (line.startsWith("## ")) {
+        nodes.push(
+          <div key={k} style={{ ...mono, fontSize: 8, color: "#c084fc", letterSpacing: "0.08em", fontWeight: 700, marginTop: 14, marginBottom: 6, borderBottom: "1px solid rgba(192,132,252,0.2)", paddingBottom: 4 }}>
+            {line.slice(3)}
+          </div>
+        );
+        continue;
+      }
+
+      if (line.startsWith("### ")) {
+        nodes.push(
+          <div key={k} style={{ ...mono, fontSize: 7, color: "var(--ae-cyan)", letterSpacing: "0.08em", fontWeight: 700, marginTop: 10, marginBottom: 4 }}>
+            {line.slice(4)}
+          </div>
+        );
+        continue;
+      }
+
+      if (line.startsWith("| ")) {
+        const cells = line.split("|").filter(c => c.trim()).map(c => c.trim());
+        const isSep = cells.every(c => /^[-: ]+$/.test(c));
+        if (isSep) continue;
+        nodes.push(
+          <div key={k} style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--ae-border)" }}>
+            {cells.map((cell, ci) => (
+              <div key={ci} style={{ flex: 1, padding: "3px 8px", ...mono, fontSize: 7, color: ci === 0 ? "var(--ae-text)" : "var(--ae-muted)", borderRight: ci < cells.length - 1 ? "1px solid var(--ae-border)" : "none" }}>
+                {cell}
+              </div>
+            ))}
+          </div>
+        );
+        continue;
+      }
+
+      // Bold inline: **text**
+      const inlineParsed = line.replace(/\*\*(.+?)\*\*/g, "⟦$1⟧");
+      const parts = inlineParsed.split(/(⟦.+?⟧)/);
+      const rendered = parts.map((part, pi) => {
+        if (part.startsWith("⟦") && part.endsWith("⟧")) {
+          return <strong key={pi} style={{ color: "var(--ae-text)", fontWeight: 700 }}>{part.slice(1, -1)}</strong>;
+        }
+        return part;
+      });
+
+      if (line.match(/^[-*] /)) {
+        nodes.push(
+          <div key={k} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3 }}>
+            <span style={{ color: "#c084fc", flexShrink: 0, marginTop: 1 }}>▸</span>
+            <span style={{ ...mono, fontSize: 8, color: "var(--ae-dim)", lineHeight: 1.65 }}>{rendered}</span>
+          </div>
+        );
+        continue;
+      }
+
+      if (line.match(/^\d+\. /)) {
+        const num = line.match(/^(\d+)\. /)?.[1];
+        nodes.push(
+          <div key={k} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3 }}>
+            <span style={{ color: "#c084fc", flexShrink: 0, ...mono, fontSize: 7 }}>{num}.</span>
+            <span style={{ ...mono, fontSize: 8, color: "var(--ae-dim)", lineHeight: 1.65 }}>{rendered}</span>
+          </div>
+        );
+        continue;
+      }
+
+      nodes.push(
+        <p key={k} style={{ ...mono, fontSize: 8, color: "var(--ae-dim)", lineHeight: 1.7, margin: "0 0 4px 0" }}>
+          {rendered}
+        </p>
+      );
+    }
+
+    return nodes;
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* AI badge + copy */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Cpu size={10} style={{ color: "#c084fc" }} />
+          <span style={{ ...mono, fontSize: 6, color: "#c084fc", letterSpacing: "0.1em" }}>REAL AI OUTPUT · {data.model?.toUpperCase()}</span>
+        </div>
+        <button
+          onClick={handleCopy}
+          style={{ background: "none", border: "1px solid var(--ae-border)", cursor: "pointer", padding: "2px 8px", color: copied ? "#4dff9b" : "var(--ae-muted)", display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
+        >
+          {copied ? <Check size={9} /> : <Copy size={9} />}
+          <span style={{ ...mono, fontSize: 6 }}>{copied ? "COPIED" : "COPY"}</span>
+        </button>
+      </div>
+
+      {/* Rendered markdown */}
+      <div style={{ background: "rgba(192,132,252,0.04)", border: "1px solid rgba(192,132,252,0.15)", padding: "12px 14px" }}>
+        {renderMarkdown(data.markdown)}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main card ────────────────────────────────────────────────────────────────
 
 export interface AgentOutputData {
@@ -386,6 +539,7 @@ export function AgentOutputCard({ output }: { output: AgentOutputData }) {
       case "deployment": return <DeploymentOutputView data={parsed as Parameters<typeof DeploymentOutputView>[0]["data"]} />;
       case "growth":     return <GrowthOutputView data={parsed as Parameters<typeof GrowthOutputView>[0]["data"]} />;
       case "analytics":  return <AnalyticsOutputView data={parsed as Parameters<typeof AnalyticsOutputView>[0]["data"]} />;
+      case "ai_report":  return <AiReportView data={parsed as Parameters<typeof AiReportView>[0]["data"]} />;
       default:           return <div style={{ ...mono, fontSize: 8, color: "var(--ae-dim)" }}>UNKNOWN OUTPUT TYPE</div>;
     }
   }

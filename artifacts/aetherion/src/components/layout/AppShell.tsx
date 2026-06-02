@@ -18,6 +18,21 @@ const NAV_ITEMS = [
   { href: "/app/settings",    label: "SETTINGS", Icon: Settings },
 ];
 
+// Sync stored API key to server on app mount (server loses in-memory config on restart)
+function useAiKeySync() {
+  useEffect(() => {
+    const key = localStorage.getItem("ctrl_ai_key");
+    const provider = localStorage.getItem("ctrl_ai_provider") ?? "openai";
+    if (key) {
+      fetch("/api/ai/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: key, provider }),
+      }).catch(() => {});
+    }
+  }, []);
+}
+
 function useTick() {
   const [tick, setTick] = useState(0);
   const startRef = useRef(Date.now());
@@ -272,6 +287,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const tick = useTick();
   const isMobile = useIsMobile();
   useRealtimeEvents();
+  useAiKeySync();
 
   const totalTasksCompleted = (stations ?? []).reduce((sum: number, s: { tasksCompleted?: number | null }) => sum + (s.tasksCompleted ?? 0), 0);
   const totalTasksTotal = (stations ?? []).reduce((sum: number, s: { tasksTotal?: number | null }) => sum + (s.tasksTotal ?? 1), 0);

@@ -69,6 +69,14 @@ export default function Settings() {
     const storedProvider = (localStorage.getItem(LS_PROVIDER) as ProviderId) ?? "openai";
     setApiKey(stored);
     setProvider(storedProvider);
+    // Auto-sync key to server on mount (server resets in-memory config on restart)
+    if (stored) {
+      fetch("/api/ai/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: stored, provider: storedProvider }),
+      }).catch(() => {});
+    }
   }, []);
 
   function handleContractSave() {
@@ -84,20 +92,31 @@ export default function Settings() {
     }).catch(() => {});
   }
 
-  function handleSave() {
+  async function handleSave() {
+    const key = apiKey.trim();
     localStorage.setItem(LS_PROVIDER, provider);
-    localStorage.setItem(LS_KEY, apiKey.trim());
+    localStorage.setItem(LS_KEY, key);
     setSaved(true);
     setTestStatus("idle");
     setTimeout(() => setSaved(false), 2000);
+    try {
+      await fetch("/api/ai/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: key, provider }),
+      });
+    } catch { /* server sync is best-effort */ }
   }
 
-  function handleClear() {
+  async function handleClear() {
     setApiKey("");
     localStorage.removeItem(LS_KEY);
     localStorage.removeItem(LS_PROVIDER);
     setTestStatus("idle");
     setTestMessage("");
+    try {
+      await fetch("/api/ai/config", { method: "DELETE" });
+    } catch { /* best-effort */ }
   }
 
   async function handleTest() {
