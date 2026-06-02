@@ -1516,10 +1516,9 @@ export class StationScene {
 
     // Day/Night phase label in bottom-left of canvas
     const phaseColor = this.dayPhase === 'NIGHT OPS' ? 0x4d7fff : this.dayPhase === 'PEAK HOURS' ? 0xffd700 : 0x5b8fff;
-    const phasePulse = 0.6 + Math.sin(Date.now() * 0.003) * 0.4;
-    g.fillStyle(phaseColor, 0.15 * phasePulse);
+    g.fillStyle(phaseColor, 0.08);
     g.fillRect(4, H - 20, 80, 14);
-    g.lineStyle(1, phaseColor, 0.5 * phasePulse);
+    g.lineStyle(1, phaseColor, 0.25);
     g.strokeRect(4, H - 20, 80, 14);
   }
 
