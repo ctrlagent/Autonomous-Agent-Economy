@@ -222,7 +222,19 @@ export function StationCanvas({ onAgentSelect, onRoomSelect, onRevenueChange, on
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={{
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+      backgroundColor: '#03040b',
+      backgroundImage: [
+        'linear-gradient(rgba(15,28,53,0.8) 1px, transparent 1px)',
+        'linear-gradient(90deg, rgba(15,28,53,0.8) 1px, transparent 1px)',
+        'linear-gradient(rgba(26,46,84,0.35) 1px, transparent 1px)',
+        'linear-gradient(90deg, rgba(26,46,84,0.35) 1px, transparent 1px)',
+      ].join(', '),
+      backgroundSize: '24px 24px, 24px 24px, 96px 96px, 96px 96px',
+    }}>
       <div
         ref={mountRef}
         style={{
