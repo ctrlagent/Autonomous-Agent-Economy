@@ -131,8 +131,8 @@ export default function Settings() {
   }
 
   return (
-    <div style={{ display: "flex", height: "100%", overflow: "hidden", flexDirection: "column" }}>
-      <div style={{ flex: 1, overflowY: "auto", padding: "24px", maxWidth: 720 }}>
+    <div style={{ height: "100%", overflowY: "auto" }}>
+      <div style={{ padding: "24px", maxWidth: 720, margin: "0 auto" }}>
 
         {/* Header */}
         <div style={{
