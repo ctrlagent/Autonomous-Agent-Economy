@@ -511,9 +511,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </>
           )}
 
-          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: "var(--ae-dim)", marginLeft: "auto", letterSpacing: "0.08em" }}>
-            v1.0 · TICK {tick}
-          </span>
         </div>
       )}
 
