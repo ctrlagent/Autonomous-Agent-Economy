@@ -586,31 +586,29 @@ export default function Dashboard() {
       {/* ── Room Detail Popup ─────────────────────────────────────────────── */}
       <AnimatePresence>
         {dungeonRoom && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              key="room-backdrop"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              onClick={() => setSelectedDungeonRoomId(null)}
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 200, backdropFilter: "blur(2px)" }}
-            />
-
-            {/* Panel */}
+          <motion.div
+            key="room-overlay"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setSelectedDungeonRoomId(null)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 200,
+              background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              paddingRight: isMobile ? 0 : 265,
+            }}
+          >
+            {/* Panel — stopPropagation so clicking inside doesn't close */}
             <motion.div
               key="room-popup"
-              initial={{ opacity: 0, y: 24, scale: 0.97 }}
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.97 }}
+              exit={{ opacity: 0, y: 12, scale: 0.97 }}
               transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              onClick={e => e.stopPropagation()}
               style={{
-                position: "fixed",
-                top: "50%",
-                left: "calc(50% - 132px)",
-                transform: "translate(-50%, -50%)",
-                zIndex: 201,
-                width: 340,
-                maxHeight: "80vh",
+                width: 360,
+                height: 520,
                 display: "flex",
                 flexDirection: "column",
                 background: "var(--ae-bg)",
@@ -761,7 +759,7 @@ export default function Dashboard() {
                 )}
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
 
