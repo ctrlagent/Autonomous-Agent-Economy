@@ -465,44 +465,53 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* BOTTOM STATUS BAR — desktop only */}
       {!isMobile && (
         <div style={{
-          height: 26, flexShrink: 0,
-          background: "rgba(0,0,0,0.6)", borderTop: "1px solid var(--ae-border)",
-          display: "flex", alignItems: "center", padding: "0 14px", gap: 20, zIndex: 100,
+          height: 38, flexShrink: 0,
+          background: "rgba(0,0,0,0.7)", borderTop: "1px solid var(--ae-border)",
+          display: "flex", alignItems: "center", padding: "0 18px", gap: 24, zIndex: 100,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4dff9b", boxShadow: "0 0 6px #4dff9b", animation: "pulse-dot 2s ease-in-out infinite" }} />
-            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>AUTONOMOUS · RUNNING</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4dff9b", boxShadow: "0 0 8px #4dff9b", animation: "pulse-dot 2s ease-in-out infinite" }} />
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: "var(--ae-muted)", letterSpacing: "0.12em" }}>AUTONOMOUS · RUNNING</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>AGENTS</span>
-            <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
+
+          <div style={{ width: 1, height: 18, background: "var(--ae-border)" }} />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>AGENTS</span>
+            <div style={{ width: 110, height: 5, background: "var(--ae-border)" }}>
               <div style={{
                 height: "100%",
                 width: `${Math.min(100, ((summary?.activeAgents ?? 0) / Math.max(1, summary?.totalAgents ?? 1)) * 100)}%`,
-                background: "#4dff9b", boxShadow: "0 0 4px #4dff9b", transition: "width 1s",
+                background: "#4dff9b", boxShadow: "0 0 6px #4dff9b55", transition: "width 1s",
               }} />
             </div>
-            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{summary?.activeAgents ?? 0}/{summary?.totalAgents ?? 0}</span>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, fontWeight: 700, color: "#4dff9b" }}>{summary?.activeAgents ?? 0}<span style={{ color: "var(--ae-dim)", fontWeight: 400 }}>/{summary?.totalAgents ?? 0}</span></span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)" }}>XP</span>
-            <div style={{ width: 80, height: 3, background: "var(--ae-border)" }}>
-              <div style={{ height: "100%", width: `${xpPct}%`, background: "linear-gradient(to right, #4d7fff, #9b6dff)", boxShadow: "0 0 4px #4d7fff", transition: "width 1s" }} />
+
+          <div style={{ width: 1, height: 18, background: "var(--ae-border)" }} />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>XP</span>
+            <div style={{ width: 110, height: 5, background: "var(--ae-border)" }}>
+              <div style={{ height: "100%", width: `${xpPct}%`, background: "linear-gradient(to right, #4d7fff, #9b6dff)", boxShadow: "0 0 6px #4d7fff55", transition: "width 1s" }} />
             </div>
-            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)" }}>{totalTasksCompleted}/{totalTasksTotal}</span>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, fontWeight: 700, color: "#9b6dff" }}>{totalTasksCompleted}<span style={{ color: "var(--ae-dim)", fontWeight: 400 }}>/{totalTasksTotal}</span></span>
           </div>
 
           {/* Wallet address in status bar */}
           {isConnected && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Wallet size={9} color="var(--ae-muted)" />
-              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.08em" }}>
-                BASE
-              </span>
-            </div>
+            <>
+              <div style={{ width: 1, height: 18, background: "var(--ae-border)" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <Wallet size={11} color="var(--ae-muted)" />
+                <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: "var(--ae-muted)", letterSpacing: "0.08em" }}>
+                  BASE
+                </span>
+              </div>
+            </>
           )}
 
-          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginLeft: "auto" }}>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: "var(--ae-dim)", marginLeft: "auto", letterSpacing: "0.08em" }}>
             v1.0 · TICK {tick}
           </span>
         </div>
