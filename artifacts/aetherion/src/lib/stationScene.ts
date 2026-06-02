@@ -490,16 +490,43 @@ export class StationScene {
     const W = this.scene.scale.width;
     const H = this.scene.scale.height;
 
-    g.fillStyle(0x05060a, 1);
+    g.fillStyle(0x04050d, 1);
     g.fillRect(0, 0, W, H);
 
-    const GRID = 24;
-    g.lineStyle(1, 0x1a2040, 0.3);
-    for (let x = 0; x < W; x += GRID) {
+    // Full-canvas tile-aligned grid (minor lines)
+    const GRID = this.tilePx;
+    g.lineStyle(1, 0x152038, 0.65);
+    for (let x = 0; x <= W; x += GRID) {
       g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.strokePath();
     }
-    for (let y = 0; y < H; y += GRID) {
+    for (let y = 0; y <= H; y += GRID) {
       g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.strokePath();
+    }
+
+    // Major grid lines every 4 tiles — slightly brighter
+    const MAJOR = GRID * 4;
+    g.lineStyle(1, 0x1e3260, 0.45);
+    for (let x = 0; x <= W; x += MAJOR) {
+      g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.strokePath();
+    }
+    for (let y = 0; y <= H; y += MAJOR) {
+      g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.strokePath();
+    }
+
+    // Intersection dots at every grid crossing
+    g.fillStyle(0x1e3468, 0.55);
+    for (let x = 0; x <= W; x += GRID) {
+      for (let y = 0; y <= H; y += GRID) {
+        g.fillRect(x - 1, y - 1, 2, 2);
+      }
+    }
+
+    // Larger dots at major intersections
+    g.fillStyle(0x2a4a90, 0.5);
+    for (let x = 0; x <= W; x += MAJOR) {
+      for (let y = 0; y <= H; y += MAJOR) {
+        g.fillRect(x - 2, y - 2, 4, 4);
+      }
     }
 
     for (const cor of DUNGEON_CORRIDORS) {
