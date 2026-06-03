@@ -1,0 +1,1 @@
+- [Phase 0 fixes](phase0-fixes.md) — Revenue sync, pending task execution, activeAgents recalc, persistent AI config in DB

@@ -292,10 +292,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const totalTasksCompleted = (stations ?? []).reduce((sum: number, s: { tasksCompleted?: number | null }) => sum + (s.tasksCompleted ?? 0), 0);
   const totalTasksTotal = (stations ?? []).reduce((sum: number, s: { tasksTotal?: number | null }) => sum + (s.tasksTotal ?? 1), 0);
   const xpPct = Math.round((totalTasksCompleted / Math.max(1, totalTasksTotal)) * 100);
-  const revenueEstimate = `$${(totalTasksCompleted * 27).toLocaleString()}`;
+  const totalRevenue = (stations ?? []).reduce((sum: number, s: { revenue?: number | null }) => sum + (s.revenue ?? 0), 0);
+  const revenueEstimate = `$${Math.floor(totalRevenue).toLocaleString()}`;
 
   const activeMissionsCount = [
-    (totalTasksCompleted * 27) < 5000,
+    totalRevenue < 5000,
     true,
     true,
     (summary?.totalAgents ?? 0) >= 2,

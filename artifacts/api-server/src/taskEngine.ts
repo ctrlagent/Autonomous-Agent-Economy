@@ -43,6 +43,17 @@ function revenueIncrement(): number {
   return Math.floor(Math.random() * (REVENUE_PER_TASK_MAX - REVENUE_PER_TASK_MIN + 1)) + REVENUE_PER_TASK_MIN;
 }
 
+/** Recalculate activeAgents for a station from actual agent statuses */
+async function syncActiveAgents(stationId: number): Promise<void> {
+  const stationAgents = await db.select({ status: agentsTable.status })
+    .from(agentsTable)
+    .where(eq(agentsTable.stationId, stationId));
+  const realActive = stationAgents.filter(a => a.status === "working").length;
+  await db.update(stationsTable)
+    .set({ activeAgents: realActive })
+    .where(eq(stationsTable.id, stationId));
+}
+
 async function tick() {
   try {
     const agents = await db.select().from(agentsTable);
@@ -59,15 +70,30 @@ async function tick() {
           .where(and(eq(tasksTable.agentId, agent.id), eq(tasksTable.status, "in_progress")));
 
         if (!activeTask) {
-          const title = taskTitle(agent.role);
-          await db.insert(tasksTable).values({
-            agentId: agent.id,
-            title,
-            description: `Auto-generated task for ${agent.name}`,
-            status: "in_progress",
-            progress: 0,
-            priority: "medium",
-          });
+          // Check for a pending task first (Commander-assigned)
+          const [pendingTask] = await db
+            .select()
+            .from(tasksTable)
+            .where(and(eq(tasksTable.agentId, agent.id), eq(tasksTable.status, "pending")));
+
+          if (pendingTask) {
+            await db.update(tasksTable)
+              .set({ status: "in_progress" })
+              .where(eq(tasksTable.id, pendingTask.id));
+            await db.update(agentsTable)
+              .set({ currentTask: pendingTask.title })
+              .where(eq(agentsTable.id, agent.id));
+          } else {
+            const title = taskTitle(agent.role);
+            await db.insert(tasksTable).values({
+              agentId: agent.id,
+              title,
+              description: `Auto-generated task for ${agent.name}`,
+              status: "in_progress",
+              progress: 0,
+              priority: "medium",
+            });
+          }
           broadcastEvent("task_update", { agentId: agent.id });
           continue;
         }
@@ -97,6 +123,9 @@ async function tick() {
             tasksCompleted: sql`${stationsTable.tasksCompleted} + 1`,
             revenue: sql`${stationsTable.revenue} + ${rev}`,
           }).where(eq(stationsTable.id, agent.stationId));
+
+          // Recalculate activeAgents from real DB state
+          await syncActiveAgents(agent.stationId);
 
           const [station] = await db.select({ name: stationsTable.name }).from(stationsTable).where(eq(stationsTable.id, agent.stationId));
           const stationName = station?.name ?? "Unknown Station";
@@ -147,15 +176,30 @@ async function tick() {
             logger.warn({ err: e }, "failed to generate agent output");
           }
 
-          const nextTitle = taskTitle(agent.role);
-          await db.insert(tasksTable).values({
-            agentId: agent.id,
-            title: nextTitle,
-            description: `Auto-generated task for ${agent.name}`,
-            status: "in_progress",
-            progress: 0,
-            priority: "medium",
-          });
+          // Check if there's a pending task queued for this agent next
+          const [nextPending] = await db
+            .select()
+            .from(tasksTable)
+            .where(and(eq(tasksTable.agentId, agent.id), eq(tasksTable.status, "pending")));
+
+          if (nextPending) {
+            await db.update(tasksTable)
+              .set({ status: "in_progress" })
+              .where(eq(tasksTable.id, nextPending.id));
+            await db.update(agentsTable)
+              .set({ currentTask: nextPending.title })
+              .where(eq(agentsTable.id, agent.id));
+          } else {
+            const nextTitle = taskTitle(agent.role);
+            await db.insert(tasksTable).values({
+              agentId: agent.id,
+              title: nextTitle,
+              description: `Auto-generated task for ${agent.name}`,
+              status: "in_progress",
+              progress: 0,
+              priority: "medium",
+            });
+          }
 
           broadcastEvent(levelsGained > 0 ? "agent_level_up" : "task_complete", {
             agentId: agent.id,
@@ -173,36 +217,66 @@ async function tick() {
           broadcastEvent("task_update", { agentId: agent.id, progress: newProgress });
         }
 
-      } else if (isIdle && Math.random() < IDLE_START_CHANCE) {
-        const title = taskTitle(agent.role);
+      } else if (isIdle) {
+        // Check for a pending Commander-assigned task first
+        const [pendingTask] = await db
+          .select()
+          .from(tasksTable)
+          .where(and(eq(tasksTable.agentId, agent.id), eq(tasksTable.status, "pending")));
 
-        await db.update(agentsTable)
-          .set({ status: "working", currentTask: title })
-          .where(eq(agentsTable.id, agent.id));
+        if (pendingTask) {
+          // Always pick up Commander-assigned tasks, no random chance
+          await db.update(agentsTable)
+            .set({ status: "working", currentTask: pendingTask.title })
+            .where(eq(agentsTable.id, agent.id));
 
-        await db.update(stationsTable)
-          .set({ activeAgents: sql`${stationsTable.activeAgents} + 1` })
-          .where(eq(stationsTable.id, agent.stationId));
+          await db.update(tasksTable)
+            .set({ status: "in_progress" })
+            .where(eq(tasksTable.id, pendingTask.id));
 
-        await db.insert(tasksTable).values({
-          agentId: agent.id,
-          title,
-          description: `Auto-generated task for ${agent.name}`,
-          status: "in_progress",
-          progress: 0,
-          priority: "medium",
-        });
+          await syncActiveAgents(agent.stationId);
 
-        const [station] = await db.select({ name: stationsTable.name }).from(stationsTable).where(eq(stationsTable.id, agent.stationId));
-        await db.insert(activityTable).values({
-          agentName: agent.name,
-          agentRole: agent.role,
-          stationName: station?.name ?? "Unknown",
-          action: "TASK START",
-          details: `${agent.name} started "${title}"`,
-        });
+          const [station] = await db.select({ name: stationsTable.name }).from(stationsTable).where(eq(stationsTable.id, agent.stationId));
+          await db.insert(activityTable).values({
+            agentName: agent.name,
+            agentRole: agent.role,
+            stationName: station?.name ?? "Unknown",
+            action: "TASK START",
+            details: `${agent.name} started "${pendingTask.title}" [Commander assigned]`,
+          });
 
-        broadcastEvent("task_update", { agentId: agent.id });
+          broadcastEvent("task_update", { agentId: agent.id });
+
+        } else if (Math.random() < IDLE_START_CHANCE) {
+          // Auto-start a random task
+          const title = taskTitle(agent.role);
+
+          await db.update(agentsTable)
+            .set({ status: "working", currentTask: title })
+            .where(eq(agentsTable.id, agent.id));
+
+          await syncActiveAgents(agent.stationId);
+
+          await db.insert(tasksTable).values({
+            agentId: agent.id,
+            title,
+            description: `Auto-generated task for ${agent.name}`,
+            status: "in_progress",
+            progress: 0,
+            priority: "medium",
+          });
+
+          const [station] = await db.select({ name: stationsTable.name }).from(stationsTable).where(eq(stationsTable.id, agent.stationId));
+          await db.insert(activityTable).values({
+            agentName: agent.name,
+            agentRole: agent.role,
+            stationName: station?.name ?? "Unknown",
+            action: "TASK START",
+            details: `${agent.name} started "${title}"`,
+          });
+
+          broadcastEvent("task_update", { agentId: agent.id });
+        }
       }
     }
   } catch (err) {

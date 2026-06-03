@@ -22,6 +22,8 @@ router.get("/summary", async (req, res) => {
     ? stations.reduce((acc, s) => acc + s.progress, 0) / stations.length
     : 0;
 
+  const totalRevenue = stations.reduce((sum, s) => sum + (s.revenue ?? 0), 0);
+
   return res.json({
     totalStations: stations.length,
     activeStations,
@@ -30,6 +32,7 @@ router.get("/summary", async (req, res) => {
     tasksCompletedToday,
     totalTemplates: templates.length,
     overallProgress,
+    totalRevenue,
   });
 });
 
