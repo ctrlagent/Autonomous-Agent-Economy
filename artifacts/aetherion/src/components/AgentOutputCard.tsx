@@ -50,9 +50,9 @@ function ContentOutputView({ data }: { data: {
 }}) {
   const [activePlatform, setActivePlatform] = useState(0);
   const platformIcons: Record<string, React.ReactNode> = {
-    "Twitter / X": <Twitter size={9} />,
-    "LinkedIn":    <Linkedin size={9} />,
-    "Instagram":   <Instagram size={9} />,
+    "Twitter / X": <span style={{ fontSize: 9, fontWeight: "bold" }}>𝕏</span>,
+    "LinkedIn":    <span style={{ fontSize: 9, fontWeight: "bold" }}>in</span>,
+    "Instagram":   <span style={{ fontSize: 9 }}>◉</span>,
   };
 
   return (

@@ -289,10 +289,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   useRealtimeEvents();
   useAiKeySync();
 
-  const totalTasksCompleted = (stations ?? []).reduce((sum: number, s: { tasksCompleted?: number | null }) => sum + (s.tasksCompleted ?? 0), 0);
-  const totalTasksTotal = (stations ?? []).reduce((sum: number, s: { tasksTotal?: number | null }) => sum + (s.tasksTotal ?? 1), 0);
+  type StationSummary = { tasksCompleted?: number | null; tasksTotal?: number | null; revenue?: number | null };
+  const stationList = (stations ?? []) as StationSummary[];
+  const totalTasksCompleted = stationList.reduce((sum, s) => sum + (s.tasksCompleted ?? 0), 0);
+  const totalTasksTotal = stationList.reduce((sum, s) => sum + (s.tasksTotal ?? 1), 0);
   const xpPct = Math.round((totalTasksCompleted / Math.max(1, totalTasksTotal)) * 100);
-  const totalRevenue = (stations ?? []).reduce((sum: number, s: { revenue?: number | null }) => sum + (s.revenue ?? 0), 0);
+  const totalRevenue = stationList.reduce((sum, s) => sum + (s.revenue ?? 0), 0);
   const revenueEstimate = `$${Math.floor(totalRevenue).toLocaleString()}`;
 
   const activeMissionsCount = [
