@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { useListAgents, useListAgentTasks, useListStations, useListRooms, useDeleteAgent } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, TrendingUp, CheckCircle, Plus, Trash2, ChevronDown } from "lucide-react";
+import { X, Zap, TrendingUp, CheckCircle, Plus, Trash2, ChevronDown, Lock, Unlock } from "lucide-react";
 import { AgentAvatar, RoleBadge, LevelBadge } from "@/components/PixelSprite";
 import { AssignTaskModal } from "@/components/AssignTaskModal";
 import { AddAgentModal } from "@/components/AddAgentModal";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
+import { ROLE_SKILLS, getRank, getNextRank, XP_PER_LEVEL } from "@/lib/agentSkills";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth <= 768);
@@ -153,6 +154,47 @@ function AgentDetailContent({
         </div>
       )}
 
+      {/* Rank + XP milestone row */}
+      {(() => {
+        const rank = getRank(agent.level);
+        const nextRank = getNextRank(agent.level);
+        const xpInLevel = agent.experience % XP_PER_LEVEL;
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {/* Rank badge */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                padding: "3px 10px", border: `1px solid ${rank.color}66`,
+                background: `${rank.color}12`, display: "flex", alignItems: "center", gap: 5,
+              }}>
+                <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 7, color: rank.color, letterSpacing: "0.06em", textShadow: `0 0 8px ${rank.color}66` }}>
+                  ★ {rank.rank}
+                </span>
+              </div>
+              {nextRank && (
+                <span style={{ ...mono, fontSize: 7, color: "var(--ae-dim)" }}>
+                  → {nextRank.rank} @ LV.{nextRank.minLevel}
+                </span>
+              )}
+            </div>
+            {/* XP progress */}
+            <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 7, color: "var(--ae-muted)", marginBottom: 3 }}>
+              <span>XP PROGRESS</span>
+              <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 7, color: "#ffd700" }}>LV.{agent.level}</span>
+            </div>
+            <div style={{ height: 8, background: "var(--ae-border)", position: "relative" }}>
+              <div style={{ height: "100%", width: `${xpInLevel}%`, background: `linear-gradient(to right, ${roleColor}88, ${roleColor})`, boxShadow: `0 0 10px ${roleColor}80`, transition: "width 1s" }}>
+                <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 2, background: "rgba(255,255,255,0.5)" }} />
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ ...mono, fontSize: 6, color: "var(--ae-dim)" }}>{xpInLevel} / {XP_PER_LEVEL} XP</span>
+              <span style={{ ...mono, fontSize: 6, color: roleColor }}>~{Math.ceil((XP_PER_LEVEL - xpInLevel) / 30)} tasks to next</span>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Stats grid */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
         {[
@@ -168,6 +210,68 @@ function AgentDetailContent({
           </div>
         ))}
       </div>
+
+      {/* Skills Panel */}
+      {(() => {
+        const skills = ROLE_SKILLS[agent.role] ?? [];
+        const unlocked = skills.filter(s => agent.level >= s.unlockLevel);
+        const locked   = skills.filter(s => agent.level < s.unlockLevel);
+        const nextUnlock = locked[0];
+        return (
+          <div style={{ border: `1px solid ${roleColor}33`, padding: "8px 10px", background: `${roleColor}04`, position: "relative" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, width: 5, height: 5, borderTop: `2px solid ${roleColor}`, borderLeft: `2px solid ${roleColor}` }} />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em" }}>
+                ⬡ SKILLS · {unlocked.length}/{skills.length} UNLOCKED
+              </div>
+              {nextUnlock && (
+                <div style={{ ...mono, fontSize: 6, color: "var(--ae-dim)" }}>
+                  next: LV.{nextUnlock.unlockLevel}
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {skills.map(skill => {
+                const isUnlocked = agent.level >= skill.unlockLevel;
+                return (
+                  <div
+                    key={skill.name}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8, padding: "5px 7px",
+                      background: isUnlocked ? `${roleColor}10` : "rgba(0,0,0,0.15)",
+                      border: `1px solid ${isUnlocked ? `${roleColor}44` : "var(--ae-border)"}`,
+                      opacity: isUnlocked ? 1 : 0.55,
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <span style={{ fontSize: 11, flexShrink: 0, lineHeight: 1 }}>{skill.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ ...mono, fontSize: 7, color: isUnlocked ? roleColor : "var(--ae-muted)", letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {skill.name}
+                      </div>
+                      {isUnlocked && (
+                        <div style={{ ...mono, fontSize: 6, color: "var(--ae-dim)", marginTop: 1, lineHeight: 1.4 }}>
+                          {skill.description}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}>
+                      {isUnlocked ? (
+                        <Unlock size={7} color={roleColor} />
+                      ) : (
+                        <Lock size={7} color="var(--ae-dim)" />
+                      )}
+                      <span style={{ ...mono, fontSize: 6, color: isUnlocked ? roleColor : "var(--ae-dim)" }}>
+                        {isUnlocked ? `LV.${skill.unlockLevel}` : `LV.${skill.unlockLevel}`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Wallet section */}
       {agent.walletAddress && (
@@ -448,6 +552,17 @@ export default function Crew() {
                   }}>
                     {ROLE_LABEL[agent.role.toLowerCase()] ?? agent.role.toUpperCase()}
                   </div>
+
+                  {/* Rank badge */}
+                  {(() => {
+                    const rank = getRank(agent.level);
+                    return (
+                      <div style={{ ...mono, fontSize: 6, color: rank.color, marginBottom: 5, letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 3 }}>
+                        <span>★</span>
+                        <span style={{ textShadow: `0 0 6px ${rank.color}66` }}>{rank.rank}</span>
+                      </div>
+                    );
+                  })()}
 
                   {/* Wallet badge */}
                   {agent.walletAddress && (

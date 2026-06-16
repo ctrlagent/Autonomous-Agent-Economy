@@ -6,3 +6,4 @@
 - [Week 6 Token Gate](week6-token-gate.md) — TierProvider (context), WalletGate reads $CTRL balance via useBalance, tier 0→TokenGate tier≥1→children; badge in WalletChip dropdown
 - [Week 7 GitHub PR](week7-github-pr.md) — Octokit-based PR creation for builder agents; aiResult must be declared outside try block in taskEngine; env vars GITHUB_TOKEN/OWNER/REPO gate real vs simulated PRs
 - [Week 8 Agent Marketplace](week8-marketplace.md) — marketplace_listings table + rarityEnum; seedMarketplace() on startup; routes at /api/marketplace; import must use @workspace/db not "../db"
+- [Week 9 XP & Leveling](week9-xp-leveling.md) — agentSkills.ts (skills+ranks); Phaser levelUpBurst already wired via triggerRef/sceneRef; agent_level_up WS event already emitted; skills panel in Crew.tsx
