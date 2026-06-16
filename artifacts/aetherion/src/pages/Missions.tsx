@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useGetDashboardSummary, useGetAgentPerformance } from "@workspace/api-client-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Star, Trophy, Zap, CheckCircle, TrendingUp, Users, Code, ChevronDown, BarChart2, RefreshCw } from "lucide-react";
+import { Lock, Star, Trophy, Zap, CheckCircle, TrendingUp, Users, Code, ChevronDown, BarChart2, RefreshCw, DollarSign, Shield, X } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   TrendingUp, Zap, Users, Code, Star,
@@ -17,8 +17,23 @@ interface Mission {
   current: number;
   unit: string;
   rewardXp: number;
+  rewardAmount: number;
+  rewardToken: string;
   status: "active" | "completed" | "locked";
   sortOrder: number;
+}
+
+interface EscrowInfo {
+  missionId: number;
+  status: "none" | "pending" | "deposited" | "proof_submitted" | "approved" | "refunded";
+  amount: number;
+  token: string;
+  depositorAddress: string | null;
+  agentAddress: string | null;
+  proofHash: string | null;
+  txHashDeposit: string | null;
+  txHashRelease: string | null;
+  simulated: boolean;
 }
 
 function useIsMobile() {
@@ -38,6 +53,10 @@ export default function Missions() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [escrowMap, setEscrowMap] = useState<Record<number, EscrowInfo>>({});
+  const [fundingMission, setFundingMission] = useState<Mission | null>(null);
+  const [fundAmount, setFundAmount] = useState("100");
+  const [fundLoading, setFundLoading] = useState(false);
 
   const avgPerf = performance && performance.length > 0
     ? Math.round(performance.reduce((acc: number, p: { avgProgress: number }) => acc + p.avgProgress, 0) / performance.length)
@@ -55,7 +74,44 @@ export default function Missions() {
     }
   }
 
-  useEffect(() => { fetchMissions(); }, []);
+  async function fetchEscrows() {
+    try {
+      const resp = await fetch("/api/escrow");
+      const data = await resp.json() as EscrowInfo[];
+      const map: Record<number, EscrowInfo> = {};
+      data.forEach(e => { map[e.missionId] = e; });
+      setEscrowMap(map);
+    } catch { /* ignore */ }
+  }
+
+  async function fundBounty() {
+    if (!fundingMission) return;
+    const amount = parseInt(fundAmount);
+    if (!amount || amount <= 0) return;
+    setFundLoading(true);
+    try {
+      const resp = await fetch("/api/escrow/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ missionId: fundingMission.id, amount }),
+      });
+      const data = await resp.json() as EscrowInfo;
+      setEscrowMap(prev => ({ ...prev, [fundingMission.id]: data }));
+      setFundingMission(null);
+      setFundAmount("100");
+    } catch { /* ignore */ }
+    finally { setFundLoading(false); }
+  }
+
+  async function approveEscrow(missionId: number) {
+    try {
+      const resp = await fetch(`/api/escrow/approve/${missionId}`, { method: "POST" });
+      const data = await resp.json() as EscrowInfo;
+      setEscrowMap(prev => ({ ...prev, [missionId]: data }));
+    } catch { /* ignore */ }
+  }
+
+  useEffect(() => { fetchMissions(); fetchEscrows(); }, []);
 
   // Auto-complete missions based on live data
   useEffect(() => {
@@ -90,7 +146,6 @@ export default function Missions() {
 
   const mono = { fontFamily: "'Space Mono', monospace" };
 
-  // Revenue history from missions data (computed from current revenue mission)
   const revMission = missions.find(m => m.unit === "$");
   const revenueHistory = revMission
     ? [
@@ -106,7 +161,7 @@ export default function Missions() {
   const maxRev = revMission?.target ?? 5000;
 
   return (
-    <div style={{ display: "flex", height: "100%", overflow: "hidden", flexDirection: isMobile ? "column" : "row" }}>
+    <div style={{ display: "flex", height: "100%", overflow: "hidden", flexDirection: isMobile ? "column" : "row", position: "relative" }}>
       {/* MAIN MISSIONS */}
       <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px 14px" : "20px 24px", display: "flex", flexDirection: "column", gap: 0 }}>
         {/* Header */}
@@ -131,7 +186,7 @@ export default function Missions() {
                 {missions.filter(m => m.status === "active" && m.current < m.target).length} IN PROGRESS · {missions.filter(m => m.status === "completed" || m.current >= m.target).length} COMPLETED
               </div>
             </div>
-            <button onClick={fetchMissions} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)", display: "flex", padding: 4 }}>
+            <button onClick={() => { fetchMissions(); fetchEscrows(); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)", display: "flex", padding: 4 }}>
               <RefreshCw size={11} style={{ color: "var(--ae-muted)" }} />
             </button>
             {isMobile && (
@@ -168,6 +223,9 @@ export default function Missions() {
               const progress = Math.min(100, Math.round((m.current / Math.max(1, m.target)) * 100));
               const displayVal = m.unit === "$" ? `$${Math.round(m.current).toLocaleString()}` : `${Math.round(m.current)}${m.unit}`;
               const displayTarget = m.unit === "$" ? `$${m.target.toLocaleString()}` : `${m.target}${m.unit}`;
+              const escrowInfo = escrowMap[m.id];
+              const escrowActive = escrowInfo && escrowInfo.status !== "none" && escrowInfo.status !== "refunded";
+              const escrowAmount = escrowActive ? escrowInfo.amount : (m.rewardAmount ?? 0);
 
               return (
                 <motion.div
@@ -215,6 +273,21 @@ export default function Missions() {
                           ✓ COMPLETE
                         </span>
                       )}
+                      {escrowInfo?.status === "deposited" && (
+                        <span style={{ ...mono, fontSize: 6, padding: "1px 6px", background: "rgba(77,255,155,0.1)", border: "1px solid var(--ae-green)", color: "var(--ae-green)", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                          <Shield size={8} /> ESCROW ACTIVE
+                        </span>
+                      )}
+                      {escrowInfo?.status === "proof_submitted" && (
+                        <span style={{ ...mono, fontSize: 6, padding: "1px 6px", background: "rgba(255,184,77,0.1)", border: "1px solid var(--ae-amber)", color: "var(--ae-amber)", letterSpacing: "0.06em" }}>
+                          ◈ PROOF PENDING
+                        </span>
+                      )}
+                      {escrowInfo?.status === "approved" && (
+                        <span style={{ ...mono, fontSize: 6, padding: "1px 6px", background: "rgba(77,255,155,0.12)", border: "1px solid var(--ae-green)", color: "var(--ae-green)", letterSpacing: "0.06em" }}>
+                          ✓ PAID OUT
+                        </span>
+                      )}
                     </div>
                     {m.description && (
                       <div style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", marginBottom: 8, letterSpacing: "0.04em" }}>{m.description}</div>
@@ -252,7 +325,7 @@ export default function Missions() {
                   </div>
 
                   {!isLocked && (
-                    <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, minWidth: 48 }}>
+                    <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 56 }}>
                       <div style={{
                         fontFamily: "'Press Start 2P',monospace", fontSize: 8,
                         color: "#ffd700", textShadow: "0 0 8px rgba(255,215,0,0.5)",
@@ -262,6 +335,43 @@ export default function Missions() {
                         +{m.rewardXp}<br />
                         <span style={{ fontSize: 6, color: "rgba(255,215,0,0.7)" }}>XP</span>
                       </div>
+                      {escrowAmount > 0 && (
+                        <div style={{
+                          fontFamily: "'Press Start 2P',monospace", fontSize: 7,
+                          color: "#4dff9b", textShadow: "0 0 8px rgba(77,255,155,0.5)",
+                          padding: "3px 5px", border: "1px solid rgba(77,255,155,0.35)",
+                          background: "rgba(77,255,155,0.06)", textAlign: "center",
+                          display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
+                        }}>
+                          <DollarSign size={8} style={{ color: "#4dff9b" }} />
+                          <span>{escrowAmount}</span>
+                          <span style={{ fontSize: 5, color: "rgba(77,255,155,0.65)" }}>USDC</span>
+                        </div>
+                      )}
+                      {!isComplete && !isLocked && (!escrowActive || escrowInfo?.status === "proof_submitted") && (
+                        <button
+                          onClick={() => {
+                            if (escrowInfo?.status === "proof_submitted") {
+                              approveEscrow(m.id);
+                            } else {
+                              setFundingMission(m);
+                            }
+                          }}
+                          style={{
+                            fontFamily: "'Press Start 2P',monospace", fontSize: 6,
+                            background: escrowInfo?.status === "proof_submitted"
+                              ? "rgba(77,255,155,0.12)"
+                              : "rgba(91,143,255,0.08)",
+                            border: `1px solid ${escrowInfo?.status === "proof_submitted" ? "var(--ae-green)" : "var(--ae-blue)"}`,
+                            color: escrowInfo?.status === "proof_submitted" ? "var(--ae-green)" : "var(--ae-blue)",
+                            cursor: "pointer", padding: "3px 5px", letterSpacing: "0.04em",
+                            textAlign: "center", lineHeight: 1.4, width: "100%",
+                            whiteSpace: "pre",
+                          }}
+                        >
+                          {escrowInfo?.status === "proof_submitted" ? "APPROVE" : "FUND\nBOUNTY"}
+                        </button>
+                      )}
                     </div>
                   )}
                 </motion.div>
@@ -282,6 +392,14 @@ export default function Missions() {
                 +{missions.reduce((acc, m) => acc + m.rewardXp, 0)} XP
               </span>
             </div>
+            {Object.values(escrowMap).filter(e => e.status !== "none" && e.status !== "refunded").length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <DollarSign size={16} style={{ color: "#4dff9b" }} />
+                <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 10, color: "#4dff9b", textShadow: "0 0 12px rgba(77,255,155,0.6)" }}>
+                  {Object.values(escrowMap).filter(e => e.status !== "none" && e.status !== "refunded").reduce((a, e) => a + e.amount, 0)} USDC
+                </span>
+              </div>
+            )}
             {["🤖 ORACLE AGENT", "🛡️ COMMANDER BADGE", "⭐ ELITE RANK"].map(r => (
               <div key={r} style={{
                 ...mono, fontSize: 7, padding: "4px 12px",
@@ -404,6 +522,104 @@ export default function Missions() {
         </div>
       </motion.div>
       )}
+      </AnimatePresence>
+
+      {/* FUND BOUNTY MODAL */}
+      <AnimatePresence>
+        {fundingMission && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "absolute", inset: 0, zIndex: 999,
+              background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+            onClick={() => setFundingMission(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: "var(--ae-surface)",
+                border: "1px solid var(--ae-cyan)",
+                padding: "24px 28px",
+                width: 320, position: "relative",
+                boxShadow: "0 0 40px rgba(77,240,216,0.2)",
+              }}
+            >
+              <div style={{ position: "absolute", top: 0, left: 0, width: 12, height: 12, borderTop: "2px solid var(--ae-cyan)", borderLeft: "2px solid var(--ae-cyan)" }} />
+              <div style={{ position: "absolute", bottom: 0, right: 0, width: 12, height: 12, borderBottom: "2px solid var(--ae-cyan)", borderRight: "2px solid var(--ae-cyan)" }} />
+              <button
+                onClick={() => setFundingMission(null)}
+                style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", cursor: "pointer", color: "var(--ae-muted)" }}
+              >
+                <X size={14} />
+              </button>
+              <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 9, color: "var(--ae-cyan)", marginBottom: 6, textShadow: "0 0 12px rgba(77,240,216,0.5)" }}>
+                FUND BOUNTY
+              </div>
+              <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: "var(--ae-muted)", marginBottom: 18 }}>
+                {fundingMission.title}
+              </div>
+              <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-muted)", marginBottom: 6, letterSpacing: "0.08em" }}>
+                USDC AMOUNT
+              </div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                {[50, 100, 250, 500].map(amt => (
+                  <button
+                    key={amt}
+                    onClick={() => setFundAmount(String(amt))}
+                    style={{
+                      flex: 1, fontFamily: "'Press Start 2P',monospace", fontSize: 7,
+                      background: fundAmount === String(amt) ? "rgba(77,240,216,0.15)" : "transparent",
+                      border: `1px solid ${fundAmount === String(amt) ? "var(--ae-cyan)" : "var(--ae-border)"}`,
+                      color: fundAmount === String(amt) ? "var(--ae-cyan)" : "var(--ae-muted)",
+                      cursor: "pointer", padding: "5px 4px",
+                    }}
+                  >
+                    {amt}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                value={fundAmount}
+                onChange={e => setFundAmount(e.target.value)}
+                placeholder="Custom amount"
+                style={{
+                  width: "100%", fontFamily: "'Space Mono',monospace", fontSize: 11,
+                  background: "var(--ae-bg)", border: "1px solid var(--ae-border)",
+                  color: "var(--ae-text)", padding: "8px 10px", outline: "none",
+                  boxSizing: "border-box", marginBottom: 16,
+                }}
+              />
+              <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: "var(--ae-dim)", marginBottom: 16, letterSpacing: "0.04em", lineHeight: 1.6 }}>
+                Funds locked in escrow · Released when mission approved · 2.5% protocol fee on release
+                <span style={{ color: "var(--ae-amber)", display: "block", marginTop: 4 }}>
+                  ⚠ SIMULATED MODE — no real USDC transferred
+                </span>
+              </div>
+              <button
+                onClick={fundBounty}
+                disabled={fundLoading || !parseInt(fundAmount)}
+                style={{
+                  width: "100%", fontFamily: "'Press Start 2P',monospace", fontSize: 8,
+                  background: fundLoading ? "rgba(77,127,255,0.1)" : "rgba(77,127,255,0.15)",
+                  border: "1px solid var(--ae-blue)",
+                  color: fundLoading ? "var(--ae-muted)" : "var(--ae-blue)",
+                  cursor: fundLoading ? "not-allowed" : "pointer",
+                  padding: "10px 16px", letterSpacing: "0.08em",
+                }}
+              >
+                {fundLoading ? "PROCESSING..." : `DEPOSIT ${fundAmount || "0"} USDC`}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

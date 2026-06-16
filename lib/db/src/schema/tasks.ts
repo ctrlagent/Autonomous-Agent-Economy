@@ -13,6 +13,11 @@ export const tasksTable = pgTable("tasks", {
   status: taskStatusEnum("status").notNull().default("pending"),
   progress: integer("progress").notNull().default(0),
   priority: taskPriorityEnum("priority").notNull().default("medium"),
+  bountyAmount: integer("bounty_amount").notNull().default(0),
+  bountyToken: text("bounty_token").notNull().default("USDC"),
+  escrowTx: text("escrow_tx"),
+  prUrl: text("pr_url"),
+  reviewStatus: text("review_status").notNull().default("none"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),
 });

@@ -9,6 +9,7 @@ import missionsRouter from "./missions";
 import aiRouter from "./ai";
 import eventsRouter from "./events";
 import roomsRouter from "./rooms";
+import escrowRouter from "./escrow";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/missions", missionsRouter);
 router.use("/ai", aiRouter);
 router.use("/events", eventsRouter);
 router.use("/rooms", roomsRouter);
+router.use("/escrow", escrowRouter);
 
 export default router;
