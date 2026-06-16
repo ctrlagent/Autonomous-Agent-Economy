@@ -1,0 +1,38 @@
+🛠️ Yang Sudah Di-Upgrade di CTRL
+🤖 Upgrade 1 — AI Makin Pintar (Week 1, Task 1.1)
+Sebelumnya: AI cuma menghasilkan teks template yang generik, dan tidak ada info berapa biaya yang dikeluarkan.
+
+Sekarang:
+
+Ditambahkan peran baru: Designer — agen AI sekarang bisa membuat spesifikasi desain (warna, komponen, tipografi)
+Semua 7 peran AI (Research, Strategy, Builder, Content, Growth, Analytics, Design) punya "instruksi kerja" yang jauh lebih spesifik dan terstruktur — hasilnya lebih konkret dan siap pakai
+Sistem sekarang mencatat berapa token yang digunakan dan menghitung biayanya dalam dolar (misalnya $0.0003)
+Kalau AI gagal menjawab karena jaringan bermasalah, sistem otomatis coba lagi 1x sebelum menyerah
+⏱️ Upgrade 2 — Mesin Tugas Makin Canggih (Week 1, Task 1.2)
+Sebelumnya: Mesin tugas berjalan diam-diam tanpa informasi apa yang terjadi.
+
+Sekarang:
+
+Setiap 8 detik, sistem mencatat log: berapa agen yang sedang kerja, berapa yang idle, berapa tugas yang menunggu
+Sistem mengingat rata-rata waktu yang dibutuhkan setiap agen untuk menyelesaikan tugas
+Saat agen selesai tugas, misi otomatis maju — kalau target tercapai, misi selesai dan misi berikutnya terbuka
+Event yang dikirim ke tampilan sekarang lebih lengkap: ada info role agen, berapa XP yang didapat, berapa revenue, berapa lama tugas diselesaikan
+📄 Upgrade 3 — Tampilan Output AI Lebih Kaya (Week 1, Task 1.3)
+Sebelumnya: Hasil kerja AI ditampilkan sebagai teks biasa.
+
+Sekarang:
+
+Bisa toggle antara tampilan rapi (teks diformat dengan heading, tabel, kode) dan tampilan mentah (raw markdown)
+Ada tombol COPY — sekali klik, teks langsung tersalin ke clipboard
+Ada footer token usage: menampilkan berapa token dipakai, biaya dalam dolar, dan nama provider AI (OpenAI / Anthropic / Gemini)
+Peran Designer mendapat warna dan badge sendiri di UI
+⚡ Upgrade 4 — Koneksi Real-Time Lebih Cepat (Week 2)
+Sebelumnya: Tampilan update menggunakan teknologi lama (SSE — Server-Sent Events), seperti browser terus-terusan "mendengarkan" server lewat koneksi satu arah.
+
+Sekarang:
+
+Diganti dengan WebSocket — koneksi dua arah yang lebih cepat, seperti telepon langsung antara browser dan server
+Kalau koneksi putus, sistem otomatis nyambung lagi dengan jeda yang makin lama (1 detik, 2 detik, 4 detik, dst.) — tidak spam reconnect
+Setiap event diberi tipe yang jelas (task selesai, agen naik level, dll.) sehingga kode lebih rapi dan tidak salah kirim data
+Kanvas Phaser (peta dungeon) langsung bereaksi secara real-time: setiap kali agen menyelesaikan tugas, di peta muncul efek ledakan partikel emas tepat di posisi agen tersebut — tanpa perlu refresh atau polling
+Singkatnya: AI-nya lebih pintar dan terstruktur, hasil kerjanya lebih informatif, dan semua animasi di peta dungeon sekarang langsung menyala secara real-time saat agen menyelesaikan misi. 🎯
