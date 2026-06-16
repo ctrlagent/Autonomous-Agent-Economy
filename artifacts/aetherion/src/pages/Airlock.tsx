@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, CheckCircle, XCircle, RefreshCw, AlertTriangle, ChevronDown, Filter, Eye, EyeOff } from "lucide-react";
+import { Shield, CheckCircle, XCircle, RefreshCw, AlertTriangle, ChevronDown, Filter, Eye, EyeOff, GitPullRequest, GitMerge, ExternalLink } from "lucide-react";
 
 const ROLE_COLORS: Record<string, string> = {
   research:  "#4df0d8",
@@ -43,6 +43,9 @@ interface AirlockEntry {
   stationId: number;
   createdAt: string;
   reviewedAt: string | null;
+  prUrl: string | null;
+  branchName: string | null;
+  taskReviewStatus: string;
 }
 
 interface AirlockStats {
@@ -231,6 +234,54 @@ function AirlockCard({
               <span style={{ ...mono, fontSize: 7, color: "#4dff9b" }}>+${entry.bonusRevenue}</span>
             )}
           </div>
+
+          {/* PR Badge for builder agents */}
+          {entry.prUrl && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
+              {entry.taskReviewStatus === "merged" ? (
+                <span style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  ...mono, fontSize: 7, color: "#c084fc", padding: "2px 7px",
+                  border: "1px solid #c084fc44", background: "#c084fc10",
+                  letterSpacing: "0.06em",
+                }}>
+                  <GitMerge size={8} />
+                  PR MERGED
+                </span>
+              ) : (
+                <span style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  ...mono, fontSize: 7, color: "#4d7fff", padding: "2px 7px",
+                  border: "1px solid #4d7fff44", background: "#4d7fff10",
+                  letterSpacing: "0.06em",
+                }}>
+                  <GitPullRequest size={8} />
+                  PR OPEN
+                </span>
+              )}
+              {entry.branchName && (
+                <span style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", letterSpacing: "0.04em" }}>
+                  {entry.branchName.slice(0, 28)}{entry.branchName.length > 28 ? "…" : ""}
+                </span>
+              )}
+              <a
+                href={entry.prUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex", alignItems: "center", gap: 3,
+                  ...mono, fontSize: 7, color: "#4d7fff", textDecoration: "none",
+                  padding: "1px 5px", border: "1px solid #4d7fff33",
+                  transition: "border-color 0.15s, color 0.15s",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#4d7fff88"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#4d7fff33"; }}
+              >
+                <ExternalLink size={7} />
+                VIEW
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Preview toggle */}

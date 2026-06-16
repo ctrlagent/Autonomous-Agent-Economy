@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Copy, Check, Cpu } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Copy, Check, Cpu, GitPullRequest, GitMerge, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ROLE_HEX: Record<string, string> = {
@@ -552,6 +552,7 @@ function AiReportView({ data }: { data: {
 export interface AgentOutputData {
   id: number;
   agentId: number;
+  taskId?: number;
   stationId: number;
   type: string;
   title: string;
@@ -562,10 +563,31 @@ export interface AgentOutputData {
   agentRole?: string;
 }
 
+interface PrInfo {
+  prUrl: string;
+  branchName: string | null;
+  reviewStatus: string;
+  hasPr: boolean;
+}
+
+function usePrInfo(taskId: number | undefined, isBuilderReport: boolean): PrInfo | null {
+  const [pr, setPr] = useState<PrInfo | null>(null);
+  useEffect(() => {
+    if (!taskId || !isBuilderReport) return;
+    fetch(`/api/tasks/${taskId}/pr`)
+      .then(r => r.ok ? r.json() as Promise<PrInfo> : null)
+      .then(data => { if (data?.hasPr) setPr(data); })
+      .catch(() => {});
+  }, [taskId, isBuilderReport]);
+  return pr;
+}
+
 export function AgentOutputCard({ output }: { output: AgentOutputData }) {
   const [expanded, setExpanded] = useState(false);
   const typeColor = TYPE_COLORS[output.type] ?? "#fff";
   const roleColor = ROLE_HEX[output.agentRole ?? ""] ?? "#fff";
+  const isBuilderReport = output.agentRole === "builder" && output.type === "ai_report";
+  const pr = usePrInfo(output.taskId, isBuilderReport);
 
   let parsed: unknown;
   try { parsed = JSON.parse(output.content); } catch { parsed = null; }
@@ -611,6 +633,26 @@ export function AgentOutputCard({ output }: { output: AgentOutputData }) {
           {output.title}
         </span>
 
+        {/* PR badge for builder outputs */}
+        {pr && (
+          pr.reviewStatus === "merged" ? (
+            <span style={{
+              display: "flex", alignItems: "center", gap: 3, flexShrink: 0,
+              ...mono, fontSize: 6, color: "#c084fc", padding: "1px 5px",
+              border: "1px solid #c084fc44", background: "#c084fc10",
+            }}>
+              <GitMerge size={7} /> MERGED
+            </span>
+          ) : (
+            <span style={{
+              display: "flex", alignItems: "center", gap: 3, flexShrink: 0,
+              ...mono, fontSize: 6, color: "#4d7fff", padding: "1px 5px",
+              border: "1px solid #4d7fff44", background: "#4d7fff10",
+            }}>
+              <GitPullRequest size={7} /> PR
+            </span>
+          )
+        )}
         {/* Agent name + time */}
         <span style={{ ...mono, fontSize: 7, color: roleColor, flexShrink: 0 }}>{output.agentName}</span>
         <span style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", flexShrink: 0 }}>{formatTime(output.createdAt)}</span>

@@ -4,6 +4,7 @@ import { emit } from "./lib/eventBus";
 import { logger } from "./lib/logger";
 import { generateOutput } from "./lib/outputGenerators";
 import { executeAiTask } from "./lib/aiTaskExecutor";
+import { createAgentPR } from "./lib/githubAgent";
 
 const TICK_INTERVAL_MS = 8000;
 const XP_PER_TASK = 30;
@@ -230,8 +231,9 @@ async function tick() {
           let outputId: number | null = null;
           let outputType: string | null = null;
           let outputContent: string | null = null;
+          let aiResult: Awaited<ReturnType<typeof executeAiTask>> = null;
           try {
-            const aiResult = await executeAiTask(
+            aiResult = await executeAiTask(
               agent.role,
               activeTask.title,
               activeTask.description,
@@ -268,6 +270,19 @@ async function tick() {
             }
           } catch (e) {
             logger.warn({ err: e }, "failed to generate agent output");
+          }
+
+          // For builder agents: create a GitHub PR (non-blocking)
+          if (agent.role === "builder" && aiResult && outputContent) {
+            try {
+              const parsed = JSON.parse(aiResult.content) as { markdown?: string };
+              const md = parsed.markdown ?? outputContent;
+              createAgentPR(activeTask.id, activeTask.title, agent.name, md).catch(e => {
+                logger.warn({ err: e }, "createAgentPR background failed");
+              });
+            } catch (e) {
+              logger.warn({ err: e }, "failed to trigger PR creation");
+            }
           }
 
           // Insert into Security Airlock for Commander review

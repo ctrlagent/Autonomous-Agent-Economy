@@ -17,6 +17,7 @@ export const tasksTable = pgTable("tasks", {
   bountyToken: text("bounty_token").notNull().default("USDC"),
   escrowTx: text("escrow_tx"),
   prUrl: text("pr_url"),
+  branchName: text("branch_name"),
   reviewStatus: text("review_status").notNull().default("none"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),

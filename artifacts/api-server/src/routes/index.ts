@@ -11,6 +11,7 @@ import eventsRouter from "./events";
 import roomsRouter from "./rooms";
 import escrowRouter from "./escrow";
 import airlockRouter from "./airlock";
+import githubRouter from "./github";
 
 const router: IRouter = Router();
 
@@ -19,6 +20,7 @@ router.use("/templates", templatesRouter);
 router.use("/stations", stationsRouter);
 router.use("/agents", agentsRouter);
 router.use("/tasks", tasksRouter);
+router.use("/tasks", githubRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/missions", missionsRouter);
 router.use("/ai", aiRouter);

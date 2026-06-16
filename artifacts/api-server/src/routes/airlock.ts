@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
-import { db, airlockTable, agentsTable, stationsTable, activityTable } from "@workspace/db";
+import { db, airlockTable, agentsTable, stationsTable, activityTable, tasksTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { emit } from "../lib/eventBus";
 import { logger } from "../lib/logger";
+import { mergeAgentPR } from "../lib/githubAgent";
 
 const router = Router();
 
@@ -64,13 +65,33 @@ router.get("/", async (req, res) => {
     if (!valid.includes(status as (typeof valid)[number])) {
       return res.status(400).json({ error: "Invalid status filter" });
     }
-    const rows = status === "all"
+
+    const baseRows = status === "all"
       ? await db.select().from(airlockTable).orderBy(sql`${airlockTable.createdAt} desc`).limit(100)
       : await db.select().from(airlockTable)
           .where(eq(airlockTable.status, status as "pending" | "approved" | "rejected" | "changes_requested"))
           .orderBy(sql`${airlockTable.createdAt} desc`)
           .limit(100);
-    return res.json(rows);
+
+    // Enrich with PR info from tasks table
+    const taskIds = [...new Set(baseRows.map(r => r.taskId))];
+    let taskPrMap: Record<number, { prUrl: string | null; branchName: string | null; reviewStatus: string }> = {};
+    if (taskIds.length > 0) {
+      const taskRows = await db
+        .select({ id: tasksTable.id, prUrl: tasksTable.prUrl, branchName: tasksTable.branchName, reviewStatus: tasksTable.reviewStatus })
+        .from(tasksTable)
+        .where(sql`${tasksTable.id} = ANY(ARRAY[${sql.join(taskIds.map(id => sql`${id}`), sql`, `)}])`);
+      taskPrMap = Object.fromEntries(taskRows.map(t => [t.id, { prUrl: t.prUrl, branchName: t.branchName, reviewStatus: t.reviewStatus }]));
+    }
+
+    const enriched = baseRows.map(row => ({
+      ...row,
+      prUrl: taskPrMap[row.taskId]?.prUrl ?? null,
+      branchName: taskPrMap[row.taskId]?.branchName ?? null,
+      taskReviewStatus: taskPrMap[row.taskId]?.reviewStatus ?? "none",
+    }));
+
+    return res.json(enriched);
   } catch (err) {
     logger.error({ err }, "airlock GET / error");
     return res.status(500).json({ error: (err as Error).message });
@@ -122,6 +143,15 @@ router.post("/:id/approve", async (req, res) => {
       reviewedAt:   new Date(),
     }).where(eq(airlockTable.id, id)).returning();
     await applyApprovalReward(updated);
+
+    // Auto-merge PR if builder agent has one
+    if (entry.agentRole === "builder") {
+      mergeAgentPR(entry.taskId).catch(e => {
+        logger.warn({ err: e, taskId: entry.taskId }, "PR merge on approval failed");
+      });
+      await db.update(tasksTable).set({ reviewStatus: "merged" }).where(eq(tasksTable.id, entry.taskId)).catch(() => {});
+    }
+
     return res.json(updated);
   } catch (err) {
     logger.error({ err }, "airlock approve error");
