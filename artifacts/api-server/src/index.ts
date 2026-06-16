@@ -6,6 +6,7 @@ import { startTaskEngine } from "./taskEngine";
 import { loadAiConfigFromDb } from "./lib/aiConfig";
 import { initWsServer } from "./lib/eventBus";
 import { initAllAgentWallets } from "./lib/agentWallet";
+import { seedMarketplace } from "./lib/seedMarketplace";
 
 const rawPort = process.env["PORT"];
 
@@ -27,6 +28,7 @@ initWsServer(server);
 runAutoSeedIfEmpty()
   .then(() => loadAiConfigFromDb())
   .then(() => initAllAgentWallets())
+  .then(() => seedMarketplace())
   .then(() => {
     server.listen(port, (err?: Error) => {
       if (err) {

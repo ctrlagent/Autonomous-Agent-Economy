@@ -12,6 +12,7 @@ import roomsRouter from "./rooms";
 import escrowRouter from "./escrow";
 import airlockRouter from "./airlock";
 import githubRouter from "./github";
+import marketplaceRouter from "./marketplace";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use("/events", eventsRouter);
 router.use("/rooms", roomsRouter);
 router.use("/escrow", escrowRouter);
 router.use("/airlock", airlockRouter);
+router.use("/marketplace", marketplaceRouter);
 
 export default router;
