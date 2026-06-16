@@ -19,6 +19,23 @@ const NAV_ITEMS = [
   { href: "/app/settings",    label: "SETTINGS", Icon: Settings },
 ];
 
+function useAirlockPending() {
+  const [pending, setPending] = useState(0);
+  useEffect(() => {
+    async function poll() {
+      try {
+        const res = await fetch("/api/airlock/stats");
+        const data = await res.json() as { pending: number; changes_requested: number };
+        setPending((data.pending ?? 0) + (data.changes_requested ?? 0));
+      } catch {}
+    }
+    poll();
+    const id = setInterval(poll, 15000);
+    return () => clearInterval(id);
+  }, []);
+  return pending;
+}
+
 // Sync stored API key to server on app mount (server loses in-memory config on restart)
 function useAiKeySync() {
   useEffect(() => {
@@ -287,6 +304,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const tick = useTick();
   const isMobile = useIsMobile();
+  const airlockPending = useAirlockPending();
   useRealtimeEvents();
   useAiKeySync();
 
@@ -399,6 +417,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div style={{ display: "flex", flex: 1, height: "100%", justifyContent: "flex-end" }}>
             {NAV_ITEMS.map(({ href, label }) => {
               const isActive = href === "/app" ? location === "/app" : location.startsWith(href);
+              const isAirlock = href === "/app/airlock";
+              const showAirlockBadge = isAirlock && airlockPending > 0 && !isActive;
               return (
                 <Link
                   key={href}
@@ -407,6 +427,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    gap: 5,
                     padding: "0 14px",
                     height: "100%",
                     fontFamily: "'Space Mono',monospace",
@@ -421,8 +442,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                     whiteSpace: "nowrap",
                     fontWeight: isActive ? 700 : 400,
                     boxShadow: isActive ? "0 0 16px rgba(91,143,255,0.5)" : "none",
+                    position: "relative",
                   }}
-                >{label}</Link>
+                >
+                  {label}
+                  {showAirlockBadge && (
+                    <span style={{
+                      fontFamily: "'Space Mono', monospace",
+                      fontSize: 7,
+                      fontWeight: 700,
+                      color: "#0a0b0f",
+                      background: "#ffb84d",
+                      boxShadow: "0 0 8px rgba(255,184,77,0.7)",
+                      padding: "1px 4px",
+                      minWidth: 14,
+                      textAlign: "center",
+                      lineHeight: 1.4,
+                      animation: "pulse-dot 2s ease-in-out infinite",
+                    }}>
+                      {airlockPending > 99 ? "99+" : airlockPending}
+                    </span>
+                  )}
+                </Link>
               );
             })}
 
@@ -553,7 +594,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const isActive = href === "/app" ? location === "/app" : location.startsWith(href);
             const isMissions = href === "/app/missions";
-            const showBadge = isMissions && activeMissionsCount > 0 && !isActive;
+            const isAirlock  = href === "/app/airlock";
+            const showMissionsBadge = isMissions && activeMissionsCount > 0 && !isActive;
+            const showAirlockBadge  = isAirlock && airlockPending > 0 && !isActive;
+            const showBadge = showMissionsBadge || showAirlockBadge;
+            const badgeCount = showAirlockBadge ? airlockPending : activeMissionsCount;
+            const badgeColor = showAirlockBadge ? "#ffb84d" : "#ff4d6d";
+            const badgeShadow = showAirlockBadge ? "0 0 8px rgba(255,184,77,0.8)" : "0 0 8px #ff4d6d88";
             return (
               <Link
                 key={href}
@@ -593,8 +640,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                       minWidth: 14,
                       height: 14,
                       borderRadius: 7,
-                      background: "#ff4d6d",
-                      boxShadow: "0 0 8px #ff4d6d88",
+                      background: badgeColor,
+                      boxShadow: badgeShadow,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -605,9 +652,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                         fontFamily: "'Space Mono', monospace",
                         fontSize: 7,
                         fontWeight: 700,
-                        color: "#fff",
+                        color: "#0a0b0f",
                         lineHeight: 1,
-                      }}>{activeMissionsCount}</span>
+                      }}>{badgeCount > 99 ? "99+" : badgeCount}</span>
                     </div>
                   )}
                 </div>
