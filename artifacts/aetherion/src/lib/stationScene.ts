@@ -1703,6 +1703,11 @@ export class StationScene {
     return newLevel;
   }
 
+  triggerLevelUpByName(name: string): void {
+    const ag = this.agents.find(a => a.name === name);
+    if (ag) this.triggerLevelUp(ag.id);
+  }
+
   getAgentLevel(id: string): number { return this.agentLevels[id] ?? 0; }
   getTotalRevenue(): number { return this.totalRevenue; }
   getDayPhase(): string { return this.dayPhase; }

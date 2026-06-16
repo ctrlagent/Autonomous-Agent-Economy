@@ -1,8 +1,10 @@
+import http from "http";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { runAutoSeedIfEmpty } from "./lib/autoSeed";
 import { startTaskEngine } from "./taskEngine";
 import { loadAiConfigFromDb } from "./lib/aiConfig";
+import { initWsServer } from "./lib/eventBus";
 
 const rawPort = process.env["PORT"];
 
@@ -18,10 +20,13 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+const server = http.createServer(app);
+initWsServer(server);
+
 runAutoSeedIfEmpty()
   .then(() => loadAiConfigFromDb())
   .then(() => {
-    app.listen(port, (err) => {
+    server.listen(port, (err?: Error) => {
       if (err) {
         logger.error({ err }, "Error listening on port");
         process.exit(1);

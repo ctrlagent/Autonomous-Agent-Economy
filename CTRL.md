@@ -260,4 +260,48 @@ pnpm --filter @workspace/db run push
 
 ---
 
+## v2.2 — WebSocket Event Bus (Week 2)
+
+**Released**: 16 June 2026
+
+### Architecture upgrade: SSE → WebSocket
+
+The real-time event channel was upgraded from Server-Sent Events (SSE, one-way HTTP streaming) to a full WebSocket server, enabling lower latency, bidirectional readiness, and typed event dispatch.
+
+### Backend — `artifacts/api-server/src/lib/eventBus.ts` (new)
+- Typed `AgentEvent` discriminated union: `connected | task_update | task_complete | agent_level_up | activity_new | mission_complete`
+- `initWsServer(server)` — attaches a `ws.WebSocketServer` (noServer mode) to the Express HTTP server, handling upgrades at path `/api/ws`
+- `emit(event)` — broadcasts to all open WS clients + all legacy SSE clients (dual-channel) for zero-downtime compatibility
+- `registerSseClient / unregisterSseClient` — manage the SSE client set (moved from events route)
+
+### Backend — `artifacts/api-server/src/index.ts`
+- Replaced `app.listen()` with `http.createServer(app)` + `server.listen()` so the raw HTTP server is available for WS upgrade handling
+- `initWsServer(server)` called before `server.listen()`
+
+### Backend — `artifacts/api-server/src/routes/events.ts`
+- Simplified: SSE client management now delegates to `eventBus.registerSseClient / unregisterSseClient`
+- SSE endpoint kept at `GET /api/events` for legacy fallback compatibility
+
+### Backend — `artifacts/api-server/src/taskEngine.ts`
+- Replaced all `broadcastEvent(string, data)` calls with fully-typed `emit({ type, data, ts })` calls
+- `task_complete` and `agent_level_up` now use proper discriminated type narrowing (if/else instead of ternary string)
+
+### Frontend — `artifacts/aetherion/src/lib/agentEventEmitter.ts` (new)
+- Module-level pub/sub (`subscribeAgentEvents / dispatchAgentEvent`) so any component can subscribe to real-time events without a second WS connection or React Context
+- `AgentEventPayload` interface shared between the emitter and `useRealtimeEvents`
+
+### Frontend — `artifacts/aetherion/src/hooks/useRealtimeEvents.ts`
+- Replaced `EventSource` with `WebSocket` connecting to `wss://<host>/api/ws`
+- Exponential-backoff reconnect: 1s → 2s → 4s → … → 30s max
+- On every message: invalidates React Query cache keys + calls `dispatchAgentEvent()` to fan out to all subscribers
+
+### Frontend — `artifacts/aetherion/src/lib/stationScene.ts`
+- Added `triggerLevelUpByName(name: string)` — finds a Phaser agent by uppercase name and triggers the full level-up burst effect (rings, particles, rays, flash)
+
+### Frontend — `artifacts/aetherion/src/pages/Dashboard.tsx`
+- Subscribes to `agentEventEmitter` via `useEffect`
+- On every `task_complete` or `agent_level_up` event → calls `sceneRef.current.triggerLevelUpByName(agentName.toUpperCase())` to fire the Phaser particle burst for the completing agent in real time
+
+---
+
 *CTRL v1.0 — Command your agents. Control your business.*

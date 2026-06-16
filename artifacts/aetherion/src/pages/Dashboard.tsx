@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { subscribeAgentEvents } from "@/lib/agentEventEmitter";
 import {
   useListStations, useListRooms, useListStationAgents,
   useGetDashboardSummary, useListAgentTasks,
@@ -116,6 +117,16 @@ export default function Dashboard() {
 
   const triggerRef = useRef<((id: string) => number) | null>(null);
   const sceneRef = useRef<StationScene | null>(null);
+
+  // React to real-time agent events — trigger Phaser level-up burst on task_complete / agent_level_up
+  useEffect(() => {
+    const unsub = subscribeAgentEvents((ev) => {
+      if ((ev.type === "task_complete" || ev.type === "agent_level_up") && ev.data?.agentName) {
+        sceneRef.current?.triggerLevelUpByName(ev.data.agentName.toUpperCase());
+      }
+    });
+    return unsub;
+  }, []);
 
   // Mobile detail panel toggle
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);

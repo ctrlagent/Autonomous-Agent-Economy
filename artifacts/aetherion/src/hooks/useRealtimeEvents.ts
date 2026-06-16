@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { dispatchAgentEvent, type AgentEventPayload } from "@/lib/agentEventEmitter";
 
 const INVALIDATION_MAP: Record<string, string[][]> = {
   task_update: [
@@ -29,24 +30,36 @@ const INVALIDATION_MAP: Record<string, string[][]> = {
     ["/api/dashboard/activity"],
     ["/api/rooms"],
   ],
+  mission_complete: [
+    ["/api/missions"],
+  ],
 };
 
 export function useRealtimeEvents() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const url = "/api/events";
-    let es: EventSource | null = null;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const url = `${protocol}//${window.location.host}/api/ws`;
+
+    let ws: WebSocket | null = null;
     let retryTimeout: ReturnType<typeof setTimeout> | null = null;
     let active = true;
+    let retryDelay = 1000;
 
     function connect() {
       if (!active) return;
-      es = new EventSource(url);
 
-      es.onmessage = (ev) => {
+      ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        retryDelay = 1000;
+      };
+
+      ws.onmessage = (ev) => {
         try {
-          const msg = JSON.parse(ev.data) as { type: string; data?: Record<string, unknown> };
+          const msg = JSON.parse(ev.data) as AgentEventPayload;
+          if (msg.type === "connected") return;
 
           if (msg.type === "agent_level_up" && msg.data) {
             toast({
@@ -62,16 +75,20 @@ export function useRealtimeEvents() {
               queryClient.invalidateQueries({ queryKey: key });
             }
           }
+
+          dispatchAgentEvent(msg);
         } catch {
           // ignore parse errors
         }
       };
 
-      es.onerror = () => {
-        es?.close();
-        es = null;
+      ws.onerror = () => { /* handled by onclose */ };
+
+      ws.onclose = () => {
+        ws = null;
         if (active) {
-          retryTimeout = setTimeout(connect, 5000);
+          retryTimeout = setTimeout(connect, retryDelay);
+          retryDelay = Math.min(retryDelay * 2, 30000);
         }
       };
     }
@@ -81,7 +98,9 @@ export function useRealtimeEvents() {
     return () => {
       active = false;
       if (retryTimeout) clearTimeout(retryTimeout);
-      es?.close();
+      ws?.close();
     };
-  }, [queryClient]);
+  // queryClient is stable — including it satisfies the linter without causing re-runs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }

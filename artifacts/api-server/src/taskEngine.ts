@@ -1,6 +1,6 @@
 import { db, agentsTable, tasksTable, activityTable, stationsTable, agentOutputsTable, missionsTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
-import { broadcastEvent } from "./routes/events";
+import { emit } from "./lib/eventBus";
 import { logger } from "./lib/logger";
 import { generateOutput } from "./lib/outputGenerators";
 import { executeAiTask } from "./lib/aiTaskExecutor";
@@ -167,7 +167,7 @@ async function tick() {
               priority:    "medium",
             });
           }
-          broadcastEvent("task_update", { agentId: agent.id });
+          emit({ type: "task_update", data: { agentId: agent.id }, ts: Date.now() });
           continue;
         }
 
@@ -289,7 +289,7 @@ async function tick() {
             });
           }
 
-          broadcastEvent(levelsGained > 0 ? "agent_level_up" : "task_complete", {
+          const eventData = {
             agentId:   agent.id,
             agentName: agent.name,
             agentRole: agent.role,
@@ -300,14 +300,19 @@ async function tick() {
             outputId,
             reward:    { xp: XP_PER_TASK, revenue: rev },
             durationMs,
-          });
+          };
+          if (levelsGained > 0) {
+            emit({ type: "agent_level_up", data: eventData, ts: Date.now() });
+          } else {
+            emit({ type: "task_complete", data: eventData, ts: Date.now() });
+          }
 
         } else {
           await db.update(tasksTable)
             .set({ progress: newProgress })
             .where(eq(tasksTable.id, activeTask.id));
 
-          broadcastEvent("task_update", { agentId: agent.id, progress: newProgress });
+          emit({ type: "task_update", data: { agentId: agent.id, progress: newProgress }, ts: Date.now() });
         }
 
       } else if (isIdle) {
@@ -337,7 +342,7 @@ async function tick() {
             details: `${agent.name} started "${pendingTask.title}" [Commander assigned]`,
           });
 
-          broadcastEvent("task_update", { agentId: agent.id });
+          emit({ type: "task_update", data: { agentId: agent.id }, ts: Date.now() });
 
         } else if (Math.random() < IDLE_START_CHANCE) {
           const title = taskTitle(agent.role);
@@ -366,7 +371,7 @@ async function tick() {
             details: `${agent.name} started "${title}"`,
           });
 
-          broadcastEvent("task_update", { agentId: agent.id });
+          emit({ type: "task_update", data: { agentId: agent.id }, ts: Date.now() });
         }
       }
     }
