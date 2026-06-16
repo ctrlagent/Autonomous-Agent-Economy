@@ -17,6 +17,7 @@ import Profile from "@/pages/Profile";
 import Docs from "@/pages/Docs";
 import Agents from "@/pages/Agents";
 import Stations from "@/pages/Stations";
+import Airlock from "@/pages/Airlock";
 import { EVMWalletProvider } from "@/lib/WalletProvider";
 import { WalletGate } from "@/components/WalletGate";
 import { WalletHeaderSync } from "@/components/WalletHeaderSync";
@@ -39,6 +40,7 @@ function AppRoutes() {
           <Route path="/app/agents" component={Agents} />
           <Route path="/app/stations" component={Stations} />
           <Route path="/app/stations/:id" component={Dashboard} />
+          <Route path="/app/airlock" component={Airlock} />
           <Route path="/app/rooms/:id" component={RoomDetail} />
           <Route component={NotFound} />
         </Switch>

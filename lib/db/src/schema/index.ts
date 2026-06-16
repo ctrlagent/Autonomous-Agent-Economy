@@ -9,3 +9,4 @@ export * from "./agentOutputs";
 export * from "./serverConfig";
 export * from "./agentWalletTx";
 export * from "./missionEscrow";
+export * from "./airlock";

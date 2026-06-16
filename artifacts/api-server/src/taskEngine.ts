@@ -1,4 +1,4 @@
-import { db, agentsTable, tasksTable, activityTable, stationsTable, agentOutputsTable, missionsTable } from "@workspace/db";
+import { db, agentsTable, tasksTable, activityTable, stationsTable, agentOutputsTable, missionsTable, airlockTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { emit } from "./lib/eventBus";
 import { logger } from "./lib/logger";
@@ -228,6 +228,8 @@ async function tick() {
 
           // Generate output — AI first, fallback to template
           let outputId: number | null = null;
+          let outputType: string | null = null;
+          let outputContent: string | null = null;
           try {
             const aiResult = await executeAiTask(
               agent.role,
@@ -247,6 +249,8 @@ async function tick() {
                 thumbnailUrl: null,
               }).returning({ id: agentOutputsTable.id });
               outputId = outputRow?.id ?? null;
+              outputType = aiResult.type;
+              outputContent = aiResult.content;
             } else {
               const output = generateOutput(agent.role, activeTask.title, activeTask.id, agent.id, agent.name);
               const [outputRow] = await db.insert(agentOutputsTable).values({
@@ -259,9 +263,31 @@ async function tick() {
                 thumbnailUrl: output.thumbnailUrl,
               }).returning({ id: agentOutputsTable.id });
               outputId = outputRow?.id ?? null;
+              outputType = output.type;
+              outputContent = output.content;
             }
           } catch (e) {
             logger.warn({ err: e }, "failed to generate agent output");
+          }
+
+          // Insert into Security Airlock for Commander review
+          try {
+            await db.insert(airlockTable).values({
+              taskId:      activeTask.id,
+              agentId:     agent.id,
+              agentName:   agent.name,
+              agentRole:   agent.role,
+              taskTitle:   activeTask.title,
+              outputId:    outputId ?? undefined,
+              outputType:  outputType ?? undefined,
+              outputData:  outputContent ? JSON.stringify({ content: outputContent.slice(0, 1200) }) : undefined,
+              status:      "pending",
+              bonusXp:     20,
+              bonusRevenue: Math.floor(rev * 0.25),
+              stationId:   agent.stationId,
+            });
+          } catch (e) {
+            logger.warn({ err: e }, "failed to insert airlock entry");
           }
 
           // Queue next task

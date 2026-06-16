@@ -10,6 +10,7 @@ import aiRouter from "./ai";
 import eventsRouter from "./events";
 import roomsRouter from "./rooms";
 import escrowRouter from "./escrow";
+import airlockRouter from "./airlock";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/ai", aiRouter);
 router.use("/events", eventsRouter);
 router.use("/rooms", roomsRouter);
 router.use("/escrow", escrowRouter);
+router.use("/airlock", airlockRouter);
 
 export default router;
