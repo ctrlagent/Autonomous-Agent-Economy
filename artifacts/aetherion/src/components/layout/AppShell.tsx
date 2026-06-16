@@ -1,12 +1,13 @@
 import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { PixelSprite } from "@/components/PixelSprite";
-import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy, Check, Radio, User, Shield } from "lucide-react";
+import { Settings, Zap, Users, Target, Store, Clock, Home, Wallet, LogOut, Copy, Check, Radio, User, Shield, ChevronUp } from "lucide-react";
 import { useGetDashboardSummary, useListStations } from "@workspace/api-client-react";
 import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
 import { base } from "viem/chains";
 import { formatUnits } from "viem";
+import { useTier } from "@/components/TierProvider";
 
 const NAV_ITEMS = [
   { href: "/app",             label: "STATION",  Icon: Zap },
@@ -92,6 +93,7 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
   const { address: rawAddress, connector } = useAccount();
   const { disconnect } = useDisconnect();
   const balance = useWalletBalance();
+  const { tier, tierName, tierColor, features, upgradeUrl } = useTier();
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -186,6 +188,27 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
         }}>
           {abbrev(address)}
         </span>
+
+        {/* Tier badge */}
+        {!compact && (
+          <>
+            <div style={{ width: 1, height: 14, background: "var(--ae-border)", flexShrink: 0 }} />
+            <span style={{
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: 6,
+              color: tierColor,
+              textShadow: `0 0 8px ${tierColor}99`,
+              letterSpacing: "0.06em",
+              whiteSpace: "nowrap",
+              border: `1px solid ${tierColor}44`,
+              padding: "2px 5px",
+              background: `${tierColor}12`,
+              flexShrink: 0,
+            }}>
+              {tierName.toUpperCase()}
+            </span>
+          </>
+        )}
       </button>
 
       {/* Dropdown menu */}
@@ -263,6 +286,68 @@ function WalletChip({ compact = false }: { compact?: boolean }) {
                 {copied ? <Check size={11} /> : <Copy size={11} />}
               </button>
             </div>
+          </div>
+
+          {/* Tier section */}
+          <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--ae-border)" }}>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>RANK / TIER</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: 9,
+                color: tierColor,
+                textShadow: `0 0 12px ${tierColor}bb`,
+                letterSpacing: "0.08em",
+              }}>
+                {tierName.toUpperCase()}
+              </span>
+              <div style={{
+                flex: 1,
+                height: 3,
+                background: "var(--ae-border)",
+                overflow: "hidden",
+              }}>
+                <div style={{
+                  height: "100%",
+                  width: `${[0, 33, 66, 100][tier]}%`,
+                  background: tierColor,
+                  boxShadow: `0 0 6px ${tierColor}88`,
+                  transition: "width 0.6s",
+                }} />
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {features.map(f => (
+                <div key={f} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 4, height: 4, background: `${tierColor}88`, flexShrink: 0 }} />
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.06em" }}>{f}</span>
+                </div>
+              ))}
+            </div>
+            {tier < 3 && (
+              <a
+                href={upgradeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  marginTop: 10,
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: 7,
+                  color: tierColor,
+                  letterSpacing: "0.08em",
+                  textDecoration: "none",
+                  opacity: 0.8,
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = "1"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = "0.8"; }}
+              >
+                <ChevronUp size={9} />
+                GET MORE $CTRL TO UPGRADE
+              </a>
+            )}
           </div>
 
           {/* Disconnect */}

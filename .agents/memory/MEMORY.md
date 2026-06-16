@@ -3,3 +3,4 @@
 - [Week 3 Agent Wallet](week3-agent-wallet.md) — Deterministic wallet generation via Node crypto, no CDP keys needed; initAllAgentWallets() runs on startup after seed
 - [Week 4 Escrow Service](week4-escrow.md) — Simulated escrow (DB-backed) by default; switches to on-chain when ESCROW_CONTRACT_ADDRESS + BASE_SEPOLIA_RPC env vars set
 - [Week 5 Airlock](week5-airlock.md) — Security Gate: airlock table, routes (/api/airlock), taskEngine inserts pending entry per task completion, Airlock.tsx page at /app/airlock
+- [Week 6 Token Gate](week6-token-gate.md) — TierProvider (context), WalletGate reads $CTRL balance via useBalance, tier 0→TokenGate tier≥1→children; badge in WalletChip dropdown
