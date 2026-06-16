@@ -74,13 +74,14 @@ async function fetchStats(): Promise<AirlockStats> {
   return resp.json() as Promise<AirlockStats>;
 }
 
-async function reviewEntry(id: number, action: "approve" | "reject" | "changes", notes?: string) {
+async function reviewEntry(id: number, action: "approve" | "reject" | "changes", notes?: string): Promise<AirlockEntry | null> {
   const endpoint = `/api/airlock/${id}/${action === "approve" ? "approve" : action === "reject" ? "reject" : "changes"}`;
   const resp = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ notes }),
   });
+  if (resp.status === 400) return null;
   if (!resp.ok) throw new Error("Review action failed");
   return resp.json() as Promise<AirlockEntry>;
 }
@@ -152,6 +153,8 @@ function AirlockCard({
     setActionPending(action);
     try {
       await onReview(entry.id, action, notes || undefined);
+    } catch {
+      // silently ignore — entry may have already been reviewed
     } finally {
       setActionPending(null);
       setNotesOpen(false);
@@ -356,6 +359,9 @@ export default function Airlock() {
   const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
+  const [approvingRole, setApprovingRole] = useState<string | null>(null);
+  const [approvingAll, setApprovingAll] = useState(false);
+  const [mobileQuickOpen, setMobileQuickOpen] = useState(false);
   const isMobile = useIsMobile();
   const mono = { fontFamily: "'Space Mono', monospace" };
 
@@ -385,8 +391,44 @@ export default function Airlock() {
     await load(false);
   }, [load]);
 
+  const handleApproveByRole = useCallback(async (role: string) => {
+    setApprovingRole(role);
+    try {
+      const pending = entries.filter(e => e.agentRole === role && (e.status === "pending" || e.status === "changes_requested"));
+      for (const e of pending) {
+        await reviewEntry(e.id, "approve");
+      }
+      await load(false);
+    } finally {
+      setApprovingRole(null);
+    }
+  }, [entries, load]);
+
+  const handleApproveAll = useCallback(async () => {
+    setApprovingAll(true);
+    try {
+      const pending = entries.filter(e => e.status === "pending" || e.status === "changes_requested");
+      for (const e of pending) {
+        await reviewEntry(e.id, "approve");
+      }
+      await load(false);
+    } finally {
+      setApprovingAll(false);
+    }
+  }, [entries, load]);
+
   const filtered = entries.filter(e => roleFilter === "all" || e.agentRole === roleFilter);
   const roles = Array.from(new Set(entries.map(e => e.agentRole)));
+
+  const pendingEntries = entries.filter(e => e.status === "pending" || e.status === "changes_requested");
+  const roleGroups: { role: string; count: number; color: string }[] = Object.entries(
+    pendingEntries.reduce<Record<string, number>>((acc, e) => {
+      acc[e.agentRole] = (acc[e.agentRole] ?? 0) + 1;
+      return acc;
+    }, {})
+  )
+    .map(([role, count]) => ({ role, count, color: ROLE_COLORS[role] ?? "#4df0d8" }))
+    .sort((a, b) => b.count - a.count);
 
   const FILTER_TABS = [
     { key: "pending",           label: "PENDING",  color: "#ffb84d" },
@@ -473,6 +515,49 @@ export default function Airlock() {
             style={{ flex: 1, border: "1px solid var(--ae-border)", background: "none", cursor: "default" }}
           />
         </div>
+
+        {/* Mobile quick-approve by role strip */}
+        {isMobile && roleGroups.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <button
+              onClick={() => setMobileQuickOpen(v => !v)}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "7px 10px", background: "rgba(77,255,155,0.06)", border: "1px solid rgba(77,255,155,0.3)",
+                cursor: "pointer", ...mono, fontSize: 7, color: "#4dff9b", letterSpacing: "0.08em",
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <CheckCircle size={10} />
+                QUICK APPROVE BY ROLE
+              </span>
+              <span style={{ fontSize: 9, transition: "transform 0.2s", display: "inline-block", transform: mobileQuickOpen ? "rotate(180deg)" : "none" }}>▾</span>
+            </button>
+            {mobileQuickOpen && (
+              <div style={{ border: "1px solid rgba(77,255,155,0.2)", borderTop: "none", padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6, background: "rgba(0,0,0,0.3)" }}>
+                {roleGroups.map(({ role, count, color }) => (
+                  <div key={role} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}`, flexShrink: 0 }} />
+                    <span style={{ ...mono, fontSize: 8, color, flex: 1, letterSpacing: "0.06em" }}>{role.toUpperCase()}</span>
+                    <span style={{ ...mono, fontSize: 8, color: "var(--ae-muted)", minWidth: 20, textAlign: "right" }}>{count}</span>
+                    <button
+                      disabled={approvingRole === role}
+                      onClick={() => handleApproveByRole(role)}
+                      style={{
+                        ...mono, fontSize: 7, padding: "3px 8px", cursor: approvingRole === role ? "not-allowed" : "pointer",
+                        background: `${color}12`, border: `1px solid ${color}66`, color,
+                        letterSpacing: "0.06em", opacity: approvingRole && approvingRole !== role ? 0.5 : 1,
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {approvingRole === role ? "…" : "APPROVE"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Role filter */}
         {roles.length > 1 && (
@@ -584,30 +669,67 @@ export default function Airlock() {
                 </div>
               </div>
             )}
+
+            {/* By-role breakdown */}
+            {roleGroups.length > 0 && (
+              <div style={{ marginTop: 4 }}>
+                <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 8, paddingTop: 4, borderTop: "1px solid var(--ae-border)" }}>
+                  BY ROLE
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {roleGroups.map(({ role, count, color }) => (
+                    <div key={role} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, boxShadow: `0 0 5px ${color}`, flexShrink: 0 }} />
+                      <span style={{ ...mono, fontSize: 7, color, flex: 1, letterSpacing: "0.05em", textTransform: "uppercase" }}>{role}</span>
+                      <span style={{ ...mono, fontSize: 8, fontWeight: 700, color, minWidth: 18, textAlign: "right" }}>{count}</span>
+                      <button
+                        title={`Approve all ${role} outputs`}
+                        disabled={approvingRole !== null || approvingAll}
+                        onClick={() => handleApproveByRole(role)}
+                        style={{
+                          fontFamily: "'Press Start 2P', monospace", fontSize: 5,
+                          padding: "3px 5px", cursor: (approvingRole !== null || approvingAll) ? "not-allowed" : "pointer",
+                          background: approvingRole === role ? `${color}22` : `${color}0e`,
+                          border: `1px solid ${color}55`, color,
+                          opacity: (approvingRole !== null && approvingRole !== role) || approvingAll ? 0.4 : 1,
+                          transition: "all 0.15s", letterSpacing: "0.04em", lineHeight: 1.4,
+                          minWidth: 42, textAlign: "center",
+                        }}
+                        onMouseEnter={e => { if (!approvingRole && !approvingAll) { (e.currentTarget as HTMLButtonElement).style.background = `${color}22`; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 8px ${color}44`; } }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = `${color}0e`; (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}
+                      >
+                        {approvingRole === role ? "…" : `OK ×${count}`}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick-approve all button */}
-          {stats.pending > 0 && (
+          {(stats.pending > 0 || stats.changes_requested > 0) && (
             <div style={{ padding: "12px 16px", borderTop: "1px solid var(--ae-border)", flexShrink: 0 }}>
               <button
-                onClick={async () => {
-                  const pending = entries.filter(e => e.status === "pending");
-                  for (const e of pending) {
-                    await reviewEntry(e.id, "approve");
-                  }
-                  await load(false);
-                }}
+                disabled={approvingAll || approvingRole !== null}
+                onClick={handleApproveAll}
                 style={{
                   width: "100%", fontFamily: "'Press Start 2P',monospace", fontSize: 6,
-                  padding: "8px 12px", cursor: "pointer", letterSpacing: "0.06em",
-                  background: "rgba(77,255,155,0.08)", border: "1px solid #4dff9b",
-                  color: "#4dff9b", transition: "all 0.15s", lineHeight: 1.6,
+                  padding: "8px 12px", cursor: (approvingAll || approvingRole !== null) ? "not-allowed" : "pointer",
+                  letterSpacing: "0.06em",
+                  background: approvingAll ? "rgba(77,255,155,0.16)" : "rgba(77,255,155,0.08)",
+                  border: "1px solid #4dff9b", color: "#4dff9b",
+                  opacity: approvingRole !== null ? 0.5 : 1,
+                  transition: "all 0.15s", lineHeight: 1.6,
+                  boxShadow: approvingAll ? "0 0 16px rgba(77,255,155,0.3)" : "none",
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(77,255,155,0.16)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 12px rgba(77,255,155,0.25)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(77,255,155,0.08)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}
+                onMouseEnter={e => { if (!approvingAll && !approvingRole) { (e.currentTarget as HTMLButtonElement).style.background = "rgba(77,255,155,0.16)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 12px rgba(77,255,155,0.25)"; } }}
+                onMouseLeave={e => { if (!approvingAll) { (e.currentTarget as HTMLButtonElement).style.background = "rgba(77,255,155,0.08)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; } }}
               >
-                APPROVE ALL<br />
-                <span style={{ fontSize: 5, color: "rgba(77,255,155,0.65)" }}>({stats.pending} PENDING)</span>
+                {approvingAll ? "APPROVING…" : "APPROVE ALL"}<br />
+                <span style={{ fontSize: 5, color: "rgba(77,255,155,0.65)" }}>
+                  ({(stats.pending + stats.changes_requested)} PENDING)
+                </span>
               </button>
             </div>
           )}
