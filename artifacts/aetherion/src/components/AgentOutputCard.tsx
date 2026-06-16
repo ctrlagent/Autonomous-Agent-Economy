@@ -9,6 +9,7 @@ const ROLE_HEX: Record<string, string> = {
   content:  "#ffb84d",
   growth:   "#4dff9b",
   analytics:"#ff4d6d",
+  design:   "#f472b6",
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -18,6 +19,7 @@ const TYPE_LABELS: Record<string, string> = {
   deployment: "DEPLOY_LOG",
   growth:     "EXPERIMENT",
   analytics:  "ANALYTICS_RPT",
+  design:     "DESIGN_SPEC",
   ai_report:  "AI_OUTPUT",
 };
 
@@ -28,6 +30,7 @@ const TYPE_COLORS: Record<string, string> = {
   deployment: "#4d7fff",
   growth:     "#4dff9b",
   analytics:  "#ff4d6d",
+  design:     "#f472b6",
   ai_report:  "#c084fc",
 };
 
@@ -358,8 +361,15 @@ function AnalyticsOutputView({ data }: { data: {
 
 // ─── AI Report renderer (real AI output) ──────────────────────────────────────
 
-function AiReportView({ data }: { data: { markdown: string; provider: string; model: string } }) {
-  const [copied, setCopied] = useState(false);
+function AiReportView({ data }: { data: {
+  markdown: string;
+  provider: string;
+  model: string;
+  tokensUsed?: number;
+  costUsd?: number;
+} }) {
+  const [copied, setCopied]   = useState(false);
+  const [viewRaw, setViewRaw] = useState(false);
 
   function handleCopy() {
     navigator.clipboard.writeText(data.markdown).then(() => {
@@ -484,25 +494,55 @@ function AiReportView({ data }: { data: { markdown: string; provider: string; mo
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {/* AI badge + copy */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      {/* AI badge + controls row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Cpu size={10} style={{ color: "#c084fc" }} />
-          <span style={{ ...mono, fontSize: 6, color: "#c084fc", letterSpacing: "0.1em" }}>REAL AI OUTPUT · {data.model?.toUpperCase()}</span>
+          <span style={{ ...mono, fontSize: 6, color: "#c084fc", letterSpacing: "0.1em" }}>
+            REAL AI OUTPUT · {data.model?.toUpperCase()}
+          </span>
         </div>
-        <button
-          onClick={handleCopy}
-          style={{ background: "none", border: "1px solid var(--ae-border)", cursor: "pointer", padding: "2px 8px", color: copied ? "#4dff9b" : "var(--ae-muted)", display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
-        >
-          {copied ? <Check size={9} /> : <Copy size={9} />}
-          <span style={{ ...mono, fontSize: 6 }}>{copied ? "COPIED" : "COPY"}</span>
-        </button>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button
+            onClick={() => setViewRaw(v => !v)}
+            style={{ background: "none", border: "1px solid var(--ae-border)", cursor: "pointer", padding: "2px 8px", color: viewRaw ? "#c084fc" : "var(--ae-muted)", display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
+          >
+            <span style={{ ...mono, fontSize: 6 }}>{viewRaw ? "FORMATTED" : "RAW"}</span>
+          </button>
+          <button
+            onClick={handleCopy}
+            style={{ background: "none", border: "1px solid var(--ae-border)", cursor: "pointer", padding: "2px 8px", color: copied ? "#4dff9b" : "var(--ae-muted)", display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
+          >
+            {copied ? <Check size={9} /> : <Copy size={9} />}
+            <span style={{ ...mono, fontSize: 6 }}>{copied ? "COPIED" : "COPY"}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Rendered markdown */}
+      {/* Rendered markdown or raw view */}
       <div style={{ background: "rgba(192,132,252,0.04)", border: "1px solid rgba(192,132,252,0.15)", padding: "12px 14px" }}>
-        {renderMarkdown(data.markdown)}
+        {viewRaw
+          ? <pre style={{ ...mono, fontSize: 7, color: "var(--ae-dim)", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{data.markdown}</pre>
+          : renderMarkdown(data.markdown)
+        }
       </div>
+
+      {/* Token usage footer */}
+      {(data.tokensUsed != null && data.tokensUsed > 0) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 4, borderTop: "1px solid var(--ae-border)" }}>
+          <span style={{ ...mono, fontSize: 6, color: "var(--ae-muted)" }}>
+            🔋 {data.tokensUsed.toLocaleString()} tokens
+          </span>
+          {data.costUsd != null && data.costUsd > 0 && (
+            <span style={{ ...mono, fontSize: 6, color: "var(--ae-dim)" }}>
+              · ${data.costUsd < 0.001 ? data.costUsd.toFixed(6) : data.costUsd.toFixed(4)}
+            </span>
+          )}
+          <span style={{ ...mono, fontSize: 6, color: "var(--ae-dim)" }}>
+            · {data.provider?.toUpperCase()}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { pgTable, serial, text, integer, timestamp, pgEnum } from "drizzle-orm/p
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const agentRoleEnum = pgEnum("agent_role", ["research", "strategy", "builder", "content", "growth", "analytics"]);
+export const agentRoleEnum = pgEnum("agent_role", ["research", "strategy", "builder", "content", "growth", "analytics", "design"]);
 export const agentStatusEnum = pgEnum("agent_status", ["idle", "working", "paused", "offline"]);
 
 export const agentsTable = pgTable("agents", {

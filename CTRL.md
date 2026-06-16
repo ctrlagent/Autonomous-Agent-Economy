@@ -220,4 +220,44 @@ pnpm --filter @workspace/db run push
 
 ---
 
+## v2.1 — Real AI Task Engine (Week 1)
+
+**Released**: 16 June 2026
+
+### Task 1.1 — AI Task Executor Upgrade (`artifacts/api-server/src/lib/aiTaskExecutor.ts`)
+- Added 7th role: `design` — output is a design system spec (color tokens, component structure, typography, spacing scale)
+- Upgraded all 7 role system prompts to be action-oriented with structured sections, specific numbers, and ready-to-use output:
+  - **research** → Executive Summary + 3 Key Findings + Data Points + Recommendations
+  - **strategy** → Objective + 3 Tactical Steps + KPI table + Risk Mitigation + Next Actions
+  - **builder** → Technical Approach + TypeScript code snippet + Commit Message + Testing + Deployment Notes
+  - **content** → Content Brief + Twitter/X Thread (5 tweets) + LinkedIn Version + Key Messages
+  - **growth** → Hypothesis + A/B Experiment Design table + Expected Uplift + Implementation Steps + Metrics + Rollout Plan
+  - **analytics** → Summary + KPI Dashboard table + Trend Analysis + Anomalies + Action Items
+  - **design** → Design System Overview + Color Tokens (CSS vars) + Component Structure table + Typography + Spacing Scale
+- Extended `AiTaskResult` interface: added `provider`, `model`, `tokensUsed`, `costUsd`
+- Provider functions now return `inputTokens` + `outputTokens` from API responses (OpenAI `usage`, Anthropic `usage`, Gemini `usageMetadata`)
+- Added cost calculation from pricing table (OpenAI $0.15/$0.60 per M, Anthropic $0.25/$1.25, Gemini $0.075/$0.30)
+- Added `withRetry()` helper: 1x retry with exponential backoff (1s, 2s) on network errors; falls back to template on final failure
+
+### Task 1.2 — Task Engine Tick Upgrade (`artifacts/api-server/src/taskEngine.ts`)
+- Added per-tick structured logging every 8s: `{ tick, workingAgents, idleAgents, pendingTasks }`
+- Added in-memory average task duration tracker (`agentDurationMap`, exported `getAvgTaskDuration(agentId)`)
+- Improved `task_complete` / `agent_level_up` event payload: now includes `agentRole`, `taskId`, `outputId`, `reward: { xp, revenue }`, `durationMs`
+- Output inserts now use `.returning({ id })` to capture `outputId` for the event payload
+- Added mission progress update on every task completion: increments `missions.current` for all active missions; auto-completes missions reaching target and unlocks next in sort order
+- Added `design` role to `TASK_TEMPLATES` and `COMPLETE_VERBS`
+
+### Task 1.3 — AgentOutputCard UI Upgrade (`artifacts/aetherion/src/components/AgentOutputCard.tsx`)
+- AI-generated outputs (`type: "ai_report"`) continue to render via the custom pixel-art markdown renderer (headings, lists, tables, code blocks, bold inline)
+- Added **View Raw / Formatted toggle** — switches between the rendered markdown view and a raw `<pre>` block
+- Added **Copy button** — copies markdown text; shows "COPIED" feedback for 1.8s
+- Added **Token usage footer** — displays `🔋 N,NNN tokens · $0.0000 · PROVIDER` when `tokensUsed > 0`
+- Added `design` role to `ROLE_HEX` (`#f472b6`), `TYPE_LABELS` (`DESIGN_SPEC`), and `TYPE_COLORS`
+
+### Schema
+- Added `design` to `agentRoleEnum` in `lib/db/src/schema/agents.ts`
+- Pushed schema change to PostgreSQL via `drizzle-kit push`
+
+---
+
 *CTRL v1.0 — Command your agents. Control your business.*
