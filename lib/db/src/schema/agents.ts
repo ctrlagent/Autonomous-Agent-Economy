@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, pgEnum, bigint } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -17,6 +17,9 @@ export const agentsTable = pgTable("agents", {
   tasksCompleted: integer("tasks_completed").notNull().default(0),
   currentTask: text("current_task"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  walletAddress: text("wallet_address"),
+  totalEarned: integer("total_earned").notNull().default(0),
+  totalTokensUsed: bigint("total_tokens_used", { mode: "number" }).notNull().default(0),
 });
 
 export const updateAgentSchema = createInsertSchema(agentsTable).omit({ id: true, createdAt: true }).partial();

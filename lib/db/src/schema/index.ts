@@ -7,3 +7,4 @@ export * from "./activity";
 export * from "./missions";
 export * from "./agentOutputs";
 export * from "./serverConfig";
+export * from "./agentWalletTx";

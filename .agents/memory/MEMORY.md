@@ -1,2 +1,3 @@
 - [Phase 0 fixes](phase0-fixes.md) — Revenue sync, pending task execution, activeAgents recalc, persistent AI config in DB
 - [Week 2 WS event bus](week2-ws-eventbus.md) — WS server requires http.createServer(app); useRealtimeEvents hook count must stay at 2 (useQueryClient + 1 useEffect)
+- [Week 3 Agent Wallet](week3-agent-wallet.md) — Deterministic wallet generation via Node crypto, no CDP keys needed; initAllAgentWallets() runs on startup after seed

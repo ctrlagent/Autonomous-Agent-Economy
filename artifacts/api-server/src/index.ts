@@ -5,6 +5,7 @@ import { runAutoSeedIfEmpty } from "./lib/autoSeed";
 import { startTaskEngine } from "./taskEngine";
 import { loadAiConfigFromDb } from "./lib/aiConfig";
 import { initWsServer } from "./lib/eventBus";
+import { initAllAgentWallets } from "./lib/agentWallet";
 
 const rawPort = process.env["PORT"];
 
@@ -25,6 +26,7 @@ initWsServer(server);
 
 runAutoSeedIfEmpty()
   .then(() => loadAiConfigFromDb())
+  .then(() => initAllAgentWallets())
   .then(() => {
     server.listen(port, (err?: Error) => {
       if (err) {

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, agentsTable, tasksTable, agentOutputsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
+import { getWalletInfo, getWalletBalance, getWalletTransactions, ensureAgentWallet } from "../lib/agentWallet";
 
 const router = Router();
 
@@ -85,6 +86,37 @@ router.get("/:id/outputs", async (req, res) => {
     .orderBy(desc(agentOutputsTable.createdAt))
     .limit(limit);
   return res.json(outputs);
+});
+
+router.get("/:id/wallet", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const info = await getWalletInfo(id);
+  if (!info) return res.status(404).json({ error: "Agent not found" });
+  return res.json(info);
+});
+
+router.get("/:id/wallet/balance", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const [agent] = await db.select({ walletAddress: agentsTable.walletAddress, name: agentsTable.name })
+    .from(agentsTable).where(eq(agentsTable.id, id));
+  if (!agent) return res.status(404).json({ error: "Agent not found" });
+  if (!agent.walletAddress) {
+    const address = await ensureAgentWallet(id, agent.name);
+    const balance = await getWalletBalance(address);
+    return res.json(balance);
+  }
+  const balance = await getWalletBalance(agent.walletAddress);
+  return res.json(balance);
+});
+
+router.get("/:id/wallet/transactions", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const limit = Math.min(parseInt(String(req.query.limit ?? "20")), 50);
+  const txs = await getWalletTransactions(id, limit);
+  return res.json(txs);
 });
 
 export default router;

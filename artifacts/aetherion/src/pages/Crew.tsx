@@ -31,7 +31,7 @@ const ROLE_LABEL: Record<string, string> = {
   content: "◉ CONTENT", growth: "⬟ GROWTH", analytics: "⬠ ANALYTICS",
 };
 
-type Agent = { id: number; name: string; role: string; level: number; experience: number; tasksCompleted: number; currentTask?: string | null; status?: string };
+type Agent = { id: number; name: string; role: string; level: number; experience: number; tasksCompleted: number; currentTask?: string | null; status?: string; walletAddress?: string | null; totalEarned?: number; totalTokensUsed?: number };
 type Task = { id: number; title: string; status: string };
 
 function AgentDetailContent({
@@ -48,6 +48,14 @@ function AgentDetailContent({
   isMobile: boolean;
 }) {
   const roleColor = getRoleHex(agent.role);
+  const [copied, setCopied] = useState(false);
+
+  function handleCopyAddress() {
+    if (!agent.walletAddress) return;
+    navigator.clipboard.writeText(agent.walletAddress).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   return (
     <motion.div
@@ -160,6 +168,39 @@ function AgentDetailContent({
           </div>
         ))}
       </div>
+
+      {/* Wallet section */}
+      {agent.walletAddress && (
+        <div style={{ border: `1px solid ${roleColor}33`, padding: "8px 10px", background: `${roleColor}06`, position: "relative" }}>
+          <div style={{ position: "absolute", top: 0, left: 0, width: 5, height: 5, borderTop: `2px solid ${roleColor}`, borderLeft: `2px solid ${roleColor}` }} />
+          <div style={{ ...mono, fontSize: 7, color: "var(--ae-muted)", letterSpacing: "0.1em", marginBottom: 6 }}>◎ WALLET · BASE SEPOLIA</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+            <span style={{ ...mono, fontSize: 8, color: roleColor, letterSpacing: "0.04em" }}>
+              {agent.walletAddress.slice(0, 6)}...{agent.walletAddress.slice(-4)}
+            </span>
+            <button
+              onClick={handleCopyAddress}
+              style={{ ...mono, fontSize: 6, color: copied ? "var(--ae-green)" : "var(--ae-muted)", background: "none", border: "1px solid var(--ae-border)", cursor: "pointer", padding: "2px 6px", transition: "color 0.2s" }}
+            >
+              {copied ? "✓ COPIED" : "COPY"}
+            </button>
+            <a
+              href={`https://sepolia.basescan.org/address/${agent.walletAddress}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ ...mono, fontSize: 6, color: "var(--ae-cyan)", textDecoration: "none", marginLeft: "auto" }}
+            >
+              ↗ BASESCAN
+            </a>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ ...mono, fontSize: 6, color: "var(--ae-dim)" }}>TOTAL EARNED</span>
+            <span style={{ ...mono, fontSize: 8, color: "var(--ae-green)", fontWeight: 700 }}>
+              ${((agent.totalEarned ?? 0) / 100).toFixed(2)} USDC
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Action buttons */}
       <div style={{ display: "flex", gap: 5 }}>
@@ -407,6 +448,14 @@ export default function Crew() {
                   }}>
                     {ROLE_LABEL[agent.role.toLowerCase()] ?? agent.role.toUpperCase()}
                   </div>
+
+                  {/* Wallet badge */}
+                  {agent.walletAddress && (
+                    <div style={{ ...mono, fontSize: 6, color: "var(--ae-muted)", marginBottom: 5, display: "flex", alignItems: "center", gap: 4, opacity: 0.75 }}>
+                      <span style={{ color: roleColor, fontSize: 8 }}>◎</span>
+                      {agent.walletAddress.slice(0, 6)}...{agent.walletAddress.slice(-4)}
+                    </div>
+                  )}
 
                   {/* Current task indicator */}
                   {(assigned?.task ?? agent.currentTask) && (
