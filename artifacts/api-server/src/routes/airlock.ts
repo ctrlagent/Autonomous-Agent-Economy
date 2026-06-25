@@ -182,6 +182,18 @@ router.post("/:id/reject", async (req, res) => {
       details:     `${entry.agentName} output rejected — "${entry.taskTitle}"${notes ? `: ${notes}` : ""}`,
     });
 
+    emit({
+      type: "airlock_rejected",
+      data: {
+        agentId:   entry.agentId,
+        agentName: entry.agentName,
+        agentRole: entry.agentRole,
+        taskTitle: entry.taskTitle,
+        stationId: entry.stationId,
+      },
+      ts: Date.now(),
+    });
+
     return res.json(updated);
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message });

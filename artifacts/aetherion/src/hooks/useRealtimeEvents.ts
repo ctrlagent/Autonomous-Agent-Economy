@@ -16,6 +16,7 @@ const INVALIDATION_MAP: Record<string, string[][]> = {
     ["/api/dashboard/summary"],
     ["/api/dashboard/activity"],
     ["/api/dashboard/agent-performance"],
+    ["/api/dashboard/revenue"],
     ["/api/missions"],
     ["/api/stations"],
     ["/api/rooms"],
@@ -32,6 +33,16 @@ const INVALIDATION_MAP: Record<string, string[][]> = {
   ],
   mission_complete: [
     ["/api/missions"],
+  ],
+  airlock_approved: [
+    ["/api/agents"],
+    ["/api/dashboard/revenue"],
+    ["/api/airlock"],
+    ["/api/dashboard/activity"],
+  ],
+  airlock_rejected: [
+    ["/api/airlock"],
+    ["/api/dashboard/activity"],
   ],
 };
 

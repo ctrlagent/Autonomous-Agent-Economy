@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, stationsTable, agentsTable, tasksTable, templatesTable, activityTable } from "@workspace/db";
+import { db, stationsTable, agentsTable, tasksTable, templatesTable, activityTable, agentWalletTxTable } from "@workspace/db";
 import { eq, count, sql } from "drizzle-orm";
 
 const router = Router();
@@ -44,6 +44,32 @@ router.get("/activity", async (req, res) => {
     .orderBy(sql`${activityTable.timestamp} DESC`)
     .limit(limit);
   return res.json(activities);
+});
+
+router.get("/revenue", async (_req, res) => {
+  try {
+    const [result] = await db
+      .select({
+        totalUsdc: sql<number>`COALESCE(SUM(${agentWalletTxTable.amount}), 0)::int`,
+        txCount:   sql<number>`COUNT(*)::int`,
+      })
+      .from(agentWalletTxTable)
+      .where(sql`${agentWalletTxTable.type} = 'earned'`);
+
+    const oneHourAgo = new Date(Date.now() - 3600_000);
+    const [hourResult] = await db
+      .select({ hourUsdc: sql<number>`COALESCE(SUM(${agentWalletTxTable.amount}), 0)::int` })
+      .from(agentWalletTxTable)
+      .where(sql`${agentWalletTxTable.type} = 'earned' AND ${agentWalletTxTable.timestamp} >= ${oneHourAgo}`);
+
+    return res.json({
+      totalUsdc:   result?.totalUsdc ?? 0,
+      txCount:     result?.txCount ?? 0,
+      hourlyUsdc:  hourResult?.hourUsdc ?? 0,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
+  }
 });
 
 router.get("/agent-performance", async (req, res) => {

@@ -83,6 +83,22 @@ interface RoomMissionEffect {
   goldFlash: number;
 }
 
+interface BountyEffect {
+  x: number; y: number;
+  rings: Array<{ r: number; alpha: number }>;
+  particles: BurstParticle[];
+  timer: number;
+}
+
+interface AirlockRejectEffect {
+  x: number; y: number;
+  flashAlpha: number;
+  shakeOffsetX: number;
+  shakeDir: number;
+  rings: Array<{ r: number; alpha: number }>;
+  timer: number;
+}
+
 const ROOM_UNLOCK_LABELS: Record<string, string> = {
   research:  'DEEP SCAN PROTOCOL UNLOCKED',
   builder:   'RAPID BUILD PIPELINE ACTIVE',
@@ -237,6 +253,8 @@ export class StationScene {
   private furnitureImages: import('phaser').GameObjects.Image[] = [];
 
   private levelUpEffects: LevelUpEffect[] = [];
+  private bountyEffects: BountyEffect[] = [];
+  private airlockRejectEffects: AirlockRejectEffect[] = [];
   private economyFlyovers: EconomyFlyover[] = [];
   private scanY = 0;
 
@@ -1409,6 +1427,47 @@ export class StationScene {
       e.particles = e.particles.filter(p => p.life > 0);
     }
 
+    // Bounty effects — green ripple rings when agent earns a bounty
+    this.bountyEffects = this.bountyEffects.filter(e => e.timer > 0);
+    for (const e of this.bountyEffects) {
+      e.timer -= dt;
+      const prog = Math.max(0, e.timer / 80);
+      for (const ring of e.rings) {
+        ring.r += 2.2 * dt;
+        ring.alpha = Math.max(0, ring.alpha - 0.014 * dt);
+        if (ring.alpha > 0) {
+          g.lineStyle(1.5, 0x4dff9b, ring.alpha);
+          g.strokeCircle(e.x, e.y, ring.r);
+        }
+      }
+      for (const p of e.particles) {
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 0.04 * dt; p.life -= 0.016 * dt;
+        if (p.life > 0) { g.fillStyle(p.color, p.life * prog); g.fillCircle(p.x, p.y, 2); }
+      }
+      e.particles = e.particles.filter(p => p.life > 0);
+    }
+
+    // Airlock reject effects — red flash + shake rings
+    this.airlockRejectEffects = this.airlockRejectEffects.filter(e => e.timer > 0);
+    for (const e of this.airlockRejectEffects) {
+      e.timer -= dt;
+      e.flashAlpha = Math.max(0, e.flashAlpha - 0.025 * dt);
+      e.shakeOffsetX = e.shakeDir * 3 * Math.sin(e.timer * 0.6) * (e.timer / 60);
+      if (e.timer < 40) e.shakeDir *= -1;
+      if (e.flashAlpha > 0) {
+        g.fillStyle(0xff2244, e.flashAlpha * 0.18);
+        g.fillRect(0, 0, W, H);
+      }
+      for (const ring of e.rings) {
+        ring.r += 1.8 * dt;
+        ring.alpha = Math.max(0, ring.alpha - 0.02 * dt);
+        if (ring.alpha > 0) {
+          g.lineStyle(2, 0xff2244, ring.alpha);
+          g.strokeCircle(e.x + e.shakeOffsetX, e.y, ring.r);
+        }
+      }
+    }
+
     // Economy flyovers
     this.economyFlyovers = this.economyFlyovers.filter(f => f.life > 0);
     for (const f of this.economyFlyovers) {
@@ -1706,6 +1765,37 @@ export class StationScene {
   triggerLevelUpByName(name: string): void {
     const ag = this.agents.find(a => a.name === name);
     if (ag) this.triggerLevelUp(ag.id);
+  }
+
+  // ─── Bounty Pulse ─────────────────────────────────────────────────────────
+  triggerBountyPulse(agentId: string): void {
+    const ag = this.agents.find(a => a.id === agentId);
+    if (!ag) return;
+    const rings = Array.from({ length: 5 }, (_, i) => ({ r: i * 6, alpha: 1 - i * 0.12 }));
+    const particles: BurstParticle[] = Array.from({ length: 16 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.8 + Math.random() * 1.8;
+      return { x: ag.wx, y: ag.wy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 0.8, life: 0.7 + Math.random() * 0.4, color: Math.random() > 0.4 ? 0x4dff9b : 0xffffff };
+    });
+    this.bountyEffects.push({ x: ag.wx, y: ag.wy, rings, particles, timer: 80 });
+  }
+
+  triggerBountyPulseByName(name: string): void {
+    const ag = this.agents.find(a => a.name === name);
+    if (ag) this.triggerBountyPulse(ag.id);
+  }
+
+  // ─── Airlock Reject ───────────────────────────────────────────────────────
+  triggerAirlockReject(agentId: string): void {
+    const ag = this.agents.find(a => a.id === agentId);
+    if (!ag) return;
+    const rings = Array.from({ length: 3 }, (_, i) => ({ r: i * 8, alpha: 1 - i * 0.2 }));
+    this.airlockRejectEffects.push({ x: ag.wx, y: ag.wy, flashAlpha: 1, shakeOffsetX: 0, shakeDir: 1, rings, timer: 60 });
+  }
+
+  triggerAirlockRejectByName(name: string): void {
+    const ag = this.agents.find(a => a.name === name);
+    if (ag) this.triggerAirlockReject(ag.id);
   }
 
   getAgentLevel(id: string): number { return this.agentLevels[id] ?? 0; }

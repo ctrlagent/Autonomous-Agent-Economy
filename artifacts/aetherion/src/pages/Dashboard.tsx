@@ -6,6 +6,7 @@ import {
 } from "@workspace/api-client-react";
 import { Pause, ChevronDown, AlertTriangle, Star, X, ChevronLeft, ChevronRight, Plus, Activity, Package } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { TelemetryOverlay } from "@/components/TelemetryOverlay";
 import { AgentOutputCard, type AgentOutputData } from "@/components/AgentOutputCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { StationCanvas } from "@/components/StationCanvas";
@@ -71,36 +72,14 @@ export default function Dashboard() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: agentTasks } = useListAgentTasks(selectedAgentId ?? 0, { query: { enabled: !!selectedAgentId } as any });
 
-  // Revenue — persistent via DB
-  const [revenue, setRevenue] = useState<number | null>(null);
-  const [revenueGlow, setRevenueGlow] = useState(false);
-  const revenueSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastPersistedRevenue = useRef<number | null>(null);
-
-  // Sync revenue from station data
-  useEffect(() => {
-    const stationRevenue = (currentStation as { revenue?: number } | undefined)?.revenue;
-    if (stationRevenue !== undefined && revenue === null) {
-      setRevenue(stationRevenue ?? 0);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStation]);
-
-  // Debounced save revenue to DB — only writes when value has actually changed
-  const saveRevenue = useCallback((newRevenue: number, stationId: number) => {
-    if (revenueSaveTimer.current) clearTimeout(revenueSaveTimer.current);
-    revenueSaveTimer.current = setTimeout(async () => {
-      if (lastPersistedRevenue.current === newRevenue) return;
-      try {
-        await fetch(`/api/stations/${stationId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ revenue: newRevenue }),
-        });
-        lastPersistedRevenue.current = newRevenue;
-      } catch { /* ignore */ }
-    }, 5000);
-  }, []);
+  // Revenue — read from DB (agent_wallet_tx sum, read-only)
+  const { data: revenueData } = useQuery<{ totalUsdc: number; txCount: number; hourlyUsdc: number }>({
+    queryKey: ["/api/dashboard/revenue"],
+    queryFn: () => fetch("/api/dashboard/revenue").then(r => r.json()),
+    staleTime: 15000,
+    refetchInterval: 30000,
+  });
+  const totalUsdc = revenueData?.totalUsdc ?? 0;
 
   const [dayPhase, setDayPhase] = useState<string>('PEAK HOURS');
   const [activeIncidents, setActiveIncidents] = useState<Array<{ roomId: string; label: string; countdown: number; countdownMax: number }>>([]);
@@ -118,11 +97,17 @@ export default function Dashboard() {
   const triggerRef = useRef<((id: string) => number) | null>(null);
   const sceneRef = useRef<StationScene | null>(null);
 
-  // React to real-time agent events — trigger Phaser level-up burst on task_complete / agent_level_up
+  // React to real-time agent events — separate triggers for level-up, bounty, airlock reject
   useEffect(() => {
     const unsub = subscribeAgentEvents((ev) => {
-      if ((ev.type === "task_complete" || ev.type === "agent_level_up") && ev.data?.agentName) {
+      if (ev.type === "agent_level_up" && ev.data?.agentName) {
         sceneRef.current?.triggerLevelUpByName(ev.data.agentName.toUpperCase());
+      }
+      if (ev.type === "task_complete" && ev.data?.agentName) {
+        sceneRef.current?.triggerBountyPulseByName(ev.data.agentName.toUpperCase());
+      }
+      if (ev.type === "airlock_rejected" && ev.data?.agentName) {
+        sceneRef.current?.triggerAirlockRejectByName(ev.data.agentName.toUpperCase());
       }
     });
     return unsub;
@@ -147,16 +132,6 @@ export default function Dashboard() {
     }, 1000);
     return () => clearInterval(id);
   }, []);
-
-  const handleRevenueChange = (delta: number) => {
-    setRevenue(r => {
-      const next = (r ?? 0) + delta;
-      if (currentStationId) saveRevenue(next, currentStationId);
-      return next;
-    });
-    setRevenueGlow(true);
-    setTimeout(() => setRevenueGlow(false), 1200);
-  };
 
   const dungeonRoom = DUNGEON_ROOMS.find(r => r.id === selectedDungeonRoomId) ?? null;
   const selectedAgent = agents?.find((a: { id: number }) => a.id === selectedAgentId);
@@ -244,13 +219,13 @@ export default function Dashboard() {
           <span style={{ ...mono, fontSize: 7, color: phaseColor, letterSpacing: "0.12em", padding: "2px 8px", border: `1px solid ${phaseColor}55` }}>
             ◉ {dayPhase}
           </span>
+          <span style={{ ...mono, fontSize: 7, color: "rgba(77,255,155,0.55)", letterSpacing: "0.06em" }}>USDC</span>
           <span style={{
             ...mono, fontSize: 11, fontWeight: 700,
             color: "#4dff9b",
-            textShadow: revenueGlow ? "0 0 12px #4dff9b, 0 0 24px #4dff9b" : "0 0 6px #4dff9b55",
-            transition: "text-shadow 0.3s",
+            textShadow: "0 0 6px #4dff9b55",
           }}>
-            ${(revenue ?? 3840).toLocaleString()}
+            ${totalUsdc.toLocaleString()}
           </span>
         </div>
 
@@ -280,11 +255,11 @@ export default function Dashboard() {
             <StationCanvas
               onAgentSelect={handlePhaserAgentSelect}
               onRoomSelect={handleRoomSelect}
-              onRevenueChange={handleRevenueChange}
               onRoomMissionComplete={handleRoomMissionComplete}
               triggerRef={triggerRef}
               sceneRef={sceneRef}
             />
+            <TelemetryOverlay />
 
             {/* Mission Complete Notifications */}
             <div style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "none", zIndex: 30, width: 320 }}>

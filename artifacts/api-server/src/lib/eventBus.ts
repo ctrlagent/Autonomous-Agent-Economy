@@ -19,13 +19,23 @@ interface TaskEventData {
   durationMs: number;
 }
 
+interface AirlockEventData {
+  agentId: number;
+  agentName: string;
+  agentRole: string;
+  taskTitle: string;
+  stationId: number;
+}
+
 export type AgentEvent =
   | { type: "connected"; ts: number }
   | { type: "task_update"; data: { agentId: number; progress?: number }; ts: number }
   | { type: "task_complete"; data: TaskEventData; ts: number }
   | { type: "agent_level_up"; data: TaskEventData; ts: number }
   | { type: "activity_new"; data: { agentId: number; action: string; detail: string }; ts: number }
-  | { type: "mission_complete"; data: { missionId: number; missionTitle: string; nextMissionTitle?: string }; ts: number };
+  | { type: "mission_complete"; data: { missionId: number; missionTitle: string; nextMissionTitle?: string }; ts: number }
+  | { type: "airlock_approved"; data: AirlockEventData & { reward: { xp: number; revenue: number } }; ts: number }
+  | { type: "airlock_rejected"; data: AirlockEventData; ts: number };
 
 // ─── WebSocket server ────────────────────────────────────────────────────────
 
