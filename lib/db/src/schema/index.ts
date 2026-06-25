@@ -11,3 +11,4 @@ export * from "./agentWalletTx";
 export * from "./missionEscrow";
 export * from "./airlock";
 export * from "./marketplace";
+export * from "./commanderDirectives";

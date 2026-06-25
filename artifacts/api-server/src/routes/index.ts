@@ -14,6 +14,7 @@ import airlockRouter from "./airlock";
 import githubRouter from "./github";
 import marketplaceRouter from "./marketplace";
 import briefingRouter from "./briefing";
+import commanderRouter from "./commander";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use("/escrow", escrowRouter);
 router.use("/airlock", airlockRouter);
 router.use("/marketplace", marketplaceRouter);
 router.use("/briefing", briefingRouter);
+router.use("/commander", commanderRouter);
 
 export default router;

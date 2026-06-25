@@ -11,6 +11,18 @@ const XP_PER_TASK = 30;
 const XP_PER_LEVEL = 100;
 const IDLE_START_CHANCE = 0.35;
 
+// ─── Commander Directive cache ────────────────────────────────────────────────
+let directiveCache: Record<string, number> = {};
+export function setDirectiveCache(weights: Record<string, number>): void {
+  directiveCache = { ...weights };
+}
+/** Returns the start-chance multiplier for a role: 0→0× | 50→1× | 100→2× */
+function directiveMultiplier(role: string): number {
+  const w = directiveCache[role];
+  if (w === undefined) return 1;
+  return (w / 50);
+}
+
 const TASK_TEMPLATES: Record<string, string[]> = {
   research:  ["Analyzing market patterns", "Scanning competitor data", "Building research corpus", "Pattern recognition scan", "Data mining operation", "Literature synthesis run", "Trend forecasting model"],
   strategy:  ["Planning expansion phase", "Optimizing agent routing", "Strategic review cycle", "Revenue modeling", "Market positioning update", "Risk assessment sweep", "Competitive landscape scan"],
@@ -385,7 +397,7 @@ async function tick() {
 
           emit({ type: "task_update", data: { agentId: agent.id }, ts: Date.now() });
 
-        } else if (Math.random() < IDLE_START_CHANCE) {
+        } else if (Math.random() < IDLE_START_CHANCE * directiveMultiplier(agent.role)) {
           const title = taskTitle(agent.role);
 
           await db.update(agentsTable)
@@ -421,8 +433,21 @@ async function tick() {
   }
 }
 
+export async function loadDirectivesFromDb(): Promise<void> {
+  try {
+    const { commanderDirectivesTable } = await import("@workspace/db");
+    const rows = await db.select().from(commanderDirectivesTable);
+    const cache: Record<string, number> = {};
+    for (const r of rows) cache[r.role] = r.weight;
+    setDirectiveCache(cache);
+  } catch {
+    // table may not exist yet on first boot — silently skip
+  }
+}
+
 export function startTaskEngine(): void {
   logger.info("Task engine started");
+  loadDirectivesFromDb().catch(() => {});
   setTimeout(() => {
     tick();
     setInterval(tick, TICK_INTERVAL_MS);
