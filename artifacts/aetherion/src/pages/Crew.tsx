@@ -32,7 +32,7 @@ const ROLE_LABEL: Record<string, string> = {
   content: "◉ CONTENT", growth: "⬟ GROWTH", analytics: "⬠ ANALYTICS",
 };
 
-type Agent = { id: number; name: string; role: string; level: number; experience: number; tasksCompleted: number; currentTask?: string | null; status?: string; walletAddress?: string | null; totalEarned?: number; totalTokensUsed?: number };
+type Agent = { id: number; name: string; role: string; level: number; experience: number; tasksCompleted: number; currentTask?: string | null; status?: string; walletAddress?: string | null; totalEarned?: number | null; totalTokensUsed?: number | null };
 type Task = { id: number; title: string; status: string };
 
 function AgentDetailContent({

@@ -19,4 +19,7 @@ export interface Agent {
   experience: number;
   tasksCompleted: number;
   currentTask?: string | null;
+  walletAddress?: string | null;
+  totalEarned?: number | null;
+  totalTokensUsed?: number | null;
 }

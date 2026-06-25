@@ -1,5 +1,5 @@
 import { type ReactNode, useMemo, useState } from "react";
-import { useAccount, useBalance } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 import { base } from "viem/chains";
 import { formatUnits } from "viem";
 import TokenGate from "@/pages/TokenGate";
@@ -23,14 +23,17 @@ export function WalletGate({ children }: { children: ReactNode }) {
     try { return sessionStorage.getItem(BETA_KEY) === "1"; } catch { return false; }
   });
 
-  const { data: ctrlBalance } = useBalance({
-    address,
-    token: CTRL_TOKEN_ADDRESS as `0x${string}`,
+  const { data: rawBalance } = useReadContract({
+    address: CTRL_TOKEN_ADDRESS as `0x${string}`,
+    abi: [{ name: "balanceOf", type: "function", inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" }] as const,
+    functionName: "balanceOf",
+    args: [address as `0x${string}`],
     chainId: base.id,
+    query: { enabled: !!address },
   });
 
-  const formattedBalance = ctrlBalance
-    ? formatUnits(ctrlBalance.value, CTRL_TOKEN_DECIMALS)
+  const formattedBalance = rawBalance != null
+    ? formatUnits(rawBalance as bigint, CTRL_TOKEN_DECIMALS)
     : undefined;
 
   const tier = useMemo(() => computeTier(formattedBalance), [formattedBalance]);

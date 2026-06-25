@@ -23,7 +23,7 @@ router.get("/agents/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const [listing] = await db.select().from(marketplaceListingsTable).where(eq(marketplaceListingsTable.id, id));
-    if (!listing) return res.status(404).json({ error: "Listing not found" });
+    if (!listing) { res.status(404).json({ error: "Listing not found" }); return; }
     res.json(listing);
   } catch (e) {
     res.status(500).json({ error: "Failed to fetch listing" });
@@ -35,11 +35,11 @@ router.post("/hire/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { stationId } = req.body as { stationId: number };
-    if (!stationId) return res.status(400).json({ error: "stationId is required" });
+    if (!stationId) { res.status(400).json({ error: "stationId is required" }); return; }
 
     const [listing] = await db.select().from(marketplaceListingsTable).where(eq(marketplaceListingsTable.id, id));
-    if (!listing) return res.status(404).json({ error: "Listing not found" });
-    if (listing.status !== "available") return res.status(409).json({ error: "Agent already hired" });
+    if (!listing) { res.status(404).json({ error: "Listing not found" }); return; }
+    if (listing.status !== "available") { res.status(409).json({ error: "Agent already hired" }); return; }
 
     // Pick a room in the target station matching the agent's role
     const rooms = await db.select().from(roomsTable).where(eq(roomsTable.stationId, stationId));
@@ -54,7 +54,7 @@ router.post("/hire/:id", async (req, res) => {
     };
     const preferredName = ROLE_TO_ROOM[listing.role] ?? listing.role;
     const room = rooms.find(r => r.name.toLowerCase().includes(preferredName)) ?? rooms[0];
-    if (!room) return res.status(400).json({ error: "No rooms available in that station" });
+    if (!room) { res.status(400).json({ error: "No rooms available in that station" }); return; }
 
     // Create the agent
     const [newAgent] = await db.insert(agentsTable).values({

@@ -230,6 +230,9 @@ export const ListStationAgentsResponseItem = zod.object({
   experience: zod.number(),
   tasksCompleted: zod.number(),
   currentTask: zod.string().nullish(),
+  walletAddress: zod.string().nullish(),
+  totalEarned: zod.number().nullish(),
+  totalTokensUsed: zod.number().nullish(),
 });
 export const ListStationAgentsResponse = zod.array(
   ListStationAgentsResponseItem,
@@ -276,6 +279,9 @@ export const ListAgentsResponseItem = zod.object({
   experience: zod.number(),
   tasksCompleted: zod.number(),
   currentTask: zod.string().nullish(),
+  walletAddress: zod.string().nullish(),
+  totalEarned: zod.number().nullish(),
+  totalTokensUsed: zod.number().nullish(),
 });
 export const ListAgentsResponse = zod.array(ListAgentsResponseItem);
 
@@ -304,6 +310,9 @@ export const GetAgentResponse = zod.object({
   experience: zod.number(),
   tasksCompleted: zod.number(),
   currentTask: zod.string().nullish(),
+  walletAddress: zod.string().nullish(),
+  totalEarned: zod.number().nullish(),
+  totalTokensUsed: zod.number().nullish(),
 });
 
 /**
@@ -336,6 +345,9 @@ export const UpdateAgentResponse = zod.object({
   experience: zod.number(),
   tasksCompleted: zod.number(),
   currentTask: zod.string().nullish(),
+  walletAddress: zod.string().nullish(),
+  totalEarned: zod.number().nullish(),
+  totalTokensUsed: zod.number().nullish(),
 });
 
 /**

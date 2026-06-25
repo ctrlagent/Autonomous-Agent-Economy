@@ -681,6 +681,15 @@ components:
         currentTask:
           type: string
           nullable: true
+        walletAddress:
+          type: string
+          nullable: true
+        totalEarned:
+          type: integer
+          nullable: true
+        totalTokensUsed:
+          type: integer
+          nullable: true
       required:
         - id
         - stationId

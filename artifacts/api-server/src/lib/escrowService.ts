@@ -172,12 +172,10 @@ export async function approveMission(missionId: number): Promise<EscrowInfo> {
     if (agent) {
       await db.insert(agentWalletTxTable).values({
         agentId: agent.id,
-        txType: "mission_reward",
+        type: "mission_reward",
         amount: existing.amount,
         token: existing.token,
         txHash: txHashRelease!,
-        description: `Mission #${missionId} escrow released`,
-        status: "confirmed",
       });
       await db
         .update(agentsTable)

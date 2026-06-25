@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useListTemplates, useCreateStation, useListStations } from "@workspace/api-client-react";
+import type { Template } from "@workspace/api-client-react";
 import { X, Zap, Star, Users, Shield, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -404,7 +405,7 @@ function TemplatesTab({
 }: {
   filter: string; setFilter: (f: string) => void;
   search: string; setSearch: (s: string) => void;
-  filteredTemplates: ReturnType<typeof useListTemplates>["data"] extends (infer T)[] | undefined ? T[] : never[];
+  filteredTemplates: Template[];
   setCreatingTemplateId: (id: number) => void;
 }) {
   return (
