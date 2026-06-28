@@ -3,14 +3,10 @@ import { Tldraw, type Editor } from "tldraw";
 import "tldraw/tldraw.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
+import { ROLE_HEX as ROLE_COLORS } from "@/lib/roleColors";
 
 const pixel = { fontFamily: "'Press Start 2P', monospace" } as const;
 const mono  = { fontFamily: "'Space Mono', monospace" } as const;
-
-const ROLE_COLORS: Record<string, string> = {
-  research: "#4df0d8", strategy: "#9b6dff", builder: "#4d7fff",
-  content: "#ffb84d", growth: "#4dff9b", analytics: "#ff4d6d",
-};
 
 const PRIORITY_COLORS: Record<string, string> = {
   critical: "#ff4d6d", high: "#ffb84d", medium: "#4dff9b", low: "#4d7fff",

@@ -18,12 +18,7 @@ import { CreateTaskModal } from "@/components/CreateTaskModal";
 import type { AgentData as PhaserAgent } from "@/lib/stationScene";
 import type { StationScene } from "@/lib/stationScene";
 import { DUNGEON_ROOMS } from "@/lib/dungeonLayout";
-
-const ROLE_HEX: Record<string, string> = {
-  research: "#5b8fff", strategy: "#c0a020", builder: "#4d7fff",
-  design: "#9b6dff", growth: "#4dff9b", analytics: "#ff4d6d", content: "#ffb84d",
-};
-function getRoleHex(role: string) { return ROLE_HEX[role?.toLowerCase()] ?? "#4d7fff"; }
+import { getRoleColor as getRoleHex } from "@/lib/roleColors";
 
 function timeAgo(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();

@@ -20,7 +20,7 @@ function computeTier(formattedBalance: string | undefined): 0 | 1 | 2 | 3 {
 export function WalletGate({ children }: { children: ReactNode }) {
   const { address, isConnected } = useAccount();
   const [betaAccess, setBetaAccess] = useState<boolean>(() => {
-    try { return sessionStorage.getItem(BETA_KEY) === "1"; } catch { return false; }
+    try { return localStorage.getItem(BETA_KEY) === "1"; } catch { return false; }
   });
 
   const { data: rawBalance } = useReadContract({
@@ -39,7 +39,7 @@ export function WalletGate({ children }: { children: ReactNode }) {
   const tier = useMemo(() => computeTier(formattedBalance), [formattedBalance]);
 
   const grantBeta = () => {
-    try { sessionStorage.setItem(BETA_KEY, "1"); } catch {}
+    try { localStorage.setItem(BETA_KEY, "1"); } catch {}
     setBetaAccess(true);
     if (process.env.NODE_ENV === "development") {
       console.warn("[WalletGate] Beta bypass used — token gate will be enforced after TGE");

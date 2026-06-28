@@ -24,6 +24,7 @@ import {
   X, Filter, Plus, MoreHorizontal, ArrowRight, Zap, Target,
   TrendingUp, Users, Clock, Star, Flag, ChevronDown,
 } from "lucide-react";
+import { ROLE_HEX as ROLE_COLORS } from "@/lib/roleColors";
 
 type KanbanMission = {
   id: number;
@@ -58,15 +59,6 @@ const PRIORITY_META: Record<string, { color: string; label: string }> = {
   high:     { color: "#ffb84d", label: "HIGH" },
   medium:   { color: "#5b8fff", label: "MEDIUM" },
   low:      { color: "#8090b0", label: "LOW" },
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  research: "#4df0d8",
-  strategy: "#9b6dff",
-  builder:  "#4d7fff",
-  content:  "#ffb84d",
-  growth:   "#4dff9b",
-  analytics:"#ff4d6d",
 };
 
 function getIcon(name: string) {

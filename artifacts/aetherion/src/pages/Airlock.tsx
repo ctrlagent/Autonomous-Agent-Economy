@@ -2,15 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, CheckCircle, XCircle, RefreshCw, AlertTriangle, ChevronDown, Filter, Eye, EyeOff, GitPullRequest, GitMerge, ExternalLink } from "lucide-react";
 
-const ROLE_COLORS: Record<string, string> = {
-  research:  "#4df0d8",
-  strategy:  "#9b6dff",
-  builder:   "#4d7fff",
-  content:   "#ffb84d",
-  growth:    "#4dff9b",
-  analytics: "#ff4d6d",
-  design:    "#c084fc",
-};
+import { ROLE_HEX as ROLE_COLORS } from "@/lib/roleColors";
 
 const STATUS_COLORS: Record<string, string> = {
   pending:           "#ffb84d",

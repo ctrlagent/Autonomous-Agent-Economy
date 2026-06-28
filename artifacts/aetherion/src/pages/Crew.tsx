@@ -8,6 +8,7 @@ import { AssignTaskModal } from "@/components/AssignTaskModal";
 import { AddAgentModal } from "@/components/AddAgentModal";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { ROLE_SKILLS, getRank, getNextRank, XP_PER_LEVEL } from "@/lib/agentSkills";
+import { getRoleColor as getRoleHex, ROLE_LABEL, ROLE_HEX } from "@/lib/roleColors";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth <= 768);
@@ -20,17 +21,6 @@ function useIsMobile() {
 }
 
 const FILTERS = ["ALL", "RESEARCH", "STRATEGY", "BUILDER", "CONTENT", "GROWTH", "ANALYTICS"];
-
-const ROLE_HEX: Record<string, string> = {
-  research:  "#5b8fff", strategy:  "#9b6dff", builder:   "#4d7fff",
-  design:    "#ff4d9b", growth:    "#4dff9b", analytics: "#ff4d6d", content:   "#ffb84d",
-};
-function getRoleHex(role: string) { return ROLE_HEX[role?.toLowerCase()] ?? "#4d7fff"; }
-
-const ROLE_LABEL: Record<string, string> = {
-  research: "⬡ RESEARCH", strategy: "◈ STRATEGY", builder: "⬢ BUILDER",
-  content: "◉ CONTENT", growth: "⬟ GROWTH", analytics: "⬠ ANALYTICS",
-};
 
 type Agent = { id: number; name: string; role: string; level: number; experience: number; tasksCompleted: number; currentTask?: string | null; status?: string; walletAddress?: string | null; totalEarned?: number | null; totalTokensUsed?: number | null };
 type Task = { id: number; title: string; status: string };

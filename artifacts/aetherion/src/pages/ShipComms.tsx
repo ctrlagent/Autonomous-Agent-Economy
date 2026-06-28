@@ -4,14 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, Radio, Zap, ChevronRight, Key, AlertCircle } from "lucide-react";
 import { AgentAvatar } from "@/components/PixelSprite";
 import { Link } from "wouter";
+import { getRoleColor as roleHex } from "@/lib/roleColors";
 
 const mono = { fontFamily: "'Space Mono', monospace" };
-
-const ROLE_HEX: Record<string, string> = {
-  research: "#5b8fff", strategy: "#9b6dff", builder: "#4d7fff",
-  content: "#ffb84d", growth: "#4dff9b", analytics: "#ff4d6d", design: "#ff4d9b",
-};
-function roleHex(r: string) { return ROLE_HEX[r?.toLowerCase()] ?? "#4d7fff"; }
 
 interface Message {
   id: number;

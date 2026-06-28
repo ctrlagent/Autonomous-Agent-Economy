@@ -10,3 +10,4 @@
 - [Week 11 Dashboard Upgrade](week11-dashboard.md) — /api/dashboard/revenue endpoint; TelemetryOverlay widget; bountyPulse (green) + airlockReject (red flash) Phaser effects; revenue state removed from Dashboard
 - [Week 12 Commander Profile](week12-commander-profile.md) — commander_directives DB table; /api/commander/* routes; directive weight cache in taskEngine; sparkline history + sliders in Profile.tsx
 - [Week 13 Kanban Wall](week13-kanban.md) — Missions page replaced with Kanban; @dnd-kit for drag-drop; missions table extended with kanban columns; API rebuild required after schema changes
+- [Role colors & shared lib](role-colors-refactor.md) — Canonical role colors in src/lib/roleColors.ts; beta access uses localStorage (not sessionStorage); dead pages/layouts removed

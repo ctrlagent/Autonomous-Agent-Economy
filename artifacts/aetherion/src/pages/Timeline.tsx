@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useGetRecentActivity } from "@workspace/api-client-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, BarChart2 } from "lucide-react";
+import { getRoleColor as getRoleHex } from "@/lib/roleColors";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth <= 768);
@@ -14,12 +15,6 @@ function useIsMobile() {
 }
 
 const FILTERS = ["ALL", "REVENUE", "AGENTS", "ERRORS"];
-
-const ROLE_HEX: Record<string, string> = {
-  research: "#5b8fff", strategy: "#9b6dff", builder: "#4d7fff",
-  design: "#ff4d9b", growth: "#4dff9b", analytics: "#ff4d6d", content: "#ffb84d",
-};
-function getRoleHex(role: string) { return ROLE_HEX[role?.toLowerCase()] ?? "#636b8a"; }
 
 function formatTime(ts: string): string {
   try {
