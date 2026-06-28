@@ -22,6 +22,25 @@ import BriefingRoom from "@/pages/BriefingRoom";
 import { EVMWalletProvider } from "@/lib/WalletProvider";
 import { WalletGate } from "@/components/WalletGate";
 import { WalletHeaderSync } from "@/components/WalletHeaderSync";
+import { Component, type ReactNode, type ErrorInfo } from "react";
+
+class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err: Error, info: ErrorInfo) { console.error("[CTRL] Render error:", err, info); }
+  render() {
+    if (this.state.hasError) return this.props.fallback ?? null;
+    return this.props.children;
+  }
+}
+
+function SafeWalletProvider({ children }: { children: ReactNode }) {
+  return (
+    <ErrorBoundary fallback={<>{children}</>}>
+      <EVMWalletProvider>{children}</EVMWalletProvider>
+    </ErrorBoundary>
+  );
+}
 
 const queryClient = new QueryClient();
 
@@ -65,17 +84,19 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <EVMWalletProvider>
-          <WalletHeaderSync />
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-        </EVMWalletProvider>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <SafeWalletProvider>
+            <WalletHeaderSync />
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+          </SafeWalletProvider>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
