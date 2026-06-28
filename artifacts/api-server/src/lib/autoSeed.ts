@@ -152,11 +152,11 @@ async function seed() {
   ]);
 
   await db.insert(missionsTable).values([
-    { title: "Revenue Milestone", description: "Reach $5,000 in total station revenue", iconName: "TrendingUp", color: "#4dff9b", target: 5000, current: 3840, unit: "$", rewardXp: 500, status: "active", sortOrder: 1 },
-    { title: "Deploy 10 Contracts", description: "Builder agents deploy 10 smart contracts to testnet", iconName: "Code", color: "#4d7fff", target: 10, current: 7, unit: "", rewardXp: 300, status: "active", sortOrder: 2 },
-    { title: "Recruit 20 Agents", description: "Expand your crew to 20 active AI agents", iconName: "Users", color: "#9b6dff", target: 20, current: 18, unit: "", rewardXp: 400, status: "active", sortOrder: 3 },
-    { title: "Peak Performance", description: "Achieve 90% average agent performance rating", iconName: "Zap", color: "#ffb84d", target: 90, current: 0, unit: "%", rewardXp: 600, status: "active", sortOrder: 4 },
-    { title: "Station Expansion", description: "Launch 5 active space stations", iconName: "Star", color: "#ff4d6d", target: 5, current: 3, unit: "", rewardXp: 800, status: "active", sortOrder: 5 },
+    { title: "Revenue Milestone", description: "Reach $5,000 in total station revenue across all active stations", iconName: "TrendingUp", color: "#4dff9b", target: 5000, current: 3840, unit: "$", rewardXp: 500, rewardAmount: 500, status: "active", sortOrder: 1, columnStatus: "in_progress", priority: "high", labels: ["revenue", "growth"] as unknown as string[], progress: 77, branchName: "feat/revenue-track", commentsCount: 3 },
+    { title: "Deploy 10 Contracts", description: "Builder agents deploy 10 smart contracts to Base Sepolia testnet and verify on BaseScan", iconName: "TrendingUp", color: "#4d7fff", target: 10, current: 7, unit: "", rewardXp: 300, rewardAmount: 300, status: "active", sortOrder: 2, columnStatus: "in_review", priority: "medium", labels: ["blockchain", "builder"] as unknown as string[], progress: 70, branchName: "feat/contract-deploy", commentsCount: 7 },
+    { title: "Recruit 20 Agents", description: "Expand your crew to 20 active AI agents across all stations", iconName: "Users", color: "#9b6dff", target: 20, current: 18, unit: "", rewardXp: 400, rewardAmount: 400, status: "active", sortOrder: 3, columnStatus: "in_progress", priority: "critical", labels: ["hiring", "ops"] as unknown as string[], progress: 90, commentsCount: 1 },
+    { title: "Peak Performance", description: "Achieve 90% average agent performance rating for 7 consecutive days", iconName: "Zap", color: "#ffb84d", target: 90, current: 0, unit: "%", rewardXp: 600, rewardAmount: 250, status: "active", sortOrder: 4, columnStatus: "backlog", priority: "low", labels: ["performance"] as unknown as string[], progress: 0, branchName: "feat/perf-metrics", commentsCount: 0 },
+    { title: "Station Expansion", description: "Launch 5 active space stations with full crew and all rooms online", iconName: "TrendingUp", color: "#ff4d6d", target: 5, current: 5, unit: "", rewardXp: 800, rewardAmount: 800, status: "completed", sortOrder: 5, columnStatus: "done", priority: "medium", labels: ["expansion", "done"] as unknown as string[], progress: 100, commentsCount: 5 },
   ]);
 
   logger.info("Auto-seed complete — 6 templates, 3 stations, 23 agents, 24 activity entries, 5 missions");

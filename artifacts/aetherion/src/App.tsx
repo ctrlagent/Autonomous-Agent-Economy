@@ -7,6 +7,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import Dashboard from "@/pages/Dashboard";
 import Crew from "@/pages/Crew";
 import Missions from "@/pages/Missions";
+import Kanban from "@/pages/Kanban";
 import Timeline from "@/pages/Timeline";
 import Market from "@/pages/Market";
 import ShipComms from "@/pages/ShipComms";
@@ -51,7 +52,9 @@ function AppRoutes() {
         <Switch>
           <Route path="/app" component={Dashboard} />
           <Route path="/app/crew" component={Crew} />
-          <Route path="/app/missions" component={Missions} />
+          <Route path="/app/missions" component={Kanban} />
+          <Route path="/app/kanban" component={Kanban} />
+          <Route path="/app/missions-legacy" component={Missions} />
           <Route path="/app/timeline" component={Timeline} />
           <Route path="/app/templates" component={Market} />
           <Route path="/app/ship-comms" component={ShipComms} />

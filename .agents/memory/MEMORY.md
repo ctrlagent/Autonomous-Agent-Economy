@@ -9,3 +9,4 @@
 - [Week 9 XP & Leveling](week9-xp-leveling.md) — agentSkills.ts (skills+ranks); Phaser levelUpBurst already wired via triggerRef/sceneRef; agent_level_up WS event already emitted; skills panel in Crew.tsx
 - [Week 11 Dashboard Upgrade](week11-dashboard.md) — /api/dashboard/revenue endpoint; TelemetryOverlay widget; bountyPulse (green) + airlockReject (red flash) Phaser effects; revenue state removed from Dashboard
 - [Week 12 Commander Profile](week12-commander-profile.md) — commander_directives DB table; /api/commander/* routes; directive weight cache in taskEngine; sparkline history + sliders in Profile.tsx
+- [Week 13 Kanban Wall](week13-kanban.md) — Missions page replaced with Kanban; @dnd-kit for drag-drop; missions table extended with kanban columns; API rebuild required after schema changes

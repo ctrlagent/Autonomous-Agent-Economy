@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, real, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, real, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -20,6 +20,14 @@ export const missionsTable = pgTable("missions", {
   status: missionStatusEnum("status").notNull().default("active"),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  columnStatus: text("column_status").notNull().default("backlog"),
+  assigneeId: integer("assignee_id"),
+  priority: text("priority").notNull().default("medium"),
+  labels: jsonb("labels").notNull().default([]),
+  commentsCount: integer("comments_count").notNull().default(0),
+  branchName: text("branch_name"),
+  progress: integer("progress").notNull().default(0),
+  checklist: jsonb("checklist").notNull().default([]),
 });
 
 export const insertMissionSchema = createInsertSchema(missionsTable).omit({ id: true, createdAt: true });

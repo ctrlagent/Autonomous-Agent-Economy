@@ -12,7 +12,7 @@ import { useTier } from "@/components/TierProvider";
 const NAV_ITEMS = [
   { href: "/app",             label: "STATION",  Icon: Zap },
   { href: "/app/crew",        label: "CREW",     Icon: Users },
-  { href: "/app/missions",    label: "MISSIONS", Icon: Target },
+  { href: "/app/missions",    label: "KANBAN",   Icon: Target },
   { href: "/app/timeline",    label: "TIMELINE", Icon: Clock },
   { href: "/app/templates",   label: "MARKET",   Icon: Store },
   { href: "/app/airlock",     label: "AIRLOCK",  Icon: Shield },
