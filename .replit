@@ -47,7 +47,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=5000 BASE_PATH=/ pnpm --filter @workspace/aetherion dev"
+args = "node scripts/proxy-8084.mjs & PORT=5000 BASE_PATH=/ pnpm --filter @workspace/aetherion dev"
 waitForPort = 5000
 
 [agent]
